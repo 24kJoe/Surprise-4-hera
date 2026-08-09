@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { CONFIG } from "@/lib/config";
 
-function diff(start: Date, now: Date) {
+function diff(start: Date = new Date("2026-01-17T13:21:00+02:00"), now: Date = new Date()) {
   let ms = now.getTime() - start.getTime();
   if (ms < 0) ms = 0;
   const days = Math.floor(ms / 86400000);
