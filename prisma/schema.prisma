@@ -1,0 +1,44 @@
+datasource db {
+  provider = "mongodb"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum MediaType {
+  IMAGE
+  VIDEO
+}
+
+model Collection {
+  id          String      @id @default(auto()) @map("_id") @db.ObjectId
+  title       String
+  description String?
+  slug        String?     @unique
+  media       MediaItem[] // Contains both images and videos
+
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+}
+
+model MediaItem {
+  id           String      @id @default(auto()) @map("_id") @db.ObjectId
+  type         MediaType   @default(IMAGE)
+  url          String
+  publicId     String?
+  altText      String?
+  caption      String?
+  duration     Float?      // Optional: Video duration in seconds
+  thumbnailUrl String?     // Optional: Poster image for videos
+  size         Int?
+  width        Int?
+  height       Int?
+  mimeType     String?
+  collectionId String?     @db.ObjectId
+  collection   Collection? @relation(fields: [collectionId], references: [id], onDelete: Cascade)
+
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+}
