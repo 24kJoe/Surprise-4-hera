@@ -14,14 +14,12 @@ interface NavProps {
 export default function Nav({ className }: NavProps) {
   const [isOpen, setIsOpen] = useState(false);
 
-  // الحصول على الرابط الأساسي من البيئة أو القيمة الافتراضية
-  const baseUrl = process.env.NEXT_PUBLIC_URL || "http://localhost:3000";
-
+  // الروابط المباشرة بدون الحاجة لـ baseUrl
   const links = [
-    { href: `${baseUrl}/#letter`, id: "#letter", label: "Letter" },
-    { href: `${baseUrl}/#memories`, id: "#memories", label: "Memories" },
-    { href: `${baseUrl}/#gallery`, id: "#gallery", label: "Gallery" },
-    { href: `${baseUrl}/#counter`, id: "#counter", label: "Counter" },
+    { href: "/#letter", id: "#letter", label: "Letter" },
+    { href: "/#memories", id: "#memories", label: "Memories" },
+    { href: "/#gallery", id: "#gallery", label: "Gallery" },
+    { href: "/#counter", id: "#counter", label: "Counter" },
   ];
 
   // تتبع الأقسام أثناء السكرول
@@ -60,7 +58,7 @@ export default function Nav({ className }: NavProps) {
         <div className="flex items-center gap-8">
           {/* Brand Logo */}
           <Link
-            href={`${baseUrl}/#letter`}
+            href="/#letter"
             onClick={() => handleLinkClick("#letter")}
             className="font-serif text-lg md:text-xl text-[#4a2036] tracking-wider flex items-center gap-1.5 group shrink-0"
           >
@@ -114,7 +112,7 @@ export default function Nav({ className }: NavProps) {
         <div className="flex items-center gap-3">
           {/* Light Admin Link - Desktop */}
           <Link
-            href={`${baseUrl}/admin`}
+            href="/admin"
             className={twMerge(
               "hidden md:flex items-center gap-2 group",
               "bg-pink-50/80 hover:bg-pink-100/80 text-[#e05586] hover:text-[#b83f6c]",
@@ -170,7 +168,7 @@ export default function Nav({ className }: NavProps) {
             {/* Light Admin Link - Mobile */}
             <div className="pt-2 mt-1 border-t border-pink-100/40">
               <Link
-                href={`${baseUrl}/admin`}
+                href="/admin"
                 onClick={() => setIsOpen(false)}
                 className="flex items-center justify-between text-xs uppercase tracking-widest px-4 py-3 rounded-xl bg-pink-50 hover:bg-pink-100 border border-pink-200 text-[#e05586] font-semibold transition-colors"
               >
