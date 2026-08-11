@@ -11,11 +11,15 @@ export default function LetterSection() {
     let i = 0;
     let timer: ReturnType<typeof setTimeout>;
 
+    // Reset typed string on mount/change to prevent stale state overlap
+    setTyped("");
+
     function tick() {
       if (i < text.length) {
         const currentChar = text[i];
         
-        setTyped((prev) => prev + currentChar);
+        // Use slice up to index i+1 to ensure strict string rendering
+        setTyped(text.slice(0, i + 1));
         i++;
 
         const delay =
@@ -40,10 +44,13 @@ export default function LetterSection() {
         <div className="letter-card">
           <div className="to-line">{CONFIG.toLine}</div>
           <h1 className="hero-title">{CONFIG.heroTitle}</h1>
-          <div id="typed-letter">
+          
+          {/* whiteSpace: "pre-wrap" forces HTML to render \n newlines correctly */}
+          <div id="typed-letter" style={{ whiteSpace: "pre-wrap" }}>
             {typed}
             <span className="cursor">&nbsp;</span>
           </div>
+          
           <div className="sign-off">{CONFIG.signOff}</div>
         </div>
       </div>
