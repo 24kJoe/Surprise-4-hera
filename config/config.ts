@@ -32,10 +32,9 @@ export const CONFIG: SiteConfig = {
   herName: "Ann",
   startDate: "2026-01-17T13:21:00",
   toLine: "To Annona,",
-  heroTitle: "Everything I Never Said Out Loud",
+  heroTitle: "Happy Birthday ya habibti",
   letterText:
-`Happy Birthday ya habibti,
-I just wanted to say how much you actually mean to me. Like, there are honestly no words that can describe how I feel towards you. Ana bmot feeki bgd. Enti msh bas habibti, enti sa7bty, w my best friend, w ro7y feeki aslan.
+`I just wanted to say how much you actually mean to me. Like, there are honestly no words that can describe how I feel towards you. Ana bmot feeki bgd. Enti msh bas habibti, enti sa7bty, w my best friend, w ro7y feeki aslan.
 
 Bad3i en Rabna ya5leke leya. Ana msh mota5ayel asasan 7ayaty mn 8eirik. Ana 3ayzek ma3aya 3ala tool, w zy ma olt 2abl keda, wallahi el 3azeem hafdal a7awel 3ashanek, w ana msh mstaghni 3ank, aya kan eh elli ye7sal.
 
