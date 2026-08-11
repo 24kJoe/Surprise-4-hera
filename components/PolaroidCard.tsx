@@ -17,7 +17,7 @@ export interface MediaItem {
 }
 
 interface PolaroidCardProps {
-  photo: MediaItem; // يدعم كلاً من الصورة والفيديو
+  photo: MediaItem; 
   tilt: number;
   onClick?: () => void;
   index?: number;
@@ -41,7 +41,6 @@ export default function PolaroidCard({
     }
   }, []);
 
-  // منع التمرير بالخلفية عند فتح المودال
   useEffect(() => {
     if (isOpen) {
       document.body.style.overflow = "hidden";
@@ -109,7 +108,7 @@ export default function PolaroidCard({
 
   return (
     <>
-      {/* بطاقة البولاروايد الأساسية */}
+  
       {href ? (
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -136,7 +135,6 @@ export default function PolaroidCard({
         </motion.div>
       )}
 
-      {/* المودال الاحترافي (Lightbox) */}
       <AnimatePresence>
         {isOpen && (
           <motion.div
@@ -155,7 +153,7 @@ export default function PolaroidCard({
               onClick={(e) => e.stopPropagation()}
               className="relative bg-[var(--paper)] p-4 sm:p-6 pb-8 rounded-lg max-w-3xl w-full shadow-2xl border border-pink-200/50 cursor-default flex flex-col items-center"
             >
-              {/* زر الإغلاق */}
+          
               <button
                 onClick={() => setIsOpen(false)}
                 aria-label="Close modal"
@@ -163,8 +161,6 @@ export default function PolaroidCard({
               >
                 ✕
               </button>
-
-              {/* إطار الميديا المكبرة (صورة أو فيديو مع أدوات التحكم) */}
               <div className="w-full max-h-[75vh] overflow-hidden rounded-md bg-black/5 flex items-center justify-center">
                 {isVideo ? (
                   <video
@@ -183,7 +179,7 @@ export default function PolaroidCard({
                 )}
               </div>
 
-              {/* الكابشن (الوصف) */}
+            
               {photo.caption && (
                 <p className="mt-4 text-center font-serif italic text-base sm:text-lg text-[var(--cream)] px-2">
                   {photo.caption}

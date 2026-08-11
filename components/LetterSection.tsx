@@ -32,7 +32,7 @@ export default function LetterSection() {
     tick();
 
     return () => clearTimeout(timer);
-  }, []); // تعمل المرة الأولى فقط عند تحميل المكون
+  }, []); 
 
   return (
     <section id="letter">
