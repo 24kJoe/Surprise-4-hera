@@ -38,7 +38,7 @@ export default function CollectionPage({
         if (!data) {
           setIsNotFound(true);
         } else {
-          // تحويل النمط لتأكيد وجود حقل media لـ TypeScript
+          
           const collectionData = data as unknown as CollectionData;
           setCollection(collectionData);
 
@@ -59,8 +59,6 @@ export default function CollectionPage({
   if (isNotFound) {
     notFound();
   }
-
-  // تصفية العناصر حسب النوع (الكل - صور فقط - فيديوهات فقط)
   const filteredMedia = collection?.media?.filter((item) => {
     if (activeFilter === "IMAGE") return item.type === "IMAGE";
     if (activeFilter === "VIDEO") return item.type === "VIDEO";

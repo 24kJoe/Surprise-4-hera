@@ -10,7 +10,7 @@ export function useActiveSection(sectionIds: string[], offset = 120) {
       const scrollPosition = window.scrollY + offset;
 
       for (const id of sectionIds) {
-        // نتحقق من معرف القسم بدون الـ #
+       
         const cleanId = id.replace("#", "");
         const element = document.getElementById(cleanId);
 
