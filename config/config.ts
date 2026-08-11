@@ -31,7 +31,7 @@ export const CONFIG: SiteConfig = {
   herName: "Ann",
   startDate: "2026-01-17T13:21:00",
   toLine: "To Annona,",
-  heroTitle: "Everything I Never Said Out Loud",
+  heroTitle: "Everything I Never Said Out ",
   letterText:
 `Happy Birthday ya habibti,
 I just wanted to say how much you actually mean to me. Like, there are honestly no words that can describe how I feel towards you. Ana bmot feeki bgd. Enti msh bas habibti, enti sa7bty, w my best friend, w ro7y feeki aslan.
