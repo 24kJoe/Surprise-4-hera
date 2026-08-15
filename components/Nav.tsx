@@ -14,7 +14,7 @@ interface NavProps {
 export default function Nav({ className }: NavProps) {
   const [isOpen, setIsOpen] = useState(false);
 
-  // الروابط المباشرة بدون الحاجة لـ baseUrl
+  
   const links = [
     { href: "/#letter", id: "#letter", label: "Letter" },
     { href: "/#memories", id: "#memories", label: "Memories" },
@@ -22,14 +22,14 @@ export default function Nav({ className }: NavProps) {
     { href: "/#counter", id: "#counter", label: "Counter" },
   ];
 
-  // تتبع الأقسام أثناء السكرول
+ 
   const sectionIds = links.map((l) => l.id);
   const scrolledActiveSection = useActiveSection(sectionIds);
 
-  // حالة محليّة لإعطاء استجابة فورية عند الضغط
+
   const [activeTab, setActiveTab] = useState("#letter");
 
-  // تحديث التحديد النشط فور تغير القسم المكتشف بالسكرول
+ 
   useEffect(() => {
     if (scrolledActiveSection) {
       setActiveTab(scrolledActiveSection);
