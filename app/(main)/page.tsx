@@ -8,6 +8,7 @@ import LetterSection from "@/components/LetterSection";
 import MemoriesSection from "@/components/MemoriesSection";
 import CounterSection from "@/components/CounterSection";
 import Gallery from "@/components/Gallery";
+import VoiceNote from "@/components/VoiceNote";
 
 export default function Page() {
   return (
@@ -26,6 +27,15 @@ export default function Page() {
       <div className="stitch-divider" />
 
       <Gallery />
+
+      <div className="stitch-divider" />
+
+      <section id="voicenotes">
+        <VoiceNote />
+      </section>
+
+      <div className="stitch-divider" />
+
       <CounterSection />
 
       <footer>made with a whole heart, just for you.</footer>

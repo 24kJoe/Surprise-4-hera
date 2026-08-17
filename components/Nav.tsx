@@ -14,22 +14,19 @@ interface NavProps {
 export default function Nav({ className }: NavProps) {
   const [isOpen, setIsOpen] = useState(false);
 
-  
   const links = [
     { href: "/#letter", id: "#letter", label: "Letter" },
     { href: "/#memories", id: "#memories", label: "Memories" },
     { href: "/#gallery", id: "#gallery", label: "Gallery" },
+    { href: "/#voicenotes", id: "#voicenotes", label: "Voicenotes" },
     { href: "/#counter", id: "#counter", label: "Counter" },
   ];
 
- 
   const sectionIds = links.map((l) => l.id);
   const scrolledActiveSection = useActiveSection(sectionIds);
 
-
   const [activeTab, setActiveTab] = useState("#letter");
 
- 
   useEffect(() => {
     if (scrolledActiveSection) {
       setActiveTab(scrolledActiveSection);

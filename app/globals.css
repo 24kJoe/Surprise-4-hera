@@ -974,13 +974,9 @@ footer {
   stroke-width: 0.6;
 }
 
-.hold-heart-fill {
-  clip-path: inset(100% 0 0 0);
-}
-
 .hold-heart-fill path {
-  fill: var(--gold);
-  stroke: var(--gold);
+  fill: var(--rose);
+  stroke: var(--rose);
   stroke-width: 0.6;
 }
 
