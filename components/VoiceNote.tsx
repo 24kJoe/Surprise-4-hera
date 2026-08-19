@@ -36,6 +36,14 @@ const sampleVoiceNotes: VoiceNote[] = [
     audioUrl: "/audio/note2.mp3",
     duration: "1:20",
   },
+  {
+    id: "3",
+    title: "Your New Voice Note Title",
+    date: "Aug 19, 2026",
+    caption: "Write a short caption for this memory here.",
+    audioUrl: "/audio/note3.mp3", // Place the audio file in public/audio/
+    duration: "0:00", // Update with the actual duration
+  },
 ];
 
 const timelineMilestones: TimelineMilestone[] = [

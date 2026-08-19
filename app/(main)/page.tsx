@@ -9,6 +9,7 @@ import MemoriesSection from "@/components/MemoriesSection";
 import CounterSection from "@/components/CounterSection";
 import Gallery from "@/components/Gallery";
 import VoiceNote from "@/components/VoiceNote";
+import FutureLetters from "@/components/FutureLetters";
 
 export default function Page() {
   return (
@@ -32,6 +33,12 @@ export default function Page() {
 
       <section id="voicenotes">
         <VoiceNote />
+      </section>
+
+      <div className="stitch-divider" />
+
+      <section id="future-letters">
+        <FutureLetters />
       </section>
 
       <div className="stitch-divider" />

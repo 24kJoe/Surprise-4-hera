@@ -19,17 +19,21 @@ export default function Nav({ className }: NavProps) {
     { href: "/#memories", id: "#memories", label: "Memories" },
     { href: "/#gallery", id: "#gallery", label: "Gallery" },
     { href: "/#voicenotes", id: "#voicenotes", label: "Voicenotes" },
+    { href: "/#future-letters", id: "#future-letters", label: "Secret Letters" },
     { href: "/#counter", id: "#counter", label: "Counter" },
   ];
 
-  const sectionIds = links.map((l) => l.id);
+  // useActiveSection expects raw DOM ids (no "#"), matching the id="..."
+  // attributes actually rendered on each <section> in page.tsx
+  const sectionIds = links.map((l) => l.id.replace("#", ""));
   const scrolledActiveSection = useActiveSection(sectionIds);
 
   const [activeTab, setActiveTab] = useState("#letter");
 
   useEffect(() => {
     if (scrolledActiveSection) {
-      setActiveTab(scrolledActiveSection);
+      // re-add the "#" so it matches the format used in `links` and hrefs
+      setActiveTab(`#${scrolledActiveSection}`);
     }
   }, [scrolledActiveSection]);
 
