@@ -64,6 +64,13 @@ export default function WelcomeScreen({ onComplete }: { onComplete: () => void }
     setTimeout(() => {
       setIsHiding(true);
       setTimeout(() => {
+        // The component never unmounts (it just fades out via CSS), so the
+        // effect's cleanup that would normally restore scrolling never
+        // runs. Reset it explicitly here or the whole page stays
+        // permanently unscrollable — which also breaks nav clicks, since
+        // there's nothing to scroll to.
+        document.documentElement.style.overflow = "";
+        document.body.style.overflow = "";
         onComplete();
       }, 500);
     }, 400);
