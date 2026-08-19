@@ -37,9 +37,22 @@ export default function Nav({ className }: NavProps) {
     }
   }, [scrolledActiveSection]);
 
-  const handleLinkClick = (id: string) => {
+  const handleLinkClick = (id: string, e?: React.MouseEvent) => {
+    e?.preventDefault();
     setActiveTab(id);
     setIsOpen(false);
+
+    const cleanId = id.replace("#", "");
+    const el = document.getElementById(cleanId);
+    if (el) {
+      // Account for the fixed nav height so the section isn't hidden behind it
+      const navOffset = 88;
+      const top = el.getBoundingClientRect().top + window.scrollY - navOffset;
+      window.scrollTo({ top, behavior: "smooth" });
+    }
+
+    // Keep the URL hash in sync without triggering a native jump
+    window.history.pushState(null, "", `/${id}`);
   };
 
   return (
@@ -60,7 +73,7 @@ export default function Nav({ className }: NavProps) {
           {/* Brand Logo */}
           <Link
             href="/#letter"
-            onClick={() => handleLinkClick("#letter")}
+            onClick={(e) => handleLinkClick("#letter", e)}
             className="font-serif text-lg md:text-xl text-[#4a2036] tracking-wider flex items-center gap-1.5 group shrink-0"
           >
             <motion.span
@@ -83,7 +96,7 @@ export default function Nav({ className }: NavProps) {
                 <a
                   key={link.id}
                   href={link.href}
-                  onClick={() => handleLinkClick(link.id)}
+                  onClick={(e) => handleLinkClick(link.id, e)}
                   className={twMerge(
                     "relative text-xs uppercase tracking-widest px-4 py-2 rounded-full transition-colors duration-200 z-10 font-medium",
                     isActive
@@ -153,7 +166,7 @@ export default function Nav({ className }: NavProps) {
               <a
                 key={link.id}
                 href={link.href}
-                onClick={() => handleLinkClick(link.id)}
+                onClick={(e) => handleLinkClick(link.id, e)}
                 className={twMerge(
                   "text-xs uppercase tracking-widest px-4 py-3 rounded-xl transition-all font-medium flex items-center justify-between",
                   activeTab === link.id
