@@ -14,10 +14,9 @@ export default function MemoriesSection() {
   useEffect(() => {
     async function loadMedia() {
       try {
-        // جلب الكولكشن الخاص بـ "our-memories" عن طريق الـ slug
+      
         const collection = await getCollectionBySlug("our-memories");
-        
-        // استخدام as any لتفادي اعتراض TypeScript على حقل media المرفق
+ 
         const mediaList = ((collection as any)?.media as MediaItem[]) || [];
 
         setPhotos(mediaList);

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { CONFIG } from "@/config/config";
+import { CONFIG } from "@/lib/config";
 
 export default function LetterSection() {
   const [typed, setTyped] = useState("");

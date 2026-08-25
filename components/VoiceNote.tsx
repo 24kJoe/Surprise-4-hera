@@ -22,18 +22,18 @@ interface TimelineMilestone {
 const sampleVoiceNotes: VoiceNote[] = [
   {
     id: "1",
-    title: "Our Very First Voice Note",
+    title: "A voice note i really love to hear actually",
     date: "Jan 17, 2026",
-    caption: "The first time you sent me a recording and made me smile all day.",
-    audioUrl: "/audio/note1.mp3", // Place audio files in public/audio/
-    duration: "0:45",
+    caption: "I don't know if i forced you to send it, but i glad i did because it keeps making my day everytime i hear it.",
+    audioUrl: "/audio/LoveNote.mp3",
+    duration: "0:07"
   },
   {
     id: "2",
     title: "Late Night Whispers",
     date: "Feb 14, 2026",
     caption: "Just checking in before sleep to remind you how much you mean to me.",
-    audioUrl: "/audio/note2.mp3",
+    audioUrl: "/audio/Zazabo3.mp3",
     duration: "1:20",
   },
   {
@@ -41,7 +41,7 @@ const sampleVoiceNotes: VoiceNote[] = [
     title: "Your New Voice Note Title",
     date: "Aug 19, 2026",
     caption: "Write a short caption for this memory here.",
-    audioUrl: "/audio/note3.mp3", // Place the audio file in public/audio/
+    audioUrl: "/audio/BahwakSong.mp3", // Place the audio file in public/audio/
     duration: "0:00", // Update with the actual duration
   },
 ];
