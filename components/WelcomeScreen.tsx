@@ -51,7 +51,7 @@ export default function WelcomeScreen({ onComplete }: { onComplete: () => void }
     };
   }, []);
 
-  // Hardware-accelerated 2D Canvas Particle Burst
+  // Snappy, high-speed 2D Canvas Particle Burst
   const triggerHeartBurst = () => {
     const canvas = canvasRef.current;
     if (!canvas || !btnRef.current) return;
@@ -67,16 +67,19 @@ export default function WelcomeScreen({ onComplete }: { onComplete: () => void }
     const centerY = btnRect.top + btnRect.height / 2;
 
     const pinkPalette = ["#ff758f", "#e0567f", "#ffb3c1", "#c93b68", "#ffccd5", "#ff4d6d"];
-    const particleCount = 60; // Mobile-optimized count
+    const particleCount = 70;
     const particles: Particle[] = [];
 
-    // Pre-render heart path for performance
     const heartPath = new Path2D(HEART_PATH);
 
     for (let i = 0; i < particleCount; i++) {
-      const angle = (Math.PI * 2 * i) / particleCount + (Math.random() - 0.5) * 0.3;
-      const speed = 2.5 + Math.random() * 3.5;
-      const maxLife = 90 + Math.random() * 30; // ~1.5 to 2 seconds at 60fps
+      const angle = (Math.PI * 2 * i) / particleCount + (Math.random() - 0.5) * 0.35;
+      
+      // Increased initial velocity for a faster burst
+      const speed = 4.5 + Math.random() * 4.5;
+      
+      // Shortened particle lifetime (~1.0s to 1.3s)
+      const maxLife = 60 + Math.random() * 20;
 
       particles.push({
         x: centerX,
@@ -86,7 +89,7 @@ export default function WelcomeScreen({ onComplete }: { onComplete: () => void }
         size: 14 + Math.random() * 12,
         color: pinkPalette[Math.floor(Math.random() * pinkPalette.length)],
         rotation: (Math.random() - 0.5) * Math.PI,
-        vRot: (Math.random() - 0.5) * 0.05,
+        vRot: (Math.random() - 0.5) * 0.08,
         alpha: 1,
         life: 0,
         maxLife,
@@ -102,22 +105,22 @@ export default function WelcomeScreen({ onComplete }: { onComplete: () => void }
           alive = true;
           p.life++;
 
-          // Physics update
+          // Physics update with snappy drag
           p.x += p.vx;
-          p.y += p.vy + 0.3; // Gentle gravity
-          p.vx *= 0.985;
-          p.vy *= 0.985;
+          p.y += p.vy + 0.35;
+          p.vx *= 0.96;
+          p.vy *= 0.96;
           p.rotation += p.vRot;
 
-          // Smooth fade-out in final 30% of lifetime
+          // Quick fade-out at the end
           const progress = p.life / p.maxLife;
           p.alpha = progress > 0.7 ? (1 - progress) / 0.3 : 1;
 
           ctx.save();
           ctx.translate(p.x, p.y);
           ctx.rotate(p.rotation);
-          ctx.scale(p.size / 24, p.size / 24); // Original SVG viewbox is 24x24
-          ctx.translate(-12, -12); // Center path origin
+          ctx.scale(p.size / 24, p.size / 24);
+          ctx.translate(-12, -12);
 
           ctx.fillStyle = p.color;
           ctx.globalAlpha = Math.max(0, p.alpha);
