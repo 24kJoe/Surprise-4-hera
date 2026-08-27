@@ -6,63 +6,73 @@ import { Lock, Mail, Sparkles, Heart, CalendarClock, X } from "lucide-react";
 
 interface FutureLetter {
   id: string;
-  unlockDate: string; 
-  displayDate: string; 
-  occasion: string; 
+  unlockDate: string;
+  displayDate: string;
+  occasion: string;
   title: string;
-  teaser: string; 
-  content: string; 
+  lockedTitle: string;
+  teaser: string;
+  lockedTeaser: string;
+  content: string;
 }
+
 const futureLetters: FutureLetter[] = [
   {
     id: "1",
-    unlockDate: "2026-12-25T00:00:00",
+    unlockDate: "2026-11-02T00:00:00",
     displayDate: "Nov 2, 2026",
     occasion: "My Birthday",
-    title: "My Birthday",
-    teaser: "Something I wanted you to read while the lights are still twinkling.",
+    title: "Surprise",
+    lockedTitle: "My Birthday Letter for you ",
+    teaser: "A little note for your special day.",
+    lockedTeaser: "You won't have a look until my birthday comes.",
     content:
-      "Merry Christmas, my love. I wrote this weeks ago just so it would be waiting for you today. Whatever this year has held, I hope you feel how loved you are right now, in this exact moment...",
+      "Happy Birthday, my love! I hope today brings you as much happiness as you bring into my life every single day. I'm so grateful for you...",
   },
   {
     id: "2",
-    unlockDate: "2027-01-17T00:00:00",
+    unlockDate: "2027-01-17T13:21:00",
     displayDate: "Jan 17, 2027",
-    occasion: "Our Anniversary",
-    title: "One More Year With You",
-    teaser: "A little note for the day we celebrate us.",
+    occasion: "1st Anniversary",
+    title: "Happy Anniversary",
+    lockedTitle: "One Year Anniversary ",
+    teaser: "I have a little something for you i guess you have to wait, paitence is key.",
+    lockedTeaser: "Imagine on that day we will be celebrating our first year together.",
     content:
-      "Happy anniversary. Another year down, and somehow I love you even more than the version of me who wrote this. Thank you for choosing this, choosing us, again and again...",
+      "Happy Anniversary, my love. Exactly at 1:21 PM today marks our first year together. I wrote this in advance so it would be waiting for you. Whatever this year held, I hope you feel how deeply loved you are right now...",
   },
   {
     id: "3",
-    unlockDate: "2027-08-19T00:00:00",
-    displayDate: "Feb 8, 2027",
-    occasion: "Anniversary",
-    title: "Happy Birthday, Love",
-    teaser: "This one's just for you, saved a whole year in advance.",
+    unlockDate: "2027-02-07T00:00:00",
+    displayDate: "Feb 7, 2027",
+    occasion: "Ramadan",
+    title: "With You 💍",
+    lockedTitle: "First Ramadan Together",
+    teaser: "Reflecting on our time together.",
+    lockedTeaser: "Locked until February 7th.",
     content:
-      "Happy birthday! I hope today is soft and warm and full of the things you love. I'm so grateful I get to know you for another year...",
+      "A beautiful milestone with you. Thank you for choosing us every single day. Here's to forever...",
   },
 ];
 
-
-function getCountdown(target: string) {
-  const diff = new Date(target).getTime() - Date.now();
+function getLiveCountdown(target: string, now: number) {
+  const diff = new Date(target).getTime() - now;
   if (diff <= 0) return null;
+
   const days = Math.floor(diff / (1000 * 60 * 60 * 24));
   const hours = Math.floor((diff / (1000 * 60 * 60)) % 24);
   const minutes = Math.floor((diff / (1000 * 60)) % 60);
-  return { days, hours, minutes };
+  const seconds = Math.floor((diff / 1000) % 60);
+
+  return { days, hours, minutes, seconds };
 }
 
 export default function FutureLetters() {
   const [now, setNow] = useState<number>(Date.now());
   const [openLetter, setOpenLetter] = useState<FutureLetter | null>(null);
 
-  // Tick every minute so countdowns and unlock states stay accurate
   useEffect(() => {
-    const interval = setInterval(() => setNow(Date.now()), 60000);
+    const interval = setInterval(() => setNow(Date.now()), 1000);
     return () => clearInterval(interval);
   }, []);
 
@@ -77,7 +87,7 @@ export default function FutureLetters() {
       transition={{ duration: 0.5, ease: "easeOut" }}
       className="relative w-full max-w-4xl mx-auto px-4 py-8 overflow-hidden"
     >
-      {/* Floating Decorative Background Hearts */}
+      {/* Floating Background Sparkles */}
       <div className="absolute inset-0 pointer-events-none -z-10 overflow-hidden">
         {[...Array(6)].map((_, i) => (
           <motion.div
@@ -120,7 +130,7 @@ export default function FutureLetters() {
         <AnimatePresence>
           {futureLetters.map((letter) => {
             const unlocked = isUnlocked(letter);
-            const countdown = !unlocked ? getCountdown(letter.unlockDate) : null;
+            const countdown = !unlocked ? getLiveCountdown(letter.unlockDate, now) : null;
 
             return (
               <motion.div
@@ -131,7 +141,7 @@ export default function FutureLetters() {
                 className={`relative p-5 sm:p-6 rounded-2xl border backdrop-blur-md transition-all duration-300 ${
                   unlocked
                     ? "bg-white/90 border-pink-300 shadow-md cursor-pointer hover:bg-white hover:border-pink-400"
-                    : "bg-white/50 border-pink-200/50 shadow-xs"
+                    : "bg-white/50 border-pink-200/50 shadow-xs cursor-not-allowed opacity-90"
                 }`}
               >
                 {/* Wax-seal style badge */}
@@ -148,22 +158,24 @@ export default function FutureLetters() {
                 <span className="text-[10px] font-semibold tracking-wider text-pink-400 uppercase">
                   {letter.occasion}
                 </span>
+
                 <h2
                   className={`text-lg font-serif mt-1 mb-2 ${
-                    unlocked ? "text-[rgb(74,32,58)]" : "text-[rgb(74,32,58)]/50"
+                    unlocked ? "text-[rgb(74,32,58)]" : "text-[rgb(74,32,58)]/70"
                   }`}
                 >
-                  {unlocked ? letter.title : "A Sealed Letter"}
+                  {unlocked ? letter.title : letter.lockedTitle}
                 </h2>
 
                 <p
                   className={`text-xs sm:text-sm leading-relaxed italic mb-4 ${
-                    unlocked ? "text-pink-800/70" : "text-pink-700/50"
+                    unlocked ? "text-pink-800/70" : "text-pink-700/60"
                   }`}
                 >
-                  {unlocked ? `"${letter.teaser}"` : "This one stays closed a little longer..."}
+                  {unlocked ? `"${letter.teaser}"` : letter.lockedTeaser}
                 </p>
 
+                {/* Live Countdown & Status Footer */}
                 <div className="flex items-center justify-between gap-2 pt-3 border-t border-pink-100/80">
                   <span className="inline-flex items-center gap-1.5 text-[11px] font-medium text-pink-500">
                     <CalendarClock className="w-3.5 h-3.5" />
@@ -175,12 +187,11 @@ export default function FutureLetters() {
                       Tap to open
                     </span>
                   ) : countdown ? (
-                    <span className="text-[10px] font-medium text-pink-400">
-                      {countdown.days > 0
-                        ? `${countdown.days}d ${countdown.hours}h left`
-                        : countdown.hours > 0
-                        ? `${countdown.hours}h ${countdown.minutes}m left`
-                        : `${countdown.minutes}m left`}
+                    <span className="text-[11px] font-mono font-medium text-pink-500/90 bg-pink-50/80 px-2 py-0.5 rounded-md border border-pink-100">
+                      {countdown.days > 0 && `${countdown.days}d `}
+                      {String(countdown.hours).padStart(2, "0")}h{" "}
+                      {String(countdown.minutes).padStart(2, "0")}m{" "}
+                      {String(countdown.seconds).padStart(2, "0")}s
                     </span>
                   ) : null}
                 </div>
@@ -203,7 +214,7 @@ export default function FutureLetters() {
             <motion.div
               initial={{ opacity: 0, scale: 0.92, y: 12 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.94, y: 8 }}
+              exit={{ opacity: 0, scale: 1, y: 0 }}
               transition={{ duration: 0.3, ease: "easeOut" }}
               onClick={(e) => e.stopPropagation()}
               className="relative w-full max-w-md bg-white rounded-3xl border border-pink-200 shadow-2xl p-7 sm:p-9"
