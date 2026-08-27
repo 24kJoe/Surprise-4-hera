@@ -57,15 +57,15 @@ const sampleVoiceNotes: VoiceNote[] = [
   {
     id: "1",
     title: "A voice note i really love to hear actually",
-    date: "Jan 17, 2026",
-    caption: "I don't know if i forced you to send it, but i glad i did because it keeps making my day everytime i hear it.",
+    date: "Mar 27, 2026",
+    caption: "I don't know if i forced you to send it, but i glad i did because it makes my day everytime i hear it .",
     audioUrl: "/audio/LoveNote.mp3",
     duration: "0:07"
   },
   {
     id: "2",
     title: "You shouldn't have sent this one",
-    date: "Feb 14, 2026",
+    date: "Mar 21, 2026",
     caption: "It's bad but cute in the same time .",
     audioUrl: "/audio/Zazabo3.mp3",
     duration: "0:11",
@@ -73,17 +73,17 @@ const sampleVoiceNotes: VoiceNote[] = [
   {
     id: "3",
     title: "Bahwak Song",
-    date: "Aug 19, 2026",
-    caption: "The only song you sang kinda good not that bad, You sound so cute .",
+    date: "Mar 21, 2026",
+    caption: "The only song you sang kinda good not that bad started getting better at the end, You sound so cute .",
     audioUrl: "/audio/BahwakSong.mp3", 
     duration: "0:16", 
   },
 ];
 
 const timelineMilestones: TimelineMilestone[] = [
-  { date: "Jan 17, 2026", title: "First Recorded Memory" },
-  { date: "Feb 14, 2026", title: "Valentine's Message" },
-  { date: "Aug 2026", title: "Birthday Special" },
+  { date: "Mar 27, 2026", title: "Love Note" },
+  { date: "Mar 21, 2026", title: "Zaza Bo3" },
+  { date: "Mar 21, 2026", title: "Bahwak" },
 ];
 
 interface VoiceNoteCardProps {
@@ -176,9 +176,6 @@ const VoiceNoteCard = memo(function VoiceNoteCard({
 export default function Voicenotes() {
   const [voiceNotes] = useState<VoiceNote[]>(sampleVoiceNotes);
   const [playingId, setPlayingId] = useState<string | null>(null);
-  // The note currently loaded into the audio element — stays set while
-  // paused so we can keep showing its real position instead of resetting
-  // the display to 0:00 (which looked like the track had restarted).
   const [activeId, setActiveId] = useState<string | null>(null);
   const [currentTime, setCurrentTime] = useState<number>(0);
   const [duration, setDuration] = useState<number>(0);

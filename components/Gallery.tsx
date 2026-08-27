@@ -54,7 +54,7 @@ export default function Gallery() {
       <div className="section-inner">
         <div className="section-head text-center mb-12">
           <span className="eyebrow block text-xs font-semibold tracking-[0.28em] text-[var(--gold-soft)] uppercase mb-2">
-            Media Collections
+            Our Little Gallery
           </span>
           <h2 className="text-3xl sm:text-4xl font-serif text-[var(--cream)] mb-3">
             Captured Moments
