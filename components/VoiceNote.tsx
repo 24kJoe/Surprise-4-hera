@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, useCallback, memo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Play, Pause, Volume2, Mic, Calendar, Heart } from "lucide-react";
 
@@ -18,7 +18,41 @@ interface TimelineMilestone {
   title: string;
 }
 
-// Optional data array — leave empty [] to trigger the empty state view
+const formatTime = (secs: number) => {
+  if (isNaN(secs)) return "0:00";
+  const minutes = Math.floor(secs / 60);
+  const seconds = Math.floor(secs % 60);
+  return `${minutes}:${seconds < 10 ? "0" : ""}${seconds}`;
+};
+
+const FloatingHearts = memo(function FloatingHearts() {
+  return (
+    <div className="absolute inset-0 pointer-events-none -z-10 overflow-hidden">
+      {[...Array(6)].map((_, i) => (
+        <motion.div
+          key={i}
+          className="absolute text-pink-300/30"
+          style={{
+            top: `${15 * i + 10}%`,
+            left: `${(i * 18) % 90}%`,
+          }}
+          animate={{
+            y: [0, -12, 0],
+            scale: [1, 1.08, 1],
+          }}
+          transition={{
+            duration: 4 + i,
+            repeat: Infinity,
+            ease: "easeInOut",
+          }}
+        >
+          <Heart className="w-6 h-6 fill-pink-200/40" />
+        </motion.div>
+      ))}
+    </div>
+  );
+});
+
 const sampleVoiceNotes: VoiceNote[] = [
   {
     id: "1",
@@ -30,19 +64,19 @@ const sampleVoiceNotes: VoiceNote[] = [
   },
   {
     id: "2",
-    title: "Late Night Whispers",
+    title: "You shouldn't have sent this one",
     date: "Feb 14, 2026",
-    caption: "Just checking in before sleep to remind you how much you mean to me.",
+    caption: "It's bad but cute in the same time .",
     audioUrl: "/audio/Zazabo3.mp3",
-    duration: "1:20",
+    duration: "0:11",
   },
   {
     id: "3",
-    title: "Your New Voice Note Title",
+    title: "Bahwak Song",
     date: "Aug 19, 2026",
-    caption: "Write a short caption for this memory here.",
-    audioUrl: "/audio/BahwakSong.mp3", // Place the audio file in public/audio/
-    duration: "0:00", // Update with the actual duration
+    caption: "The only song you sang kinda good not that bad, You sound so cute .",
+    audioUrl: "/audio/BahwakSong.mp3", 
+    duration: "0:16", 
   },
 ];
 
@@ -52,65 +86,190 @@ const timelineMilestones: TimelineMilestone[] = [
   { date: "Aug 2026", title: "Birthday Special" },
 ];
 
+interface VoiceNoteCardProps {
+  note: VoiceNote;
+  isPlaying: boolean;
+  isActive: boolean;
+  currentTime: number;
+  duration: number;
+  onToggle: (note: VoiceNote) => void;
+  onSeek: (noteId: string, value: number) => void;
+}
+
+const VoiceNoteCard = memo(function VoiceNoteCard({
+  note,
+  isPlaying,
+  isActive,
+  currentTime,
+  duration,
+  onToggle,
+  onSeek,
+}: VoiceNoteCardProps) {
+  return (
+    <motion.div
+      whileHover={{ y: -3 }}
+      transition={{ duration: 0.2 }}
+      className={`p-5 sm:p-6 rounded-2xl border backdrop-blur-md transition-all duration-300 ${
+        isPlaying
+          ? "bg-white/95 border-pink-300 shadow-md ring-2 ring-pink-200/50"
+          : "bg-white/70 border-pink-200/60 shadow-xs hover:bg-white/90 hover:border-pink-300/80"
+      }`}
+    >
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
+        <div>
+          <div className="flex items-center gap-2">
+            <h2 className="text-lg font-medium text-[rgb(74,32,58)]">{note.title}</h2>
+            {isPlaying && (
+              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium bg-pink-100 text-pink-600 animate-pulse">
+                Playing...
+              </span>
+            )}
+          </div>
+          <p className="text-xs text-pink-400 mt-0.5">{note.date}</p>
+        </div>
+        <span className="self-start sm:self-center text-xs font-semibold text-pink-600 bg-pink-50 px-3 py-1 rounded-full border border-pink-100">
+          {note.duration}
+        </span>
+      </div>
+
+      {note.caption && (
+        <p className="text-xs sm:text-sm text-pink-800/70 mb-5 leading-relaxed italic">
+          "{note.caption}"
+        </p>
+      )}
+
+      {/* Audio Controls */}
+      <div className="flex items-center gap-3 bg-pink-50/60 p-3 rounded-xl border border-pink-100/80">
+        <button
+          onClick={() => onToggle(note)}
+          className="w-11 h-11 rounded-full bg-pink-500 hover:bg-pink-600 text-white flex items-center justify-center shadow-sm hover:shadow transition-all shrink-0 active:scale-95"
+          aria-label={isPlaying ? "Pause" : "Play"}
+        >
+          {isPlaying ? (
+            <Pause className="w-5 h-5 fill-current" />
+          ) : (
+            <Play className="w-5 h-5 fill-current ml-0.5" />
+          )}
+        </button>
+
+        <div className="flex-1 flex flex-col gap-1">
+          <input
+            type="range"
+            min="0"
+            max={isActive && duration > 0 ? duration : 100}
+            value={isActive ? currentTime : 0}
+            onChange={(e) => onSeek(note.id, Number(e.target.value))}
+            disabled={!isActive}
+            className="w-full h-1.5 bg-pink-200 rounded-lg appearance-none cursor-pointer accent-pink-500 disabled:cursor-not-allowed disabled:opacity-50"
+          />
+          <div className="flex justify-between text-[10px] text-pink-400 font-medium px-0.5">
+            <span>{isActive ? formatTime(currentTime) : "0:00"}</span>
+            <span>{isActive ? formatTime(duration) : note.duration}</span>
+          </div>
+        </div>
+      </div>
+
+    </motion.div>
+  );
+});
+
 export default function Voicenotes() {
   const [voiceNotes] = useState<VoiceNote[]>(sampleVoiceNotes);
   const [playingId, setPlayingId] = useState<string | null>(null);
+  // The note currently loaded into the audio element — stays set while
+  // paused so we can keep showing its real position instead of resetting
+  // the display to 0:00 (which looked like the track had restarted).
+  const [activeId, setActiveId] = useState<string | null>(null);
   const [currentTime, setCurrentTime] = useState<number>(0);
   const [duration, setDuration] = useState<number>(0);
 
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const loadedNoteIdRef = useRef<string | null>(null);
+  const rafIdRef = useRef<number | null>(null);
+
+  const startTicking = useCallback(() => {
+    const tick = () => {
+      if (audioRef.current) {
+        setCurrentTime(audioRef.current.currentTime);
+      }
+      rafIdRef.current = requestAnimationFrame(tick);
+    };
+    rafIdRef.current = requestAnimationFrame(tick);
+  }, []);
+
+  const stopTicking = useCallback(() => {
+    if (rafIdRef.current !== null) {
+      cancelAnimationFrame(rafIdRef.current);
+      rafIdRef.current = null;
+    }
+  }, []);
+
+  const handleLoadedMetadata = useCallback(() => {
+    if (audioRef.current) {
+      setDuration(audioRef.current.duration || 0);
+    }
+  }, []);
+
+  const handleEnded = useCallback(() => {
+    stopTicking();
+    setPlayingId(null);
+    setActiveId(null);
+    setCurrentTime(0);
+  }, [stopTicking]);
+
+  const cleanupAudio = useCallback(() => {
+    stopTicking();
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current.removeEventListener("ended", handleEnded);
+      audioRef.current.removeEventListener("loadedmetadata", handleLoadedMetadata);
+      audioRef.current = null;
+    }
+    loadedNoteIdRef.current = null;
+  }, [stopTicking, handleEnded, handleLoadedMetadata]);
 
   useEffect(() => {
     return () => {
-      if (audioRef.current) {
-        audioRef.current.pause();
-      }
+      cleanupAudio();
     };
   }, []);
 
-  const handleTimeUpdate = () => {
-    if (audioRef.current) {
-      setCurrentTime(audioRef.current.currentTime);
-      setDuration(audioRef.current.duration || 0);
-    }
-  };
-
-  const handleEnded = () => {
-    setPlayingId(null);
-    setCurrentTime(0);
-  };
-
-  const togglePlay = (note: VoiceNote) => {
-    if (playingId === note.id) {
-      audioRef.current?.pause();
-      setPlayingId(null);
-    } else {
-      if (audioRef.current) {
-        audioRef.current.pause();
+  const togglePlay = useCallback((note: VoiceNote) => {
+    setPlayingId((current) => {
+      if (current === note.id) {
+        audioRef.current?.pause();
+        stopTicking();
+        return null;
       }
+      if (loadedNoteIdRef.current === note.id && audioRef.current) {
+        audioRef.current.play();
+        startTicking();
+        return note.id;
+      }
+      cleanupAudio();
+
       const audio = new Audio(note.audioUrl);
       audioRef.current = audio;
-      audio.addEventListener("timeupdate", handleTimeUpdate);
+      loadedNoteIdRef.current = note.id;
+
       audio.addEventListener("ended", handleEnded);
+      audio.addEventListener("loadedmetadata", handleLoadedMetadata);
+
+      setCurrentTime(0);
+      setDuration(0);
       audio.play();
-      setPlayingId(note.id);
-    }
-  };
+      startTicking();
+      return note.id;
+    });
+    setActiveId(note.id);
+  }, [cleanupAudio, handleEnded, handleLoadedMetadata, startTicking, stopTicking]);
 
-  const handleSeek = (e: React.ChangeEvent<HTMLInputElement>, noteId: string) => {
-    if (playingId === noteId && audioRef.current) {
-      const newTime = Number(e.target.value);
-      audioRef.current.currentTime = newTime;
-      setCurrentTime(newTime);
+  const handleSeek = useCallback((noteId: string, value: number) => {
+    if (loadedNoteIdRef.current === noteId && audioRef.current) {
+      audioRef.current.currentTime = value;
+      setCurrentTime(value);
     }
-  };
-
-  const formatTime = (secs: number) => {
-    if (isNaN(secs)) return "0:00";
-    const minutes = Math.floor(secs / 60);
-    const seconds = Math.floor(secs % 60);
-    return `${minutes}:${seconds < 10 ? "0" : ""}${seconds}`;
-  };
+  }, []);
 
   return (
     <motion.div
@@ -121,29 +280,7 @@ export default function Voicenotes() {
       className="relative w-full max-w-4xl mx-auto px-4 py-8 overflow-hidden"
     >
       {/* Floating Decorative Background Hearts */}
-      <div className="absolute inset-0 pointer-events-none -z-10 overflow-hidden">
-        {[...Array(6)].map((_, i) => (
-          <motion.div
-            key={i}
-            className="absolute text-pink-300/30"
-            style={{
-              top: `${15 * i + 10}%`,
-              left: `${(i * 18) % 90}%`,
-            }}
-            animate={{
-              y: [0, -12, 0],
-              scale: [1, 1.08, 1],
-            }}
-            transition={{
-              duration: 4 + i,
-              repeat: Infinity,
-              ease: "easeInOut",
-            }}
-          >
-            <Heart className="w-6 h-6 fill-pink-200/40" />
-          </motion.div>
-        ))}
-      </div>
+      <FloatingHearts />
 
       {/* Header Section */}
       <div className="text-center mb-10">
@@ -200,72 +337,18 @@ export default function Voicenotes() {
           <AnimatePresence>
             {voiceNotes.map((note) => {
               const isPlaying = playingId === note.id;
-
+              const isActive = activeId === note.id;
               return (
-                <motion.div
+                <VoiceNoteCard
                   key={note.id}
-                  whileHover={{ y: -3 }}
-                  transition={{ duration: 0.2 }}
-                  className={`p-5 sm:p-6 rounded-2xl border backdrop-blur-md transition-all duration-300 ${
-                    isPlaying
-                      ? "bg-white/95 border-pink-300 shadow-md ring-2 ring-pink-200/50"
-                      : "bg-white/70 border-pink-200/60 shadow-xs hover:bg-white/90 hover:border-pink-300/80"
-                  }`}
-                >
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <h2 className="text-lg font-medium text-[rgb(74,32,58)]">{note.title}</h2>
-                        {isPlaying && (
-                          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium bg-pink-100 text-pink-600 animate-pulse">
-                            Playing...
-                          </span>
-                        )}
-                      </div>
-                      <p className="text-xs text-pink-400 mt-0.5">{note.date}</p>
-                    </div>
-                    <span className="self-start sm:self-center text-xs font-semibold text-pink-600 bg-pink-50 px-3 py-1 rounded-full border border-pink-100">
-                      {note.duration}
-                    </span>
-                  </div>
-
-                  {note.caption && (
-                    <p className="text-xs sm:text-sm text-pink-800/70 mb-5 leading-relaxed italic">
-                      "{note.caption}"
-                    </p>
-                  )}
-
-                  {/* Audio Controls */}
-                  <div className="flex items-center gap-3 bg-pink-50/60 p-3 rounded-xl border border-pink-100/80">
-                    <button
-                      onClick={() => togglePlay(note)}
-                      className="w-11 h-11 rounded-full bg-pink-500 hover:bg-pink-600 text-white flex items-center justify-center shadow-sm hover:shadow transition-all shrink-0 active:scale-95"
-                      aria-label={isPlaying ? "Pause" : "Play"}
-                    >
-                      {isPlaying ? (
-                        <Pause className="w-5 h-5 fill-current" />
-                      ) : (
-                        <Play className="w-5 h-5 fill-current ml-0.5" />
-                      )}
-                    </button>
-
-                    <div className="flex-1 flex flex-col gap-1">
-                      <input
-                        type="range"
-                        min="0"
-                        max={isPlaying ? duration : 100}
-                        value={isPlaying ? currentTime : 0}
-                        onChange={(e) => handleSeek(e, note.id)}
-                        disabled={!isPlaying}
-                        className="w-full h-1.5 bg-pink-200 rounded-lg appearance-none cursor-pointer accent-pink-500 disabled:cursor-not-allowed disabled:opacity-50"
-                      />
-                      <div className="flex justify-between text-[10px] text-pink-400 font-medium px-0.5">
-                        <span>{isPlaying ? formatTime(currentTime) : "0:00"}</span>
-                        <span>{isPlaying ? formatTime(duration) : note.duration}</span>
-                      </div>
-                    </div>
-                  </div>
-                </motion.div>
+                  note={note}
+                  isPlaying={isPlaying}
+                  isActive={isActive}
+                  currentTime={isActive ? currentTime : 0}
+                  duration={isActive ? duration : 0}
+                  onToggle={togglePlay}
+                  onSeek={handleSeek}
+                />
               );
             })}
           </AnimatePresence>

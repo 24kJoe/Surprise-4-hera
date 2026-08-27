@@ -12,6 +12,7 @@ export default function WelcomeScreen({ onComplete }: { onComplete: () => void }
   const filterId = `softEdge-${uid}`;
   const btnRef = useRef<HTMLButtonElement>(null);
   const fillGroupRef = useRef<SVGGElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
   const [caption, setCaption] = useState("Press & hold");
   const [isHiding, setIsHiding] = useState(false);
 
@@ -29,7 +30,6 @@ export default function WelcomeScreen({ onComplete }: { onComplete: () => void }
     };
   }, []);
 
-  // Prevent a runaway rAF loop / stale refs if the component unmounts mid-hold.
   useEffect(() => {
     return () => {
       cancelAnimationFrame(rafRef.current);
@@ -37,11 +37,68 @@ export default function WelcomeScreen({ onComplete }: { onComplete: () => void }
     };
   }, []);
 
+  // Restored 120-count burst with moderate, smooth timing
+  const triggerHeartBurst = () => {
+    if (!containerRef.current || !btnRef.current) return;
+
+    const btnRect = btnRef.current.getBoundingClientRect();
+    const containerRect = containerRef.current.getBoundingClientRect();
+    
+    const centerX = btnRect.left + btnRect.width / 2 - containerRect.left;
+    const centerY = btnRect.top + btnRect.height / 2 - containerRect.top;
+
+    const pinkPalette = ["#ff758f", "#e0567f", "#ffb3c1", "#c93b68", "#ffccd5", "#ff4d6d"];
+    const count = 120;
+
+    for (let i = 0; i < count; i++) {
+      const heart = document.createElement("div");
+      heart.className = "burst-heart";
+
+      const size = Math.floor(Math.random() * 16) + 14; // 14px–30px
+      const angle = (Math.PI * 2 * i) / count + (Math.random() - 0.5) * 0.2;
+      
+      const distance = Math.floor(Math.random() * 320) + 180; 
+      const gravity = 30 + Math.random() * 60;
+
+      const tx = Math.cos(angle) * distance;
+      const tyRadial = Math.sin(angle) * distance;
+      const ty = tyRadial + gravity;
+
+      const mx = tx * 0.5;
+      const my = tyRadial * 0.5;
+
+      const rot = Math.floor(Math.random() * 140) - 70;
+      // Extended duration slightly for a smoother, slightly slower burst
+      const duration = 1800 + Math.random() * 400; 
+      const color = pinkPalette[Math.floor(Math.random() * pinkPalette.length)];
+
+      heart.style.cssText = `
+        position: absolute;
+        left: ${centerX}px;
+        top: ${centerY}px;
+        width: ${size}px;
+        height: ${size}px;
+        color: ${color};
+        --tx: ${tx}px;
+        --ty: ${ty}px;
+        --mx: ${mx}px;
+        --my: ${my}px;
+        --rot: ${rot}deg;
+        animation-delay: 0ms;
+        animation-duration: ${duration}ms;
+        pointer-events: none;
+        z-index: 100;
+      `;
+
+      heart.innerHTML = `<svg viewBox="0 0 24 24" width="100%" height="100%"><path d="${HEART_PATH}" fill="currentColor"/></svg>`;
+      containerRef.current.appendChild(heart);
+
+      setTimeout(() => heart.remove(), duration + 100);
+    }
+  };
+
   const setProgress = (p: number) => {
     if (fillGroupRef.current) {
-      // Moves the wavy liquid mask up through the heart. Range is tuned so
-      // p=0 sits fully below the heart's lowest point and p=1 sits just
-      // above its top cleft, so the fill genuinely reads as "rising".
       const y = (1 - p) * 24.5 - 1;
       fillGroupRef.current.setAttribute("transform", `translate(0, ${y})`);
     }
@@ -57,6 +114,8 @@ export default function WelcomeScreen({ onComplete }: { onComplete: () => void }
     btnRef.current?.classList.add("complete");
     setCaption("Yours, always 💗");
 
+    triggerHeartBurst();
+
     if (typeof window !== "undefined" && navigator.vibrate) {
       navigator.vibrate(40);
     }
@@ -64,16 +123,11 @@ export default function WelcomeScreen({ onComplete }: { onComplete: () => void }
     setTimeout(() => {
       setIsHiding(true);
       setTimeout(() => {
-        // The component never unmounts (it just fades out via CSS), so the
-        // effect's cleanup that would normally restore scrolling never
-        // runs. Reset it explicitly here or the whole page stays
-        // permanently unscrollable — which also breaks nav clicks, since
-        // there's nothing to scroll to.
         document.documentElement.style.overflow = "";
         document.body.style.overflow = "";
         onComplete();
       }, 500);
-    }, 400);
+    }, 600);
   }, [onComplete]);
 
   const tick = useCallback(
@@ -126,8 +180,6 @@ export default function WelcomeScreen({ onComplete }: { onComplete: () => void }
     }, 500);
   }, []);
 
-  // Keyboard support: a "press and hold" control with only pointer events
-  // was unusable without a mouse/touchscreen. Enter/Space now mirror it.
   function handleKeyDown(e: React.KeyboardEvent) {
     if (e.repeat) return;
     if (e.key === "Enter" || e.key === " " || e.code === "Space") {
@@ -135,6 +187,7 @@ export default function WelcomeScreen({ onComplete }: { onComplete: () => void }
       beginHold();
     }
   }
+
   function handleKeyUp(e: React.KeyboardEvent) {
     if (e.key === "Enter" || e.key === " " || e.code === "Space") {
       if (holdingRef.current) cancelHold();
@@ -155,6 +208,7 @@ export default function WelcomeScreen({ onComplete }: { onComplete: () => void }
 
   return (
     <div
+      ref={containerRef}
       id="welcome-screen"
       className={`welcome-root fixed inset-0 z-50 flex flex-col items-center justify-center overflow-hidden transition-opacity duration-500 ${
         isHiding ? "opacity-0 pointer-events-none" : "opacity-100"
@@ -248,6 +302,17 @@ export default function WelcomeScreen({ onComplete }: { onComplete: () => void }
           --rose: #e0567f;
           --rose-deep: #9c2e54;
           --gold: #d9a566;
+        }
+
+        .burst-heart {
+          filter: drop-shadow(0 0 6px rgba(224, 86, 127, 0.45));
+          animation: heartExplode 1.8s cubic-bezier(0.1, 0.75, 0.2, 1) forwards;
+        }
+
+        @keyframes heartExplode {
+          0%   { opacity: 1; transform: translate(-50%, -50%) scale(0.2) rotate(0deg); filter: blur(0); }
+          50%  { opacity: 1; transform: translate(calc(-50% + var(--mx)), calc(-50% + var(--my))) scale(1.1) rotate(calc(var(--rot) * 0.5)); filter: blur(0); }
+          100% { opacity: 0; transform: translate(calc(-50% + var(--tx)), calc(-50% + var(--ty))) scale(0.4) rotate(var(--rot)); filter: blur(1px); }
         }
 
         .welcome-root {

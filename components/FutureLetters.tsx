@@ -6,23 +6,20 @@ import { Lock, Mail, Sparkles, Heart, CalendarClock, X } from "lucide-react";
 
 interface FutureLetter {
   id: string;
-  // Use a real, parseable date/time — this is what determines the unlock moment
-  unlockDate: string; // e.g. "2026-12-25T00:00:00"
-  displayDate: string; // e.g. "Dec 25, 2026" — shown on the card
-  occasion: string; // e.g. "Christmas Morning"
+  unlockDate: string; 
+  displayDate: string; 
+  occasion: string; 
   title: string;
-  teaser: string; // shown while locked, a little hint, no spoilers
-  content: string; // the full letter, revealed once unlocked
+  teaser: string; 
+  content: string; 
 }
-
-// EDIT ME — add, remove, or change letters here. Dates control everything.
 const futureLetters: FutureLetter[] = [
   {
     id: "1",
     unlockDate: "2026-12-25T00:00:00",
-    displayDate: "Dec 25, 2026",
-    occasion: "Christmas Morning",
-    title: "A Letter for Christmas",
+    displayDate: "Nov 2, 2026",
+    occasion: "My Birthday",
+    title: "My Birthday",
     teaser: "Something I wanted you to read while the lights are still twinkling.",
     content:
       "Merry Christmas, my love. I wrote this weeks ago just so it would be waiting for you today. Whatever this year has held, I hope you feel how loved you are right now, in this exact moment...",
@@ -40,14 +37,15 @@ const futureLetters: FutureLetter[] = [
   {
     id: "3",
     unlockDate: "2027-08-19T00:00:00",
-    displayDate: "Aug 19, 2027",
-    occasion: "Your Birthday",
+    displayDate: "Feb 8, 2027",
+    occasion: "Anniversary",
     title: "Happy Birthday, Love",
     teaser: "This one's just for you, saved a whole year in advance.",
     content:
       "Happy birthday! I hope today is soft and warm and full of the things you love. I'm so grateful I get to know you for another year...",
   },
 ];
+
 
 function getCountdown(target: string) {
   const diff = new Date(target).getTime() - Date.now();
