@@ -6,13 +6,27 @@ const HOLD_MS = 1900;
 const HEART_PATH =
   "M12,21.35 L10.55,20.03 C5.4,15.36 2,12.28 2,8.5 C2,5.42 4.42,3 7.5,3 C9.24,3 10.91,3.81 12,5.09 C13.09,3.81 14.76,3 16.5,3 C19.58,3 22,5.42 22,8.5 C22,12.28 18.6,15.36 13.45,20.04 L12,21.35 Z";
 
+interface Particle {
+  x: number;
+  y: number;
+  vx: number;
+  vy: number;
+  size: number;
+  color: string;
+  rotation: number;
+  vRot: number;
+  alpha: number;
+  life: number;
+  maxLife: number;
+}
+
 export default function WelcomeScreen({ onComplete }: { onComplete: () => void }) {
   const uid = useId().replace(/:/g, "");
   const maskId = `liquidMask-${uid}`;
   const filterId = `softEdge-${uid}`;
   const btnRef = useRef<HTMLButtonElement>(null);
   const fillGroupRef = useRef<SVGGElement>(null);
-  const containerRef = useRef<HTMLDivElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
   const [caption, setCaption] = useState("Press & hold");
   const [isHiding, setIsHiding] = useState(false);
 
@@ -37,64 +51,90 @@ export default function WelcomeScreen({ onComplete }: { onComplete: () => void }
     };
   }, []);
 
-  // Restored 120-count burst with moderate, smooth timing
+  // Hardware-accelerated 2D Canvas Particle Burst
   const triggerHeartBurst = () => {
-    if (!containerRef.current || !btnRef.current) return;
+    const canvas = canvasRef.current;
+    if (!canvas || !btnRef.current) return;
+
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
 
     const btnRect = btnRef.current.getBoundingClientRect();
-    const containerRect = containerRef.current.getBoundingClientRect();
-    
-    const centerX = btnRect.left + btnRect.width / 2 - containerRect.left;
-    const centerY = btnRect.top + btnRect.height / 2 - containerRect.top;
+    const centerX = btnRect.left + btnRect.width / 2;
+    const centerY = btnRect.top + btnRect.height / 2;
 
     const pinkPalette = ["#ff758f", "#e0567f", "#ffb3c1", "#c93b68", "#ffccd5", "#ff4d6d"];
-    const count = 120;
+    const particleCount = 60; // Mobile-optimized count
+    const particles: Particle[] = [];
 
-    for (let i = 0; i < count; i++) {
-      const heart = document.createElement("div");
-      heart.className = "burst-heart";
+    // Pre-render heart path for performance
+    const heartPath = new Path2D(HEART_PATH);
 
-      const size = Math.floor(Math.random() * 16) + 14; // 14px–30px
-      const angle = (Math.PI * 2 * i) / count + (Math.random() - 0.5) * 0.2;
-      
-      const distance = Math.floor(Math.random() * 320) + 180; 
-      const gravity = 30 + Math.random() * 60;
+    for (let i = 0; i < particleCount; i++) {
+      const angle = (Math.PI * 2 * i) / particleCount + (Math.random() - 0.5) * 0.3;
+      const speed = 2.5 + Math.random() * 3.5;
+      const maxLife = 90 + Math.random() * 30; // ~1.5 to 2 seconds at 60fps
 
-      const tx = Math.cos(angle) * distance;
-      const tyRadial = Math.sin(angle) * distance;
-      const ty = tyRadial + gravity;
-
-      const mx = tx * 0.5;
-      const my = tyRadial * 0.5;
-
-      const rot = Math.floor(Math.random() * 140) - 70;
-      // Extended duration slightly for a smoother, slightly slower burst
-      const duration = 1800 + Math.random() * 400; 
-      const color = pinkPalette[Math.floor(Math.random() * pinkPalette.length)];
-
-      heart.style.cssText = `
-        position: absolute;
-        left: ${centerX}px;
-        top: ${centerY}px;
-        width: ${size}px;
-        height: ${size}px;
-        color: ${color};
-        --tx: ${tx}px;
-        --ty: ${ty}px;
-        --mx: ${mx}px;
-        --my: ${my}px;
-        --rot: ${rot}deg;
-        animation-delay: 0ms;
-        animation-duration: ${duration}ms;
-        pointer-events: none;
-        z-index: 100;
-      `;
-
-      heart.innerHTML = `<svg viewBox="0 0 24 24" width="100%" height="100%"><path d="${HEART_PATH}" fill="currentColor"/></svg>`;
-      containerRef.current.appendChild(heart);
-
-      setTimeout(() => heart.remove(), duration + 100);
+      particles.push({
+        x: centerX,
+        y: centerY,
+        vx: Math.cos(angle) * speed,
+        vy: Math.sin(angle) * speed,
+        size: 14 + Math.random() * 12,
+        color: pinkPalette[Math.floor(Math.random() * pinkPalette.length)],
+        rotation: (Math.random() - 0.5) * Math.PI,
+        vRot: (Math.random() - 0.5) * 0.05,
+        alpha: 1,
+        life: 0,
+        maxLife,
+      });
     }
+
+    const animate = () => {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      let alive = false;
+
+      for (let p of particles) {
+        if (p.life < p.maxLife) {
+          alive = true;
+          p.life++;
+
+          // Physics update
+          p.x += p.vx;
+          p.y += p.vy + 0.3; // Gentle gravity
+          p.vx *= 0.985;
+          p.vy *= 0.985;
+          p.rotation += p.vRot;
+
+          // Smooth fade-out in final 30% of lifetime
+          const progress = p.life / p.maxLife;
+          p.alpha = progress > 0.7 ? (1 - progress) / 0.3 : 1;
+
+          ctx.save();
+          ctx.translate(p.x, p.y);
+          ctx.rotate(p.rotation);
+          ctx.scale(p.size / 24, p.size / 24); // Original SVG viewbox is 24x24
+          ctx.translate(-12, -12); // Center path origin
+
+          ctx.fillStyle = p.color;
+          ctx.globalAlpha = Math.max(0, p.alpha);
+          ctx.fill(heartPath);
+
+          ctx.restore();
+        }
+      }
+
+      if (alive) {
+        requestAnimationFrame(animate);
+      } else {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+      }
+    };
+
+    requestAnimationFrame(animate);
   };
 
   const setProgress = (p: number) => {
@@ -208,17 +248,16 @@ export default function WelcomeScreen({ onComplete }: { onComplete: () => void }
 
   return (
     <div
-      ref={containerRef}
       id="welcome-screen"
       className={`welcome-root fixed inset-0 z-50 flex flex-col items-center justify-center overflow-hidden transition-opacity duration-500 ${
         isHiding ? "opacity-0 pointer-events-none" : "opacity-100"
       }`}
     >
+      <canvas ref={canvasRef} className="absolute inset-0 pointer-events-none z-50" />
+
       <svg className="drift drift-1" viewBox="0 0 24 24" aria-hidden="true"><path d={HEART_PATH} fill="currentColor" /></svg>
       <svg className="drift drift-2" viewBox="0 0 24 24" aria-hidden="true"><path d={HEART_PATH} fill="currentColor" /></svg>
       <svg className="drift drift-3" viewBox="0 0 24 24" aria-hidden="true"><path d={HEART_PATH} fill="currentColor" /></svg>
-      <svg className="drift drift-4" viewBox="0 0 24 24" aria-hidden="true"><path d={HEART_PATH} fill="currentColor" /></svg>
-      <svg className="drift drift-5" viewBox="0 0 24 24" aria-hidden="true"><path d={HEART_PATH} fill="currentColor" /></svg>
 
       <div className="welcome-text relative text-center mb-10 px-8">
         <div className="eyebrow welcome-eyebrow text-[11px] uppercase tracking-[0.35em] text-rose-500/80 mb-3 font-semibold">
@@ -231,9 +270,6 @@ export default function WelcomeScreen({ onComplete }: { onComplete: () => void }
       </div>
 
       <div className="hold-wrap relative flex flex-col items-center gap-5">
-        <span className="spark spark-1" aria-hidden="true" />
-        <span className="spark spark-2" aria-hidden="true" />
-        <span className="spark spark-3" aria-hidden="true" />
         <button
           ref={btnRef}
           id="welcome-btn"
@@ -268,8 +304,8 @@ export default function WelcomeScreen({ onComplete }: { onComplete: () => void }
             xmlns="http://www.w3.org/2000/svg"
           >
             <defs>
-              <filter id={filterId} x="-40%" y="-40%" width="180%" height="180%">
-                <feGaussianBlur in="SourceGraphic" stdDeviation="0.55" />
+              <filter id={filterId} x="-20%" y="-20%" width="140%" height="140%">
+                <feGaussianBlur in="SourceGraphic" stdDeviation="0.4" />
               </filter>
               <mask id={maskId} maskUnits="userSpaceOnUse" x="0" y="0" width="24" height="24">
                 <g ref={fillGroupRef} transform="translate(0, 24.5)" filter={`url(#${filterId})`}>
@@ -301,48 +337,12 @@ export default function WelcomeScreen({ onComplete }: { onComplete: () => void }
           --ink: #4a2036;
           --rose: #e0567f;
           --rose-deep: #9c2e54;
-          --gold: #d9a566;
-        }
-
-        .burst-heart {
-          filter: drop-shadow(0 0 6px rgba(224, 86, 127, 0.45));
-          animation: heartExplode 1.8s cubic-bezier(0.1, 0.75, 0.2, 1) forwards;
-        }
-
-        @keyframes heartExplode {
-          0%   { opacity: 1; transform: translate(-50%, -50%) scale(0.2) rotate(0deg); filter: blur(0); }
-          50%  { opacity: 1; transform: translate(calc(-50% + var(--mx)), calc(-50% + var(--my))) scale(1.1) rotate(calc(var(--rot) * 0.5)); filter: blur(0); }
-          100% { opacity: 0; transform: translate(calc(-50% + var(--tx)), calc(-50% + var(--ty))) scale(0.4) rotate(var(--rot)); filter: blur(1px); }
         }
 
         .welcome-root {
           background:
             radial-gradient(circle at 50% 30%, #fff4f7 0%, transparent 55%),
             linear-gradient(160deg, #fffaf6 0%, #fdeef2 45%, #fbe4ec 100%);
-        }
-
-        .welcome-root::before {
-          content: "";
-          position: absolute;
-          inset: -10%;
-          background:
-            radial-gradient(circle at 16% 18%, rgba(224, 86, 127, 0.14) 0%, transparent 40%),
-            radial-gradient(circle at 86% 82%, rgba(217, 165, 102, 0.12) 0%, transparent 38%);
-          filter: blur(50px);
-          pointer-events: none;
-        }
-
-        .welcome-root::after {
-          content: "";
-          position: absolute;
-          inset: 0;
-          background:
-            url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='140' height='140'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>"),
-            radial-gradient(circle at 50% 42%, transparent 55%, rgba(74, 32, 54, 0.05) 100%);
-          background-size: 140px 140px, 100% 100%;
-          opacity: 0.05;
-          mix-blend-mode: multiply;
-          pointer-events: none;
         }
 
         .welcome-title {
@@ -353,70 +353,51 @@ export default function WelcomeScreen({ onComplete }: { onComplete: () => void }
           letter-spacing: 0.01em;
         }
 
-        @keyframes rise-in {
-          from { opacity: 0; transform: translateY(10px); }
-          to   { opacity: 1; transform: translateY(0); }
+        .hold-btn {
+          will-change: transform;
+          transition: transform 0.15s ease, filter 0.3s ease;
+          -webkit-tap-highlight-color: transparent;
         }
-        .welcome-eyebrow { animation: rise-in 0.7s ease both; animation-delay: 0.05s; }
-        .welcome-title   { animation: rise-in 0.7s ease both; animation-delay: 0.18s; }
-        .welcome-text p  { animation: rise-in 0.7s ease both; animation-delay: 0.3s; }
-        .hold-wrap       { animation: rise-in 0.8s ease both; animation-delay: 0.42s; }
+        
+        #welcome-btn.holding {
+          filter: drop-shadow(0 0 12px rgba(224, 86, 127, 0.35));
+        }
+
+        .hold-heart-outline { color: #f0c3d2; }
 
         .drift {
           position: absolute;
           bottom: -10%;
-          width: 14px;
-          height: 14px;
+          width: 12px;
+          height: 12px;
           color: var(--rose);
           opacity: 0;
           pointer-events: none;
+          will-change: transform, opacity;
           animation: drift-up 9s ease-in infinite;
         }
-        .drift-1 { left: 12%; width: 11px; height: 11px; animation-delay: 0s; }
-        .drift-2 { left: 28%; width: 16px; height: 16px; animation-delay: 1.8s; filter: blur(0.6px); opacity: 0; }
-        .drift-3 { left: 52%; width: 9px;  height: 9px;  animation-delay: 3.4s; }
-        .drift-4 { left: 71%; width: 15px; height: 15px; animation-delay: 5.2s; filter: blur(0.6px); }
-        .drift-5 { left: 87%; width: 10px; height: 10px; animation-delay: 6.6s; }
+        .drift-1 { left: 15%; animation-delay: 0s; }
+        .drift-2 { left: 50%; animation-delay: 3s; }
+        .drift-3 { left: 82%; animation-delay: 6s; }
 
         @keyframes drift-up {
-          0%   { transform: translateY(0) scale(0.8) rotate(-4deg); opacity: 0; }
-          10%  { opacity: 0.2; }
-          80%  { opacity: 0.12; }
-          100% { transform: translateY(-70vh) scale(1.1) rotate(4deg); opacity: 0; }
+          0%   { transform: translateY(0) scale(0.8); opacity: 0; }
+          15%  { opacity: 0.18; }
+          80%  { opacity: 0.1; }
+          100% { transform: translateY(-70vh) scale(1.1); opacity: 0; }
         }
 
-        .spark {
+        .breathe-ring {
           position: absolute;
-          width: 5px;
-          height: 5px;
+          inset: -14px;
           border-radius: 9999px;
-          background: radial-gradient(circle, var(--gold) 0%, transparent 70%);
-          opacity: 0;
-          pointer-events: none;
-          animation: twinkle 3.2s ease-in-out infinite;
+          background: radial-gradient(circle, rgba(224, 86, 127, 0.25) 0%, transparent 70%);
+          will-change: transform, opacity;
+          animation: breathe 2.8s ease-in-out infinite;
         }
-        .spark-1 { top: 2%;  left: 6%;   animation-delay: 0.3s; }
-        .spark-2 { top: 72%; right: 4%;  animation-delay: 1.6s; width: 4px; height: 4px; }
-        .spark-3 { top: 42%; left: -8%;  animation-delay: 2.4s; width: 4px; height: 4px; }
-
-        @keyframes twinkle {
-          0%, 100% { opacity: 0; transform: scale(0.6); }
-          50%      { opacity: 0.8; transform: scale(1); }
-        }
-        #welcome-btn.holding ~ .spark,
-        #welcome-btn.complete ~ .spark {
-          animation-play-state: paused;
-          opacity: 0;
-          transition: opacity 0.3s ease;
-        }
-
-        .caption-fade {
-          display: inline-block;
-          animation: caption-in 0.35s ease;
-        }
-        @keyframes caption-in {
-          from { opacity: 0; transform: translateY(3px); }
-          to   { opacity: 1; transform: translateY(0); }
+        @keyframes breathe {
+          0%, 100% { transform: scale(0.95); opacity: 0.5; }
+          50%      { transform: scale(1.12); opacity: 0.1; }
         }
 
         .heart-shadow {
@@ -425,81 +406,20 @@ export default function WelcomeScreen({ onComplete }: { onComplete: () => void }
           left: 50%;
           width: 46px;
           height: 10px;
-          background: radial-gradient(ellipse, rgba(156, 46, 84, 0.32) 0%, transparent 75%);
-          filter: blur(3px);
+          background: radial-gradient(ellipse, rgba(156, 46, 84, 0.25) 0%, transparent 75%);
           transform: translateX(-50%) scale(1);
           transition: transform 0.35s ease, opacity 0.35s ease;
-          opacity: 0.8;
+          opacity: 0.7;
           pointer-events: none;
         }
-        #welcome-btn.holding ~ .heart-shadow {
-          transform: translateX(-50%) scale(1.3);
-          opacity: 0.45;
-        }
-        #welcome-btn.complete ~ .heart-shadow {
-          opacity: 0.55;
-        }
 
-        .hold-btn {
-          transition: transform 0.15s ease, filter 0.4s ease;
-          -webkit-tap-highlight-color: transparent;
+        .caption-fade {
+          display: inline-block;
+          animation: caption-in 0.25s ease;
         }
-        #welcome-btn.holding {
-          filter: drop-shadow(0 0 16px rgba(224, 86, 127, 0.45));
-        }
-
-        .hold-heart-outline { color: #f0c3d2; }
-
-        .breathe-ring {
-          position: absolute;
-          inset: -18px;
-          border-radius: 9999px;
-          background: radial-gradient(circle, rgba(224, 86, 127, 0.35) 0%, transparent 72%);
-          animation: breathe 2.6s ease-in-out infinite;
-        }
-        @keyframes breathe {
-          0%, 100% { transform: scale(0.92); opacity: 0.55; }
-          50%      { transform: scale(1.18); opacity: 0.05; }
-        }
-
-        #welcome-btn.holding .breathe-ring,
-        #welcome-btn.complete .breathe-ring {
-          opacity: 0;
-          transition: opacity 0.3s ease;
-        }
-
-        .hold-wrap::before {
-          content: "";
-          position: absolute;
-          inset: -60px;
-          border-radius: 9999px;
-          background: radial-gradient(circle, rgba(217, 165, 102, 0.35) 0%, rgba(224, 86, 127, 0.18) 45%, transparent 72%);
-          opacity: 0;
-          transform: scale(0.6);
-          pointer-events: none;
-          z-index: -1;
-        }
-        .welcome-root:has(#welcome-btn.complete) .hold-wrap::before {
-          animation: bloom 0.9s ease-out forwards;
-        }
-        @keyframes bloom {
-          0%   { opacity: 0; transform: scale(0.5); }
-          40%  { opacity: 1; transform: scale(1.15); }
-          100% { opacity: 0; transform: scale(1.6); }
-        }
-
-        .welcome-root:has(#welcome-btn.complete) .hold-caption {
-          color: var(--rose-deep);
-        }
-
-        @media (prefers-reduced-motion: reduce) {
-          .drift, .breathe-ring, .hold-wrap::before, .spark,
-          .welcome-eyebrow, .welcome-title, .welcome-text p, .hold-wrap, .caption-fade {
-            animation: none !important;
-            transition: none !important;
-            opacity: 1 !important;
-            transform: none !important;
-          }
+        @keyframes caption-in {
+          from { opacity: 0; transform: translateY(2px); }
+          to   { opacity: 1; transform: translateY(0); }
         }
       `}</style>
     </div>
