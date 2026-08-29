@@ -40,7 +40,7 @@ export default function FloatingHearts() {
       clearInterval(interval);
       timeouts.forEach(clearTimeout);
     };
-  }, []); // يشتغل باستمرار وبشكل تلقائي بمجرد التحميل
+  }, []); 
 
   return (
     <div id="heart-field" aria-hidden="true">

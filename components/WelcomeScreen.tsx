@@ -266,7 +266,7 @@ export default function WelcomeScreen({ onComplete }: { onComplete: () => void }
         <div className="eyebrow welcome-eyebrow text-[11px] uppercase tracking-[0.35em] text-rose-500/80 mb-3 font-semibold">
           Before We Start
         </div>
-        <h1 className="welcome-title text-5xl mb-3">Hey Annona</h1>
+        <h1 className="welcome-title text-5xl mb-3">Annona</h1>
         <p className="text-sm text-[#4a2036]/70 max-w-[26ch] mx-auto leading-relaxed">
           I made you something. Press and hold to open your heart.
         </p>

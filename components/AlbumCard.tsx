@@ -31,11 +31,11 @@ interface AlbumCardProps {
 }
 
 export default function AlbumCard({ collection, tilt, index = 0 }: AlbumCardProps) {
-  // أحدث ميديا للعرض
+
   const latestMedia = collection.media?.[0];
   const totalCount = collection.media?.length || 0;
   
-  // حساب عدد الصور والفيديوهات بشكل منفصل
+
   const imageCount = collection.media?.filter((item) => item.type === "IMAGE").length || 0;
   const videoCount = collection.media?.filter((item) => item.type === "VIDEO").length || 0;
 
@@ -56,11 +56,11 @@ export default function AlbumCard({ collection, tilt, index = 0 }: AlbumCardProp
 
         <div className="relative bg-[var(--paper,#fff)] p-3 pb-5 rounded-[3px] text-[var(--ink,#333)] shadow-[var(--shadow)] border border-pink-100 flex flex-col justify-between">
           
-          {/* منطقة المعاينة للميديا */}
+          
           <div className="aspect-square rounded-[2px] overflow-hidden bg-gradient-to-br from-[var(--rose-dim,#9f1239)] to-[var(--gold-soft,#d4af37)] flex items-center justify-center relative">
             {latestMedia ? (
               latestMedia.type === "VIDEO" ? (
-                /* معاينة الفيديو */
+              
                 <div className="w-full h-full relative">
                   <video
                     src={latestMedia.url}
@@ -78,7 +78,7 @@ export default function AlbumCard({ collection, tilt, index = 0 }: AlbumCardProp
                   </div>
                 </div>
               ) : (
-                /* معاينة الصورة */
+            
                 <img
                   src={latestMedia.url}
                   alt={latestMedia.altText || latestMedia.caption || collection.title}
@@ -90,7 +90,7 @@ export default function AlbumCard({ collection, tilt, index = 0 }: AlbumCardProp
               <span className="text-xs text-white/70">ألبوم فارغ</span>
             )}
 
-            {/* الشارة العلوية الخاصة بعدد العناصر */}
+           
             {totalCount > 0 && (
               <div className="absolute top-2 right-2 bg-black/60 backdrop-blur-md text-white text-[11px] font-sans px-2.5 py-1 rounded-full flex items-center gap-1.5 shadow">
                 {videoCount > 0 && imageCount > 0 ? (
@@ -113,7 +113,7 @@ export default function AlbumCard({ collection, tilt, index = 0 }: AlbumCardProp
             )}
           </div>
 
-          {/* تفاصيل الألبوم والعنوان */}
+        
           <div className="mt-3 text-center px-1">
             <h3 className="font-serif font-bold text-base text-[var(--cream,#1a1a1a)] line-clamp-1">
               {collection.title}
