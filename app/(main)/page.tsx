@@ -3,7 +3,6 @@
 import { useState } from "react";
 import FloatingHearts from "@/components/FloatingHearts";
 import NameToast from "@/components/NameToast";
-import Nav from "@/components/Nav";
 import LetterSection from "@/components/LetterSection";
 import MemoriesSection from "@/components/MemoriesSection";
 import CounterSection from "@/components/CounterSection";
@@ -16,8 +15,6 @@ export default function Page() {
     <>
       <FloatingHearts />
       <NameToast />
-
-      <Nav />
 
       <LetterSection />
 
