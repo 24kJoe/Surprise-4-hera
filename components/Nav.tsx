@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import { twMerge } from "tailwind-merge";
@@ -13,6 +13,7 @@ interface NavProps {
 
 export default function Nav({ className }: NavProps) {
   const [isOpen, setIsOpen] = useState(false);
+  const [isScrolled, setIsScrolled] = useState(false);
 
   const links = [
     { href: "/#letter", id: "#letter", label: "Letter" },
@@ -23,8 +24,6 @@ export default function Nav({ className }: NavProps) {
     { href: "/#counter", id: "#counter", label: "Counter" },
   ];
 
-  // useActiveSection expects raw DOM ids (no "#"), matching the id="..."
-  // attributes actually rendered on each <section> in page.tsx
   const sectionIds = links.map((l) => l.id.replace("#", ""));
   const scrolledActiveSection = useActiveSection(sectionIds);
 
@@ -32,26 +31,71 @@ export default function Nav({ className }: NavProps) {
 
   useEffect(() => {
     if (scrolledActiveSection) {
-      // re-add the "#" so it matches the format used in `links` and hrefs
       setActiveTab(`#${scrolledActiveSection}`);
     }
   }, [scrolledActiveSection]);
 
+  // Shrink the nav once the page is scrolled a bit — never hide it entirely.
+  useEffect(() => {
+    let ticking = false;
+
+    const updateScrolled = () => {
+      setIsScrolled(window.scrollY > 24);
+      ticking = false;
+    };
+
+    const onScroll = () => {
+      if (!ticking) {
+        window.requestAnimationFrame(updateScrolled);
+        ticking = true;
+      }
+    };
+
+    window.addEventListener("scroll", onScroll, { passive: true });
+    updateScrolled();
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+
+  const scrollResetTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   const handleLinkClick = (id: string, e?: React.MouseEvent) => {
     e?.preventDefault();
     setActiveTab(id);
+
+    const wasOpenOnMobile = isOpen;
     setIsOpen(false);
 
     const cleanId = id.replace("#", "");
-    const el = document.getElementById(cleanId);
-    if (el) {
-      // Account for the fixed nav height so the section isn't hidden behind it
+
+    const performScroll = () => {
+      const el = document.getElementById(cleanId);
+      if (!el) return;
+
+      // Temporarily disable the global CSS smooth-scroll so it doesn't fight
+      // with the JS-driven smooth scroll below (this conflict is what was
+      // silently cancelling the scroll on mobile Safari).
+      const html = document.documentElement;
+      const prevScrollBehavior = html.style.scrollBehavior;
+      html.style.scrollBehavior = "auto";
+
       const navOffset = 88;
       const top = el.getBoundingClientRect().top + window.scrollY - navOffset;
       window.scrollTo({ top, behavior: "smooth" });
+
+      if (scrollResetTimeout.current) clearTimeout(scrollResetTimeout.current);
+      scrollResetTimeout.current = setTimeout(() => {
+        html.style.scrollBehavior = prevScrollBehavior;
+      }, 700);
+    };
+
+    if (wasOpenOnMobile) {
+      // Let the mobile dropdown finish collapsing and layout settle first,
+      // then scroll — doing both at once was part of what broke on mobile.
+      requestAnimationFrame(() => requestAnimationFrame(performScroll));
+    } else {
+      performScroll();
     }
 
-    // Keep the URL hash in sync without triggering a native jump
     window.history.pushState(null, "", `/${id}`);
   };
 
@@ -61,16 +105,16 @@ export default function Nav({ className }: NavProps) {
       animate={{ y: 0, opacity: 1 }}
       transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
       className={twMerge(
-        "fixed top-0 left-0 right-0 z-50",
+        "fixed top-0 left-0 right-0 z-50 transform-gpu will-change-transform",
         "bg-white/70 backdrop-blur-xl",
         "border-b border-[#e05586]/25",
         "shadow-[0_8px_32px_rgba(224,85,134,0.12)]",
-        "px-4 py-3 md:px-8",
-        "relative",
+        "px-4 md:px-8",
+        isScrolled ? "py-2" : "py-3",
+        "transition-[padding] duration-300 ease-out",
         className
       )}
     >
-      {/* HUD scan-line accent along the very top edge */}
       <div className="pointer-events-none absolute top-0 left-0 right-0 h-[2px] overflow-hidden">
         <motion.div
           className="h-full w-1/3 bg-gradient-to-r from-transparent via-[#ff4f93] to-transparent"
@@ -78,19 +122,21 @@ export default function Nav({ className }: NavProps) {
           transition={{ repeat: Infinity, duration: 3.2, ease: "linear" }}
         />
       </div>
-      {/* Faint animated gradient hairline along the bottom edge */}
       <div className="pointer-events-none absolute bottom-[-1px] left-0 right-0 h-px bg-gradient-to-r from-transparent via-[#e05586]/60 to-transparent" />
 
       <div className="max-w-7xl mx-auto flex items-center justify-between">
-        {/* Left Side: Brand Logo + Desktop Links */}
         <div className="flex items-center gap-8">
-          {/* Brand Logo */}
           <Link
             href="/#letter"
             onClick={(e) => handleLinkClick("#letter", e)}
             className="font-serif text-lg md:text-xl text-[#4a2036] tracking-wider flex items-center gap-2 group shrink-0"
           >
-            <span className="relative inline-flex items-center justify-center w-7 h-7 rounded-full border border-[#e05586]/40 bg-gradient-to-br from-[#ffe3ee]/80 to-white/40 shadow-[0_0_12px_rgba(224,85,134,0.35)] group-hover:shadow-[0_0_20px_rgba(255,79,147,0.55)] transition-shadow duration-300">
+            <span
+              className={twMerge(
+                "relative inline-flex items-center justify-center rounded-full border border-[#e05586]/40 bg-gradient-to-br from-[#ffe3ee]/80 to-white/40 shadow-[0_0_12px_rgba(224,85,134,0.35)] group-hover:shadow-[0_0_20px_rgba(255,79,147,0.55)] transition-all duration-300",
+                isScrolled ? "w-6 h-6" : "w-7 h-7"
+              )}
+            >
               <motion.span
                 animate={{ scale: [1, 1.2, 1] }}
                 transition={{ repeat: Infinity, duration: 2, ease: "easeInOut" }}
@@ -109,7 +155,6 @@ export default function Nav({ className }: NavProps) {
             </span>
           </Link>
 
-          {/* Links for Desktop */}
           <div className="hidden md:flex items-center gap-1.5 p-1 rounded-full border border-[#e05586]/15 bg-white/40 backdrop-blur-sm shadow-[inset_0_1px_2px_rgba(224,85,134,0.08)]">
             {links.map((link) => {
               const isActive = activeTab === link.id;
@@ -143,9 +188,7 @@ export default function Nav({ className }: NavProps) {
           </div>
         </div>
 
-        {/* Right Side: Light Admin Button (Desktop) & Mobile Toggle */}
         <div className="flex items-center gap-3">
-          {/* Light Admin Link - Desktop */}
           <Link
             href="/admin"
             className={twMerge(
@@ -163,7 +206,6 @@ export default function Nav({ className }: NavProps) {
             <span>Admin</span>
           </Link>
 
-          {/* Mobile Hamburger Toggle */}
           <button
             onClick={() => setIsOpen(!isOpen)}
             className="md:hidden relative p-2 text-[#4a2036] focus:outline-none rounded-lg border border-[#e05586]/25 bg-white/50 hover:bg-pink-100/50 hover:border-[#ff4f93]/50 hover:shadow-[0_0_14px_rgba(255,79,147,0.35)] transition-all"
@@ -174,7 +216,6 @@ export default function Nav({ className }: NavProps) {
         </div>
       </div>
 
-      {/* Mobile Dropdown Menu */}
       <AnimatePresence>
         {isOpen && (
           <motion.div
@@ -206,7 +247,6 @@ export default function Nav({ className }: NavProps) {
               );
             })}
 
-            {/* Light Admin Link - Mobile */}
             <div className="pt-2 mt-1 border-t border-[#e05586]/15">
               <Link
                 href="/admin"
