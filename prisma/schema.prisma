@@ -24,20 +24,29 @@ model Collection {
 }
 
 model MediaItem {
-  id           String      @id @default(auto()) @map("_id") @db.ObjectId
-  type         MediaType   @default(IMAGE)
-  url          String
-  publicId     String?
-  altText      String?
-  caption      String?
-  duration     Float?      // Optional: Video duration in seconds
-  thumbnailUrl String?     // Optional: Poster image for videos
-  size         Int?
-  width        Int?
-  height       Int?
-  mimeType     String?
-  collectionId String?     @db.ObjectId
-  collection   Collection? @relation(fields: [collectionId], references: [id], onDelete: Cascade)
+  id               String      @id @default(auto()) @map("_id") @db.ObjectId
+  type             MediaType   @default(IMAGE)
+  url              String
+  publicId         String?
+  altText          String?
+  caption          String?
+  duration         Float?      // Optional: Video duration in seconds
+  thumbnailUrl     String?     // Optional: Poster image for videos
+  size             Int?
+  width            Int?
+  height           Int?
+  mimeType         String?
+  collectionId     String?     @db.ObjectId
+  collection       Collection? @relation(fields: [collectionId], references: [id], onDelete: Cascade)
+
+  // Optional (not required-with-default) so existing MongoDB documents that
+  // predate this field read back safely as `null`/`undefined` instead of
+  // failing validation. Treat as `false` in application code when absent.
+  isMemory         Boolean?
+  // Only set when isMemory transitions false -> true. Used to order the
+  // Memories selection stably, without reshuffling on unrelated edits
+  // (e.g. editing a caption shouldn't change Memories order).
+  memorySelectedAt DateTime?
 
   createdAt    DateTime    @default(now())
   updatedAt    DateTime    @updatedAt

@@ -33,7 +33,6 @@ export default function Gallery() {
       try {
         const data = await getAllCollections();
         
-        // تصفية المجموعات لجلب كل الكولكشنز ما عدا "our-memories"
         const filteredCollections = (data as any[]).filter(
           (collection) => collection.slug !== "our-memories"
         );
