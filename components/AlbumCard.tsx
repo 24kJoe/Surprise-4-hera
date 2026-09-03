@@ -87,7 +87,7 @@ export default function AlbumCard({ collection, tilt, index = 0 }: AlbumCardProp
                 />
               )
             ) : (
-              <span className="text-xs text-white/70">ألبوم فارغ</span>
+              <span className="text-xs text-white/70"> Empty </span>
             )}
 
            
