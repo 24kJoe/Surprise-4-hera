@@ -639,6 +639,17 @@ export default function AdminDashboard() {
                           : "border-[var(--line)] bg-[var(--bg)]/40 hover:border-[var(--rose)]/40"
                       }`}
                     >
+                      {/* Native file input with explicit ID */}
+                      <input
+                        id="media-upload-input"
+                        ref={fileInputRef}
+                        type="file"
+                        accept="image/*,video/*"
+                        multiple
+                        onChange={handleFileChange}
+                        className="hidden"
+                      />
+
                       {previewItems.length > 0 ? (
                         <div className="w-full flex flex-col items-center">
                           <div className="grid grid-cols-3 gap-2.5 w-full max-h-48 overflow-y-auto p-1.5">
@@ -669,13 +680,12 @@ export default function AdminDashboard() {
                           </div>
 
                           <div className="flex items-center gap-3 mt-3">
-                            <button
-                              type="button"
-                              onClick={() => fileInputRef.current?.click()}
+                            <label
+                              htmlFor="media-upload-input"
                               className="text-xs font-semibold text-[var(--rose)] hover:text-[var(--rose-dim)] transition-colors cursor-pointer"
                             >
                               + Add more
-                            </button>
+                            </label>
                             <span className="text-[var(--cream)]/30 text-xs">•</span>
                             <button
                               type="button"
@@ -691,7 +701,10 @@ export default function AdminDashboard() {
                           </div>
                         </div>
                       ) : (
-                        <label className="flex flex-col items-center cursor-pointer w-full h-full justify-center text-center p-6">
+                        <label
+                          htmlFor="media-upload-input"
+                          className="flex flex-col items-center cursor-pointer w-full h-full justify-center text-center p-6"
+                        >
                           <div className="w-12 h-12 rounded-2xl bg-[var(--plum)] flex items-center justify-center text-[var(--rose)] mb-3 group-hover:scale-105 transition-transform">
                             <IconUpload className="w-5 h-5" />
                           </div>
@@ -701,14 +714,6 @@ export default function AdminDashboard() {
                           <span className="text-[11px] text-[var(--cream)]/45 mt-1.5">
                             Supports high-res PNG, JPG, WEBP, and MP4 videos
                           </span>
-                          <input
-                            ref={fileInputRef}
-                            type="file"
-                            accept="image/*,video/*"
-                            multiple
-                            onChange={handleFileChange}
-                            className="hidden"
-                          />
                         </label>
                       )}
                     </div>
