@@ -15,16 +15,17 @@ export default function MainLayout({
     const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
-        // We only persist the password unlock status if desired, 
-        // or clear `mainStarted` so WelcomeScreen always plays on refresh
         const mainAuth = sessionStorage.getItem("main_unlocked");
+        const hasStarted = sessionStorage.getItem("main_started");
 
         if (mainAuth === "true") {
             setIsUnlocked(true);
         }
 
-        // Always reset `started` to false on fresh load/refresh
-        setStarted(false);
+        if (hasStarted === "true") {
+            setStarted(true);
+        }
+
         setIsLoading(false);
     }, []);
 
@@ -34,7 +35,7 @@ export default function MainLayout({
     };
 
     const handleStart = () => {
-        // Updated: Removed setting sessionStorage for `main_started`
+        sessionStorage.setItem("main_started", "true");
         setStarted(true);
     };
 

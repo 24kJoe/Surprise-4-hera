@@ -119,7 +119,7 @@ export default function AlbumCard({ collection, tilt, index = 0 }: AlbumCardProp
               {collection.title}
             </h3>
             <p className="font-serif italic text-xs text-rose-500/80 mt-1 line-clamp-1">
-              {latestMedia?.caption || collection.description || "اضغط للاستعراض"}
+              {latestMedia?.caption || collection.description || "Click to view"}
             </p>
           </div>
 

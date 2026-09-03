@@ -531,7 +531,7 @@ export default function AdminDashboard() {
         <header className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 pb-6 border-b border-[var(--line)]">
           <div className="flex items-center gap-4">
             <Link
-              href="/"
+              href="/#letter"
               className="p-2.5 rounded-2xl bg-[var(--paper)]/80 hover:bg-[var(--paper)] border border-[var(--line)] text-[var(--cream)] hover:text-[var(--rose)] transition-colors shadow-sm flex items-center justify-center group shrink-0"
               title="Return to site"
             >
