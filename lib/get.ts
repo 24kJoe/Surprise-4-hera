@@ -3,13 +3,12 @@
 import { prisma } from "@/lib/prisma";
 import { MediaType } from "@prisma/client";
 
-/**
- * جلب كولكشن كامل بالـ slug مع كل الميديا الخاصة به
- */
 export async function getCollectionBySlug(slug: string) {
+  if (!slug) return null;
   try {
+    const decodedSlug = decodeURIComponent(slug);
     const collection = await prisma.collection.findUnique({
-      where: { slug },
+      where: { slug: decodedSlug },
       include: {
         media: {
           orderBy: { createdAt: "desc" },
@@ -23,13 +22,12 @@ export async function getCollectionBySlug(slug: string) {
   }
 }
 
-/**
- * جلب الصور فقط الخاصة بكولكشن معين
- */
 export async function getImagesByCollectionSlug(slug: string) {
+  if (!slug) return [];
   try {
+    const decodedSlug = decodeURIComponent(slug);
     const collection = await prisma.collection.findUnique({
-      where: { slug },
+      where: { slug: decodedSlug },
       select: {
         media: {
           where: { type: MediaType.IMAGE },
@@ -44,13 +42,12 @@ export async function getImagesByCollectionSlug(slug: string) {
   }
 }
 
-/**
- * جلب الفيديوهات فقط الخاصة بكولكشن معين
- */
 export async function getVideosByCollectionSlug(slug: string) {
+  if (!slug) return [];
   try {
+    const decodedSlug = decodeURIComponent(slug);
     const collection = await prisma.collection.findUnique({
-      where: { slug },
+      where: { slug: decodedSlug },
       select: {
         media: {
           where: { type: MediaType.VIDEO },
@@ -65,13 +62,12 @@ export async function getVideosByCollectionSlug(slug: string) {
   }
 }
 
-/**
- * جلب الميديا مقسمة إلى صور وفيديوهات في أوبجيكت واحد
- */
 export async function getMediaByCollectionSlug(slug: string) {
+  if (!slug) return { images: [], videos: [] };
   try {
+    const decodedSlug = decodeURIComponent(slug);
     const collection = await prisma.collection.findUnique({
-      where: { slug },
+      where: { slug: decodedSlug },
       select: {
         media: {
           orderBy: { createdAt: "desc" },
@@ -91,9 +87,6 @@ export async function getMediaByCollectionSlug(slug: string) {
   }
 }
 
-/**
- * جلب جميع الكولكشنز مع أحدث صورة وأحدث فيديو لكل كولكشن (معاينة)
- */
 export async function getAllCollections() {
   try {
     return await prisma.collection.findMany({

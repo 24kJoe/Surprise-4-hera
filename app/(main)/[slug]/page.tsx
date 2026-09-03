@@ -1,156 +1,102 @@
-"use client";
-
-import { useState, useEffect, use } from "react";
 import { notFound } from "next/navigation";
-import { motion } from "framer-motion";
-import PolaroidCard, { MediaItem } from "@/components/PolaroidCard";
+import Link from "next/link";
 import { getCollectionBySlug } from "@/lib/get";
 
-interface CollectionData {
-  id: string;
-  title: string;
-  description: string | null;
-  slug: string | null;
-  media: MediaItem[];
+interface CollectionPageProps {
+  params: Promise<{ slug: string }>;
 }
 
-// -------------------------------------------------------------
-// Main Collection Page Component
-// -------------------------------------------------------------
-export default function CollectionPage({
-  params,
-}: {
-  params: Promise<{ slug: string }>;
-}) {
-  const resolvedParams = use(params);
-  const { slug } = resolvedParams;
+export default async function CollectionPage({ params }: CollectionPageProps) {
+  const { slug } = await params;
+  const collection = await getCollectionBySlug(slug);
 
-  const [collection, setCollection] = useState<CollectionData | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [tilts, setTilts] = useState<number[]>([]);
-  const [isNotFound, setIsNotFound] = useState(false);
-  const [activeFilter, setActiveFilter] = useState<"ALL" | "IMAGE" | "VIDEO">("ALL");
-
-  useEffect(() => {
-    async function fetchData() {
-      try {
-        const data = await getCollectionBySlug(slug);
-        if (!data) {
-          setIsNotFound(true);
-        } else {
-          
-          const collectionData = data as unknown as CollectionData;
-          setCollection(collectionData);
-
-          // Generate random tilt angles for polaroid cards
-          setTilts((collectionData.media || []).map(() => Math.random() * 8 - 4));
-        }
-      } catch (error) {
-        console.error("Error loading collection details:", error);
-        setIsNotFound(true);
-      } finally {
-        setLoading(false);
-      }
-    }
-
-    fetchData();
-  }, [slug]);
-
-  if (isNotFound) {
+  if (!collection) {
     notFound();
   }
-  const filteredMedia = collection?.media?.filter((item) => {
-    if (activeFilter === "IMAGE") return item.type === "IMAGE";
-    if (activeFilter === "VIDEO") return item.type === "VIDEO";
-    return true;
-  }) || [];
-
-  const imageCount = collection?.media?.filter((item) => item.type === "IMAGE").length || 0;
-  const videoCount = collection?.media?.filter((item) => item.type === "VIDEO").length || 0;
 
   return (
-    <section id="collection-page" className="pt-[clamp(100px,26vw,140px)] pb-16">
-      <div className="section-inner">
-        {loading ? (
-          <div className="text-center py-20 text-[var(--gold-soft)] font-serif italic text-lg animate-pulse">
-            Loading collection...
-          </div>
-        ) : collection ? (
-          <>
-            {/* Header Section */}
-            <header className="section-head text-center max-w-2xl mx-auto mb-10">
-              <span className="eyebrow block mb-2 text-xs font-semibold tracking-[0.28em] text-[var(--gold-soft)] uppercase">
-                Collection
-              </span>
-              <h1 className="text-3xl sm:text-5xl font-serif text-[var(--cream)] font-bold tracking-tight">
-                {collection.title}
-              </h1>
-              {collection.description && (
-                <p className="text-[var(--cream)]/75 text-sm sm:text-base leading-relaxed mt-3">
-                  {collection.description}
-                </p>
-              )}
-
-              {/* فلتر التنقل بين الصور والفيديوهات (يظهر في حال وجود كلا النوعين) */}
-              {imageCount > 0 && videoCount > 0 && (
-                <div className="flex items-center justify-center gap-2 mt-6">
-                  <button
-                    onClick={() => setActiveFilter("ALL")}
-                    className={`px-4 py-1.5 rounded-full text-xs font-medium transition-all cursor-pointer ${
-                      activeFilter === "ALL"
-                        ? "bg-[var(--gold-soft)] text-black shadow"
-                        : "bg-white/10 text-[var(--cream)] hover:bg-white/20"
-                    }`}
-                  >
-                    All ({collection.media.length})
-                  </button>
-                  <button
-                    onClick={() => setActiveFilter("IMAGE")}
-                    className={`px-4 py-1.5 rounded-full text-xs font-medium transition-all cursor-pointer ${
-                      activeFilter === "IMAGE"
-                        ? "bg-[var(--gold-soft)] text-black shadow"
-                        : "bg-white/10 text-[var(--cream)] hover:bg-white/20"
-                    }`}
-                  >
-                    Photos ({imageCount})
-                  </button>
-                  <button
-                    onClick={() => setActiveFilter("VIDEO")}
-                    className={`px-4 py-1.5 rounded-full text-xs font-medium transition-all cursor-pointer ${
-                      activeFilter === "VIDEO"
-                        ? "bg-[var(--gold-soft)] text-black shadow"
-                        : "bg-white/10 text-[var(--cream)] hover:bg-white/20"
-                    }`}
-                  >
-                    Videos ({videoCount})
-                  </button>
-                </div>
-              )}
-            </header>
-
-            {/* Media Gallery Grid */}
-            {filteredMedia.length === 0 ? (
-              <div className="text-center py-20 text-[var(--cream)]/60 font-serif italic text-base sm:text-lg">
-                No items found in this category.
-              </div>
-            ) : (
-              <motion.div
-                layout
-                className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 sm:gap-8"
-              >
-                {filteredMedia.map((mediaItem, i) => (
-                  <PolaroidCard
-                    key={mediaItem.id}
-                    photo={mediaItem}
-                    tilt={tilts[i] || 0}
-                    index={i}
-                  />
-                ))}
-              </motion.div>
-            )}
-          </>
-        ) : null}
+    <main className="min-h-screen pt-24 pb-20 px-4 sm:px-8 max-w-7xl mx-auto">
+      {/* Back to Gallery Button */}
+      <div className="mb-8 flex items-center justify-between border-b border-[var(--rose)]/15 pb-4">
+        <Link
+          href="/#gallery"
+          className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/60 hover:bg-white/90 border border-[var(--rose)]/20 text-[var(--plum)] font-medium text-xs sm:text-sm shadow-sm hover:shadow transition-all group backdrop-blur-sm"
+        >
+          <svg
+            className="w-4 h-4 text-[var(--rose)] group-hover:-translate-x-1 transition-transform"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M10 19l-7-7m0 0l7-7m-7 7h18"
+            />
+          </svg>
+          <span>Back to Gallery</span>
+        </Link>
       </div>
-    </section>
+
+      <header className="text-center max-w-2xl mx-auto space-y-2 mb-10">
+        <span className="text-xs font-semibold tracking-[0.28em] text-[var(--gold-soft)] uppercase">
+          Collection
+        </span>
+        <h1 className="font-serif text-3xl sm:text-5xl font-bold text-[var(--cream)]">
+          {collection.title}
+        </h1>
+        {collection.description && (
+          <p className="text-sm sm:text-base text-[var(--cream)]/70">
+            {collection.description}
+          </p>
+        )}
+      </header>
+
+      {collection.media && collection.media.length > 0 ? (
+        <div className="flex flex-wrap items-center justify-center gap-6">
+          {collection.media.map((item: any, idx: number) => {
+            const isVideo = item.type === "VIDEO" || item.url?.match(/\.(mp4|webm|mov)$/i);
+            const tilt = ((idx % 5) - 2) * 1.5;
+
+            return (
+              <div
+                key={item.id || idx}
+                style={{ transform: `rotate(${tilt}deg)` }}
+                className="bg-[var(--paper)] p-3 pb-5 rounded-2xl border border-[var(--line)] shadow-md hover:shadow-xl hover:scale-[1.02] hover:rotate-0 transition-all duration-300 flex flex-col justify-between w-64"
+              >
+                <div className="relative aspect-square w-full rounded-xl overflow-hidden bg-black/20 border border-[var(--line)]">
+                  {isVideo ? (
+                    <video
+                      src={item.url}
+                      poster={item.thumbnailUrl || undefined}
+                      controls
+                      playsInline
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <img
+                      src={item.url}
+                      alt={item.caption || "Collection item"}
+                      className="w-full h-full object-cover"
+                    />
+                  )}
+                </div>
+
+                <div className="pt-3 px-1 text-center">
+                  <p className="font-serif text-sm text-[var(--cream)] truncate">
+                    {item.caption || "A sweet moment"}
+                  </p>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      ) : (
+        <div className="text-center py-20 text-[var(--cream)]/50 font-serif italic">
+          No memories have been added to this collection yet.
+        </div>
+      )}
+    </main>
   );
 }
