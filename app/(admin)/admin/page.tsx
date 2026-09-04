@@ -139,6 +139,14 @@ function IconEye(props: React.SVGProps<SVGSVGElement>) {
     </svg>
   );
 }
+function IconCheckSquare(props: React.SVGProps<SVGSVGElement>) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" {...props}>
+      <polyline points="9 11 12 14 22 4" {...iconStroke} />
+      <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" {...iconStroke} />
+    </svg>
+  );
+}
 function IconSpinner(props: React.SVGProps<SVGSVGElement>) {
   return (
     <svg viewBox="0 0 24 24" fill="none" className={`animate-spin ${props.className || ""}`}>
@@ -149,7 +157,7 @@ function IconSpinner(props: React.SVGProps<SVGSVGElement>) {
 }
 
 /* ---------------------------------------------------------------------- */
-/*  UI Primitives with Original Palette                                   */
+/*  UI Primitives                                                         */
 /* ---------------------------------------------------------------------- */
 
 const inputCls =
@@ -279,6 +287,119 @@ function Modal({
 }
 
 /* ---------------------------------------------------------------------- */
+/*  Memory-Safe Batch Thumbnail Loader                                    */
+/* ---------------------------------------------------------------------- */
+
+function BatchFileThumbnail({ file }: { file: File }) {
+  const [thumbUrl, setThumbUrl] = useState<string | null>(null);
+  const isVideo = file.type.startsWith("video/");
+  const isImage = file.type.startsWith("image/");
+
+  useEffect(() => {
+    if (!isImage && !isVideo) return;
+    const url = URL.createObjectURL(file);
+    setThumbUrl(url);
+    return () => URL.revokeObjectURL(url);
+  }, [file, isImage, isVideo]);
+
+  if (!thumbUrl) {
+    return (
+      <div className="w-14 h-14 rounded-xl bg-[var(--plum)] flex items-center justify-center text-[var(--rose)] shrink-0">
+        {isVideo ? <IconVideo className="w-5 h-5" /> : <IconImage className="w-5 h-5" />}
+      </div>
+    );
+  }
+
+  return (
+    <div className="w-14 h-14 rounded-xl overflow-hidden bg-black/40 border border-[var(--line)] shrink-0 relative flex items-center justify-center">
+      {isVideo ? (
+        <>
+          <video src={thumbUrl} className="w-full h-full object-cover" muted />
+          <div className="absolute inset-0 bg-black/30 flex items-center justify-center text-white">
+            <IconVideo className="w-4 h-4" />
+          </div>
+        </>
+      ) : (
+        <img
+          src={thumbUrl}
+          alt={file.name}
+          className="w-full h-full object-cover"
+          onError={(e) => {
+            (e.target as HTMLElement).style.display = "none";
+          }}
+        />
+      )}
+    </div>
+  );
+}
+
+/* ---------------------------------------------------------------------- */
+/*  Full Single-File Lightbox Preview Component                           */
+/* ---------------------------------------------------------------------- */
+
+function SingleFilePreviewModal({
+  file,
+  index,
+  total,
+  onClose,
+  onDelete,
+  onNext,
+  onPrev,
+}: {
+  file: File;
+  index: number;
+  total: number;
+  onClose: () => void;
+  onDelete: () => void;
+  onNext: () => void;
+  onPrev: () => void;
+}) {
+  const [fileUrl, setFileUrl] = useState<string | null>(null);
+  const isVideo = file.type.startsWith("video/");
+
+  useEffect(() => {
+    const url = URL.createObjectURL(file);
+    setFileUrl(url);
+    return () => URL.revokeObjectURL(url);
+  }, [file]);
+
+  return (
+    <Modal title={`Preview (${index + 1} of ${total})`} maxWidth="max-w-2xl" onClose={onClose}>
+      <div className="space-y-4">
+        <div className="w-full max-h-[60vh] rounded-2xl overflow-hidden bg-black/70 flex items-center justify-center border border-[var(--line)] relative">
+          {fileUrl && (
+            isVideo ? (
+              <video src={fileUrl} controls autoPlay className="max-h-[58vh] w-full object-contain" />
+            ) : (
+              <img src={fileUrl} alt={file.name} className="max-h-[58vh] w-full object-contain" />
+            )
+          )}
+        </div>
+
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-[var(--cream)]/70 px-1 border-t border-[var(--line)] pt-3">
+          <div className="truncate max-w-[240px]">
+            <p className="font-semibold text-[var(--cream)] truncate">{file.name}</p>
+            <p className="text-[11px] text-[var(--cream)]/45">{(file.size / (1024 * 1024)).toFixed(2)} MB</p>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <GhostButton onClick={onPrev} disabled={total <= 1}>
+              Previous
+            </GhostButton>
+            <GhostButton onClick={onNext} disabled={total <= 1}>
+              Next
+            </GhostButton>
+            <DangerButton onClick={onDelete}>
+              <IconTrash className="w-3.5 h-3.5" /> Remove
+            </DangerButton>
+          </div>
+        </div>
+      </div>
+    </Modal>
+  );
+}
+
+/* ---------------------------------------------------------------------- */
 /*  Main Component                                                        */
 /* ---------------------------------------------------------------------- */
 
@@ -287,22 +408,35 @@ export default function AdminDashboard() {
   const [collections, setCollections] = useState<CollectionItem[]>([]);
   const [loaded, setLoaded] = useState(false);
 
-  // Top view toggle: Studio (Upload) first
   const [currentView, setCurrentView] = useState<"studio" | "gallery">("studio");
   const [activeStudioTab, setActiveStudioTab] = useState<"upload" | "collection">("upload");
 
-  // Gallery Search & Inspector Lightbox
   const [searchQuery, setSearchQuery] = useState("");
   const [inspectingMedia, setInspectingMedia] = useState<MediaItem | null>(null);
 
   // Multi-upload state
   const [files, setFiles] = useState<File[]>([]);
-  const [previewItems, setPreviewItems] = useState<{ url: string; isVideo: boolean; name: string }[]>([]);
+  const [singleCoverUrl, setSingleCoverUrl] = useState<string | null>(null);
   const [caption, setCaption] = useState("");
   const [altText, setAltText] = useState("");
   const [selectedCollectionId, setSelectedCollectionId] = useState("none");
   const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Batch Review Modal & Single File Inspection
+  const [showBatchModal, setShowBatchModal] = useState(false);
+  const [inspectingFileIndex, setInspectingFileIndex] = useState<number | null>(null);
+
+  // Batch upload progress state
+  const [uploadProgress, setUploadProgress] = useState<{ current: number; total: number } | null>(null);
+  const [isBatchUploading, setIsBatchUploading] = useState(false);
+  const abortUploadRef = useRef(false);
+
+  // Multi-select state (Gallery)
+  const [selectMode, setSelectMode] = useState(false);
+  const [selectedMediaIds, setSelectedMediaIds] = useState<Set<string>>(new Set());
+  const [isBulkDeleting, setIsBulkDeleting] = useState(false);
+  const [showBulkDeleteModal, setShowBulkDeleteModal] = useState(false);
 
   // Collection form state
   const [newColTitle, setNewColTitle] = useState("");
@@ -321,7 +455,6 @@ export default function AdminDashboard() {
   const [successMsg, setSuccessMsg] = useState("");
   const [activeFilter, setActiveFilter] = useState<string>("all");
 
-  const [isPendingUpload, startTransitionUpload] = useTransition();
   const [isPendingCol, startTransitionCol] = useTransition();
   const [isPendingEdit, startTransitionEdit] = useTransition();
   const [deletingId, setDeletingId] = useState<string | null>(null);
@@ -341,22 +474,65 @@ export default function AdminDashboard() {
     loadData();
   }, []);
 
-  const applyFiles = (selectedFiles: File[]) => {
-    if (selectedFiles.length === 0) return;
-    setFiles((prev) => [...prev, ...selectedFiles]);
-    setPreviewItems((prev) => [
-      ...prev,
-      ...selectedFiles.map((file) => ({
-        url: URL.createObjectURL(file),
-        isVideo: file.type.startsWith("video/"),
-        name: file.name,
-      })),
-    ]);
+  useEffect(() => {
+    return () => {
+      if (singleCoverUrl) {
+        URL.revokeObjectURL(singleCoverUrl);
+      }
+    };
+  }, [singleCoverUrl]);
+
+  const clearSelectedFiles = () => {
+    if (singleCoverUrl) {
+      URL.revokeObjectURL(singleCoverUrl);
+      setSingleCoverUrl(null);
+    }
+    setFiles([]);
+    setShowBatchModal(false);
+    setInspectingFileIndex(null);
+    if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
-  const removeSingleFile = (idx: number) => {
-    setFiles((prev) => prev.filter((_, i) => i !== idx));
-    setPreviewItems((prev) => prev.filter((_, i) => i !== idx));
+  const removeFileFromBatch = (indexToRemove: number) => {
+    const updated = files.filter((_, idx) => idx !== indexToRemove);
+    setFiles(updated);
+
+    if (inspectingFileIndex !== null) {
+      if (updated.length === 0) {
+        setInspectingFileIndex(null);
+      } else if (inspectingFileIndex >= updated.length) {
+        setInspectingFileIndex(updated.length - 1);
+      }
+    }
+
+    if (indexToRemove === 0) {
+      if (singleCoverUrl) URL.revokeObjectURL(singleCoverUrl);
+      const nextImage = updated.find((f) => f.type.startsWith("image/"));
+      if (nextImage) {
+        setSingleCoverUrl(URL.createObjectURL(nextImage));
+      } else {
+        setSingleCoverUrl(null);
+      }
+    }
+
+    if (updated.length === 0) {
+      setShowBatchModal(false);
+      setInspectingFileIndex(null);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
+  };
+
+  const applyFiles = (selectedFiles: File[]) => {
+    if (selectedFiles.length === 0) return;
+
+    if (!singleCoverUrl) {
+      const firstImage = selectedFiles.find((f) => f.type.startsWith("image/"));
+      if (firstImage) {
+        setSingleCoverUrl(URL.createObjectURL(firstImage));
+      }
+    }
+
+    setFiles((prev) => [...prev, ...selectedFiles]);
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -418,6 +594,12 @@ export default function AdminDashboard() {
   };
 
   const handleDeleteCollection = async (col: CollectionItem) => {
+    const isProtected = col.title.toLowerCase() === "our-memories" || (col as any).slug === "our-memories";
+    if (isProtected) {
+      alert("The 'our-memories' collection is protected and cannot be deleted.");
+      return;
+    }
+
     setDeletingColId(col.id);
     const res = await deleteCollectionAction(col.id);
     setDeletingColId(null);
@@ -438,30 +620,60 @@ export default function AdminDashboard() {
       return;
     }
 
+    setShowBatchModal(false);
+    setInspectingFileIndex(null);
     setErrorMsg("");
     setSuccessMsg("");
+    setIsBatchUploading(true);
+    abortUploadRef.current = false;
 
-    const formData = new FormData();
-    files.forEach((file) => formData.append("files", file));
-    formData.append("caption", caption);
-    formData.append("altText", altText);
-    formData.append("collectionId", selectedCollectionId);
+    const total = files.length;
+    setUploadProgress({ current: 0, total });
 
-    startTransitionUpload(async () => {
-      const res = await uploadMediaAction(formData);
-      if (res.success) {
-        setSuccessMsg(`${files.length} item${files.length > 1 ? "s" : ""} uploaded successfully`);
-        setFiles([]);
-        setPreviewItems([]);
-        setCaption("");
-        setAltText("");
-        setSelectedCollectionId("none");
-        await loadData();
-        setCurrentView("gallery");
-      } else {
-        setErrorMsg(res.error || "Upload failed");
+    let completed = 0;
+    let failed = 0;
+    const batchSize = 2;
+
+    for (let i = 0; i < total; i += batchSize) {
+      if (abortUploadRef.current) break;
+
+      const chunk = files.slice(i, i + batchSize);
+      const formData = new FormData();
+      chunk.forEach((file) => formData.append("files", file));
+      formData.append("caption", caption);
+      formData.append("altText", altText);
+      formData.append("collectionId", selectedCollectionId);
+
+      try {
+        const res = await uploadMediaAction(formData);
+        if (!res.success) {
+          failed += chunk.length;
+          console.error("Batch upload failed:", res.error);
+        } else {
+          completed += chunk.length;
+        }
+      } catch (err) {
+        failed += chunk.length;
+        console.error("Batch upload error:", err);
       }
-    });
+
+      setUploadProgress({ current: Math.min(i + batchSize, total), total });
+    }
+
+    setIsBatchUploading(false);
+    setUploadProgress(null);
+
+    if (failed > 0) {
+      setErrorMsg(`Uploaded ${completed} items, but ${failed} item(s) failed.`);
+    } else {
+      setSuccessMsg(`${completed} item${completed > 1 ? "s" : ""} uploaded successfully!`);
+      clearSelectedFiles();
+      setCaption("");
+      setAltText("");
+      setSelectedCollectionId("none");
+      await loadData();
+      setCurrentView("gallery");
+    }
   };
 
   const handleUpdateMedia = async (e: React.FormEvent) => {
@@ -496,12 +708,16 @@ export default function AdminDashboard() {
 
     if (res.success) {
       setMediaItems((prev) => prev.filter((m) => m.id !== item.id));
+      setSelectedMediaIds((prev) => {
+        const next = new Set(prev);
+        next.delete(item.id);
+        return next;
+      });
     } else {
       alert(res.error || "Could not delete item");
     }
   };
 
-  // Filtered and Searched items
   const filteredMedia = useMemo(() => {
     let result = mediaItems;
     if (activeFilter === "none") {
@@ -522,6 +738,61 @@ export default function AdminDashboard() {
 
     return result;
   }, [mediaItems, activeFilter, searchQuery]);
+
+  const toggleSelectMedia = (id: string) => {
+    setSelectedMediaIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const selectAllFiltered = () => {
+    const allIds = new Set(filteredMedia.map((m) => m.id));
+    setSelectedMediaIds(allIds);
+  };
+
+  const clearBulkSelection = () => {
+    setSelectedMediaIds(new Set());
+  };
+
+  const handleBulkDelete = async () => {
+    const ids = Array.from(selectedMediaIds);
+    if (ids.length === 0) return;
+
+    setIsBulkDeleting(true);
+    const chunkSize = 4;
+    const failedIds: string[] = [];
+
+    for (let i = 0; i < ids.length; i += chunkSize) {
+      const chunk = ids.slice(i, i + chunkSize);
+      await Promise.all(
+        chunk.map(async (id) => {
+          try {
+            const res = await deleteMediaAction(id);
+            if (!res.success) failedIds.push(id);
+          } catch {
+            failedIds.push(id);
+          }
+        })
+      );
+    }
+
+    setIsBulkDeleting(false);
+    setShowBulkDeleteModal(false);
+
+    const deletedCount = ids.length - failedIds.length;
+    const successfullyDeleted = new Set(ids.filter((id) => !failedIds.includes(id)));
+    setMediaItems((prev) => prev.filter((m) => !successfullyDeleted.has(m.id)));
+    setSelectedMediaIds(new Set(failedIds));
+
+    if (failedIds.length > 0) {
+      alert(`Deleted ${deletedCount} items. ${failedIds.length} failed to delete.`);
+    } else {
+      setSelectMode(false);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-[var(--bg)] text-[var(--cream)] p-4 sm:p-8 font-sans selection:bg-[var(--gold)] selection:text-white">
@@ -548,7 +819,6 @@ export default function AdminDashboard() {
             </div>
           </div>
 
-          {/* Master View Navigation */}
           <div className="p-1.5 rounded-2xl bg-[var(--paper)] border border-[var(--line)] flex items-center gap-1 shadow-sm w-full sm:w-auto">
             <button
               onClick={() => setCurrentView("studio")}
@@ -576,7 +846,7 @@ export default function AdminDashboard() {
           </div>
         </header>
 
-        {/* View 1: Studio (Upload & Album Setup) */}
+        {/* View 1: Studio */}
         {currentView === "studio" && (
           <motion.div
             initial={{ opacity: 0, y: 10 }}
@@ -633,13 +903,12 @@ export default function AdminDashboard() {
                       }}
                       onDragLeave={() => setIsDragging(false)}
                       onDrop={handleDrop}
-                      className={`flex flex-col items-center justify-center border-2 border-dashed rounded-2xl p-4 transition-all relative overflow-hidden min-h-[240px] ${
+                      className={`flex flex-col items-center justify-center border-2 border-dashed rounded-2xl p-4 transition-all relative overflow-hidden min-h-[260px] ${
                         isDragging
                           ? "border-[var(--rose)] bg-[var(--rose)]/10"
                           : "border-[var(--line)] bg-[var(--bg)]/40 hover:border-[var(--rose)]/40"
                       }`}
                     >
-                      {/* Native file input with explicit ID */}
                       <input
                         id="media-upload-input"
                         ref={fileInputRef}
@@ -647,56 +916,80 @@ export default function AdminDashboard() {
                         accept="image/*,video/*"
                         multiple
                         onChange={handleFileChange}
+                        disabled={isBatchUploading}
                         className="hidden"
                       />
 
-                      {previewItems.length > 0 ? (
-                        <div className="w-full flex flex-col items-center">
-                          <div className="grid grid-cols-3 gap-2.5 w-full max-h-48 overflow-y-auto p-1.5">
-                            {previewItems.map((item, idx) => (
-                              <div
-                                key={idx}
-                                className="relative aspect-square w-full overflow-hidden rounded-xl border border-[var(--line)] bg-black/20 group"
-                              >
-                                {item.isVideo ? (
-                                  <video src={item.url} className="w-full h-full object-cover" muted />
-                                ) : (
-                                  <img src={item.url} alt="Upload preview" className="w-full h-full object-cover" />
-                                )}
-                                <button
-                                  type="button"
-                                  onClick={() => removeSingleFile(idx)}
-                                  className="absolute top-1 right-1 p-1 rounded-md bg-black/70 hover:bg-[var(--rose)] text-white transition-colors"
-                                >
-                                  <IconX className="w-3 h-3" />
-                                </button>
-                                {item.isVideo && (
-                                  <span className="absolute bottom-1 right-1 bg-black/70 text-white p-1 rounded-md">
-                                    <IconVideo className="w-3 h-3" />
-                                  </span>
-                                )}
+                      {files.length > 0 ? (
+                        <div className="w-full flex flex-col items-center justify-center p-4">
+                          <div
+                            onClick={() => setShowBatchModal(true)}
+                            title="Click to view & manage selected files"
+                            className="relative w-36 h-28 mb-3 flex items-center justify-center select-none cursor-pointer group"
+                          >
+                            <div className="absolute inset-0 rounded-2xl bg-white/60 border border-rose-200/60 shadow-xs rotate-6 translate-x-3 translate-y-1 group-hover:rotate-8 transition-transform" />
+                            <div className="absolute inset-0 rounded-2xl bg-white/80 border border-rose-200/80 shadow-xs -rotate-4 -translate-x-2 group-hover:-rotate-6 transition-transform" />
+                            
+                            <div className="relative w-full h-full rounded-2xl bg-[#fffdfa] border border-rose-300 shadow-md group-hover:shadow-xl group-hover:border-[var(--rose)] transition-all flex flex-col items-center justify-center p-3 text-center overflow-hidden">
+                              {singleCoverUrl ? (
+                                <img
+                                  src={singleCoverUrl}
+                                  alt=""
+                                  className="absolute inset-0 w-full h-full object-cover opacity-35 group-hover:scale-105 transition-transform pointer-events-none"
+                                  onError={(e) => {
+                                    (e.target as HTMLElement).style.display = "none";
+                                  }}
+                                />
+                              ) : null}
+
+                              <div className="relative z-10 flex flex-col items-center">
+                                <div className="w-8 h-8 rounded-full bg-rose-500/10 text-[var(--rose)] flex items-center justify-center mb-1 group-hover:scale-110 transition-transform">
+                                  <IconEye className="w-4 h-4" />
+                                </div>
+                                <span className="font-serif text-lg font-bold text-[rgb(74,32,58)] leading-tight">
+                                  {files.length}
+                                </span>
+                                <span className="text-[10px] uppercase tracking-wider font-semibold text-rose-900/60">
+                                  Batch Selected
+                                </span>
                               </div>
-                            ))}
+                            </div>
                           </div>
 
-                          <div className="flex items-center gap-3 mt-3">
-                            <label
-                              htmlFor="media-upload-input"
-                              className="text-xs font-semibold text-[var(--rose)] hover:text-[var(--rose-dim)] transition-colors cursor-pointer"
-                            >
-                              + Add more
-                            </label>
-                            <span className="text-[var(--cream)]/30 text-xs">•</span>
+                          <div className="flex items-center gap-2">
+                            <p className="text-xs font-medium text-rose-950/80 text-center font-serif italic">
+                              {(files.reduce((acc, f) => acc + f.size, 0) / (1024 * 1024)).toFixed(1)} MB total
+                            </p>
+                            <span className="text-rose-300 text-xs">•</span>
                             <button
                               type="button"
-                              onClick={() => {
-                                setFiles([]);
-                                setPreviewItems([]);
-                                if (fileInputRef.current) fileInputRef.current.value = "";
-                              }}
-                              className="text-xs text-[var(--cream)]/60 hover:text-rose-300 transition-colors cursor-pointer"
+                              onClick={() => setShowBatchModal(true)}
+                              className="text-xs font-semibold text-[var(--rose)] hover:underline flex items-center gap-1 cursor-pointer"
                             >
-                              Clear all ({files.length})
+                              <IconEye className="w-3.5 h-3.5" />
+                              <span>View files</span>
+                            </button>
+                          </div>
+
+                          <div className="flex items-center gap-3 mt-4">
+                            <label
+                              htmlFor="media-upload-input"
+                              className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-rose-100/70 border border-rose-200/80 text-xs font-semibold text-[var(--rose)] hover:bg-white shadow-2xs transition-all cursor-pointer ${
+                                isBatchUploading ? "pointer-events-none opacity-40" : ""
+                              }`}
+                            >
+                              <IconPlus className="w-3.5 h-3.5" />
+                              <span>Add more files</span>
+                            </label>
+
+                            <button
+                              type="button"
+                              onClick={clearSelectedFiles}
+                              disabled={isBatchUploading}
+                              className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-medium text-rose-900/60 hover:text-rose-500 hover:bg-rose-50 transition-all cursor-pointer disabled:opacity-40"
+                            >
+                              <IconX className="w-3.5 h-3.5" />
+                              <span>Clear selection</span>
                             </button>
                           </div>
                         </div>
@@ -712,7 +1005,7 @@ export default function AdminDashboard() {
                             Drop files here, or browse from device
                           </span>
                           <span className="text-[11px] text-[var(--cream)]/45 mt-1.5">
-                            Supports high-res PNG, JPG, WEBP, and MP4 videos
+                            Supports high-res PNG, JPG, WEBP, and MP4 videos (bulk enabled)
                           </span>
                         </label>
                       )}
@@ -724,7 +1017,8 @@ export default function AdminDashboard() {
                           <select
                             value={selectedCollectionId}
                             onChange={(e) => setSelectedCollectionId(e.target.value)}
-                            className={`${inputCls} cursor-pointer`}
+                            disabled={isBatchUploading}
+                            className={`${inputCls} cursor-pointer disabled:opacity-50`}
                           >
                             <option value="none">General (No Collection)</option>
                             {collections.map((col) => (
@@ -740,8 +1034,9 @@ export default function AdminDashboard() {
                             type="text"
                             value={caption}
                             onChange={(e) => setCaption(e.target.value)}
+                            disabled={isBatchUploading}
                             placeholder="e.g. Walking under the evening lights..."
-                            className={inputCls}
+                            className={`${inputCls} disabled:opacity-50`}
                           />
                         </Field>
 
@@ -750,23 +1045,55 @@ export default function AdminDashboard() {
                             type="text"
                             value={altText}
                             onChange={(e) => setAltText(e.target.value)}
+                            disabled={isBatchUploading}
                             placeholder="Brief description for screen readers"
-                            className={inputCls}
+                            className={`${inputCls} disabled:opacity-50`}
                           />
                         </Field>
                       </div>
+
+                      {isBatchUploading && uploadProgress && (
+                        <div className="bg-[var(--bg)]/80 p-3.5 rounded-2xl border border-[var(--line)] space-y-2">
+                          <div className="flex items-center justify-between text-xs font-medium">
+                            <span className="text-[var(--cream)]/80 flex items-center gap-2">
+                              <IconSpinner className="w-3.5 h-3.5 text-[var(--rose)]" />
+                              Uploading in mobile-safe queue...
+                            </span>
+                            <span className="text-[var(--rose)] font-semibold">
+                              {uploadProgress.current} / {uploadProgress.total}
+                            </span>
+                          </div>
+                          <div className="w-full h-2 bg-black/40 rounded-full overflow-hidden">
+                            <div
+                              className="h-full bg-[var(--rose)] transition-all duration-300 rounded-full"
+                              style={{ width: `${(uploadProgress.current / uploadProgress.total) * 100}%` }}
+                            />
+                          </div>
+                          <div className="flex justify-end">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                abortUploadRef.current = true;
+                              }}
+                              className="text-[10px] text-rose-300/80 hover:text-rose-200 underline"
+                            >
+                              Stop remaining
+                            </button>
+                          </div>
+                        </div>
+                      )}
 
                       {errorMsg && <Banner tone="error">{errorMsg}</Banner>}
                       {successMsg && <Banner tone="success">{successMsg}</Banner>}
 
                       <PrimaryButton
                         type="submit"
-                        disabled={isPendingUpload || files.length === 0}
-                        loading={isPendingUpload}
+                        disabled={isBatchUploading || files.length === 0}
+                        loading={isBatchUploading}
                         className="w-full mt-2"
                       >
-                        {isPendingUpload
-                          ? "Uploading Assets…"
+                        {isBatchUploading
+                          ? `Uploading (${uploadProgress?.current || 0}/${uploadProgress?.total || files.length})…`
                           : `Upload ${files.length > 0 ? `${files.length} Item${files.length > 1 ? "s" : ""}` : "Files"}`}
                       </PrimaryButton>
                     </div>
@@ -819,6 +1146,7 @@ export default function AdminDashboard() {
               </AnimatePresence>
             </section>
 
+            {/* Albums & Collections: our-memories sorted to the first spot & delete locked */}
             {collections.length > 0 && (
               <section className="space-y-4">
                 <h2 className="font-serif text-lg font-semibold text-[var(--cream)] flex items-center gap-2">
@@ -827,42 +1155,66 @@ export default function AdminDashboard() {
                 </h2>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-                  {collections.map((col) => (
-                    <div
-                      key={col.id}
-                      className="bg-[var(--paper)]/80 p-4 rounded-2xl border border-[var(--line)] shadow-sm hover:border-[var(--cream)]/20 transition-all flex items-center justify-between group"
-                    >
-                      <div className="flex items-center gap-3.5 min-w-0">
-                        <div className="w-10 h-10 rounded-xl bg-[var(--plum)] flex items-center justify-center text-[var(--rose)] shrink-0">
-                          <IconFolder className="w-4.5 h-4.5" />
-                        </div>
-                        <div className="min-w-0">
-                          <h3 className="font-semibold text-sm text-[var(--cream)] truncate">{col.title}</h3>
-                          <p className="text-[11px] text-[var(--cream)]/50 mt-0.5 truncate">
-                            {col.description || `${col.media?.length || 0} media saved`}
-                          </p>
-                        </div>
-                      </div>
+                  {(() => {
+                    const sortedCollections = [...collections].sort((a, b) => {
+                      const aIsSpecial = a.title.toLowerCase() === "our-memories" || (a as any).slug === "our-memories";
+                      const bIsSpecial = b.title.toLowerCase() === "our-memories" || (b as any).slug === "our-memories";
+                      if (aIsSpecial) return -1;
+                      if (bIsSpecial) return 1;
+                      return 0;
+                    });
 
-                      <div className="flex items-center gap-1 opacity-75 group-hover:opacity-100 transition-opacity shrink-0">
-                        <button
-                          onClick={() => setEditingCollection(col)}
-                          className="p-1.5 rounded-lg text-[var(--cream)]/60 hover:text-amber-300 hover:bg-amber-500/10 transition-colors cursor-pointer"
-                          title="Edit album"
+                    return sortedCollections.map((col) => {
+                      const isProtected = col.title.toLowerCase() === "our-memories" || (col as any).slug === "our-memories";
+
+                      return (
+                        <div
+                          key={col.id}
+                          className="bg-[var(--paper)]/80 p-4 rounded-2xl border border-[var(--line)] shadow-sm hover:border-[var(--cream)]/20 transition-all flex items-center justify-between group"
                         >
-                          <IconEdit className="w-4 h-4" />
-                        </button>
-                        <button
-                          onClick={() => setConfirmDeleteCollection(col)}
-                          disabled={deletingColId === col.id}
-                          className="p-1.5 rounded-lg text-[var(--cream)]/60 hover:text-rose-300 hover:bg-rose-500/10 transition-colors cursor-pointer"
-                          title="Delete album"
-                        >
-                          {deletingColId === col.id ? <IconSpinner className="w-4 h-4" /> : <IconTrash className="w-4 h-4" />}
-                        </button>
-                      </div>
-                    </div>
-                  ))}
+                          <div className="flex items-center gap-3.5 min-w-0">
+                            <div className="w-10 h-10 rounded-xl bg-[var(--plum)] flex items-center justify-center text-[var(--rose)] shrink-0">
+                              <IconFolder className="w-4.5 h-4.5" />
+                            </div>
+                            <div className="min-w-0">
+                              <h3 className="font-semibold text-sm text-[var(--cream)] truncate">{col.title}</h3>
+                              <p className="text-[11px] text-[var(--cream)]/50 mt-0.5 truncate">
+                                {col.description || `${col.media?.length || 0} media saved`}
+                              </p>
+                            </div>
+                          </div>
+
+                          <div className="flex items-center gap-1 opacity-75 group-hover:opacity-100 transition-opacity shrink-0">
+                            <button
+                              onClick={() => setEditingCollection(col)}
+                              className="p-1.5 rounded-lg text-[var(--cream)]/60 hover:text-amber-300 hover:bg-amber-500/10 transition-colors cursor-pointer"
+                              title="Edit album"
+                            >
+                              <IconEdit className="w-4 h-4" />
+                            </button>
+
+                            {!isProtected ? (
+                              <button
+                                onClick={() => setConfirmDeleteCollection(col)}
+                                disabled={deletingColId === col.id}
+                                className="p-1.5 rounded-lg text-[var(--cream)]/60 hover:text-rose-300 hover:bg-rose-500/10 transition-colors cursor-pointer"
+                                title="Delete album"
+                              >
+                                {deletingColId === col.id ? <IconSpinner className="w-4 h-4" /> : <IconTrash className="w-4 h-4" />}
+                              </button>
+                            ) : (
+                              <span
+                                className="px-2 py-1 text-[10px] uppercase tracking-wider text-[var(--gold-soft)] font-semibold"
+                                title="Protected system album"
+                              >
+                                Protected
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    });
+                  })()}
                 </div>
               </section>
             )}
@@ -875,19 +1227,36 @@ export default function AdminDashboard() {
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.2 }}
-            className="space-y-6"
+            className="space-y-6 pb-20"
           >
-            {/* Gallery Controls Header */}
             <div className="bg-[var(--paper)]/80 backdrop-blur-md p-4 sm:p-5 rounded-3xl border border-[var(--line)] shadow-sm space-y-4">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                <div className="flex items-center gap-2">
-                  <span className="text-sm font-semibold text-[var(--cream)]">All Media</span>
-                  <span className="text-xs px-2 py-0.5 rounded-full bg-[var(--plum)] text-[var(--rose)] font-semibold">
-                    {filteredMedia.length} of {mediaItems.length}
-                  </span>
+                <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-semibold text-[var(--cream)]">All Media</span>
+                    <span className="text-xs px-2 py-0.5 rounded-full bg-[var(--plum)] text-[var(--rose)] font-semibold">
+                      {filteredMedia.length} of {mediaItems.length}
+                    </span>
+                  </div>
+
+                  {filteredMedia.length > 0 && (
+                    <button
+                      onClick={() => {
+                        setSelectMode(!selectMode);
+                        clearBulkSelection();
+                      }}
+                      className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-semibold transition-all cursor-pointer border ${
+                        selectMode
+                          ? "bg-[var(--rose)] text-white border-[var(--rose)] shadow-sm"
+                          : "bg-[var(--bg)] text-[var(--cream)]/75 border-[var(--line)] hover:border-[var(--cream)]/30 hover:text-[var(--cream)]"
+                      }`}
+                    >
+                      <IconCheckSquare className="w-3.5 h-3.5" />
+                      <span>{selectMode ? "Exit Selection" : "Select Multiple"}</span>
+                    </button>
+                  )}
                 </div>
 
-                {/* Instant Search Bar */}
                 <div className="relative w-full sm:w-64">
                   <IconSearch className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-[var(--cream)]/40 pointer-events-none" />
                   <input
@@ -908,39 +1277,81 @@ export default function AdminDashboard() {
                 </div>
               </div>
 
-              {/* Scrollable Collection Filter Chips */}
-              <div className="flex gap-1.5 overflow-x-auto pb-1 scrollbar-none border-t border-[var(--line)] pt-3">
-                {[
-                  { id: "all", label: "All Items", count: mediaItems.length },
-                  { id: "none", label: "Unassigned", count: mediaItems.filter((m) => !m.collectionId).length },
-                  ...collections.map((c) => ({ id: c.id, label: c.title, count: c.media?.length || 0 })),
-                ].map((f) => {
-                  const isActive = activeFilter === f.id;
-                  return (
+              {selectMode && (
+                <div className="flex items-center justify-between bg-[var(--bg)]/70 p-2.5 px-3.5 rounded-xl border border-[var(--line)]">
+                  <div className="flex items-center gap-3">
                     <button
-                      key={f.id}
-                      onClick={() => setActiveFilter(f.id)}
-                      className={`shrink-0 px-3 py-1.5 rounded-xl text-xs font-medium transition-all cursor-pointer border flex items-center gap-1.5 ${
-                        isActive
-                          ? "bg-[var(--rose)] text-white border-[var(--rose)] shadow-sm"
-                          : "bg-[var(--bg)]/70 text-[var(--cream)]/65 hover:text-[var(--cream)] border-[var(--line)]"
-                      }`}
+                      onClick={selectAllFiltered}
+                      className="text-xs font-semibold text-[var(--rose)] hover:underline cursor-pointer"
                     >
-                      <span>{f.label}</span>
-                      <span
-                        className={`text-[10px] px-1.5 py-0.2 rounded-full ${
-                          isActive ? "bg-white/25 text-white" : "bg-[var(--paper)] text-[var(--cream)]/50"
+                      Select All ({filteredMedia.length})
+                    </button>
+                    <span className="text-[var(--cream)]/20 text-xs">•</span>
+                    <button
+                      onClick={clearBulkSelection}
+                      className="text-xs text-[var(--cream)]/60 hover:text-[var(--cream)] cursor-pointer"
+                    >
+                      Deselect All
+                    </button>
+                  </div>
+                  <span className="text-xs font-semibold text-[var(--cream)]">
+                    {selectedMediaIds.size} selected
+                  </span>
+                </div>
+              )}
+
+              {/* Filter Chips: our-memories placed directly after Unassigned */}
+              <div className="flex gap-1.5 overflow-x-auto pb-1 scrollbar-none border-t border-[var(--line)] pt-3">
+                {(() => {
+                  const ourMemoriesCol = collections.find(
+                    (c) => c.title.toLowerCase() === "our-memories" || (c as any).slug === "our-memories"
+                  );
+                  const remainingCols = collections.filter(
+                    (c) => c.id !== ourMemoriesCol?.id
+                  );
+
+                  const chips = [
+                    { id: "all", label: "All Items", count: mediaItems.length },
+                    { id: "none", label: "Unassigned", count: mediaItems.filter((m) => !m.collectionId).length },
+                    ...(ourMemoriesCol
+                      ? [
+                          {
+                            id: ourMemoriesCol.id,
+                            label: ourMemoriesCol.title,
+                            count: ourMemoriesCol.media?.length || 0,
+                          },
+                        ]
+                      : []),
+                    ...remainingCols.map((c) => ({ id: c.id, label: c.title, count: c.media?.length || 0 })),
+                  ];
+
+                  return chips.map((f) => {
+                    const isActive = activeFilter === f.id;
+                    return (
+                      <button
+                        key={f.id}
+                        onClick={() => setActiveFilter(f.id)}
+                        className={`shrink-0 px-3 py-1.5 rounded-xl text-xs font-medium transition-all cursor-pointer border flex items-center gap-1.5 ${
+                          isActive
+                            ? "bg-[var(--rose)] text-white border-[var(--rose)] shadow-sm"
+                            : "bg-[var(--bg)]/70 text-[var(--cream)]/65 hover:text-[var(--cream)] border-[var(--line)]"
                         }`}
                       >
-                        {f.count}
-                      </span>
-                    </button>
-                  );
-                })}
+                        <span>{f.label}</span>
+                        <span
+                          className={`text-[10px] px-1.5 py-0.2 rounded-full ${
+                            isActive ? "bg-white/25 text-white" : "bg-[var(--paper)] text-[var(--cream)]/50"
+                          }`}
+                        >
+                          {f.count}
+                        </span>
+                      </button>
+                    );
+                  });
+                })()}
               </div>
             </div>
 
-            {/* Gallery Grid */}
             {!loaded ? (
               <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
                 {Array.from({ length: 8 }).map((_, i) => (
@@ -964,107 +1375,305 @@ export default function AdminDashboard() {
             ) : (
               <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
                 <AnimatePresence mode="popLayout">
-                  {filteredMedia.map((item) => (
-                    <motion.div
-                      key={item.id}
-                      layout
-                      initial={{ opacity: 0, scale: 0.96 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      exit={{ opacity: 0, scale: 0.96 }}
-                      className="group relative aspect-[3/4] rounded-2xl overflow-hidden border border-[var(--line)] bg-[var(--paper)] shadow-sm hover:shadow-lg hover:border-[var(--cream)]/25 transition-all flex flex-col justify-between"
-                    >
-                      {/* Media Display */}
-                      <div
-                        onClick={() => setInspectingMedia(item)}
-                        className="absolute inset-0 cursor-pointer overflow-hidden bg-black/40"
+                  {filteredMedia.map((item) => {
+                    const isSelected = selectedMediaIds.has(item.id);
+
+                    return (
+                      <motion.div
+                        key={item.id}
+                        layout
+                        initial={{ opacity: 0, scale: 0.96 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        exit={{ opacity: 0, scale: 0.96 }}
+                        onClick={() => {
+                          if (selectMode) toggleSelectMedia(item.id);
+                        }}
+                        className={`group relative aspect-[3/4] rounded-2xl overflow-hidden border transition-all flex flex-col justify-between ${
+                          isSelected
+                            ? "border-[var(--rose)] ring-3 ring-[var(--rose)]/40 shadow-lg shadow-[var(--rose)]/20"
+                            : "border-[var(--line)] bg-[var(--paper)] shadow-sm hover:shadow-lg hover:border-[var(--cream)]/25"
+                        } ${selectMode ? "cursor-pointer" : ""}`}
                       >
-                        {item.type === "VIDEO" ? (
-                          <video
-                            src={item.url}
-                            poster={item.thumbnailUrl || undefined}
-                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                            muted
-                            loop
-                            playsInline
-                          />
-                        ) : (
-                          <img
-                            src={item.url}
-                            alt={item.altText || "Media item"}
-                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                          />
-                        )}
-                      </div>
-
-                      {/* Dark Vignette Overlay */}
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-black/30 pointer-events-none opacity-80 group-hover:opacity-95 transition-opacity" />
-
-                      {/* Top Badges & Quick View Button */}
-                      <div className="relative z-10 p-2.5 flex items-start justify-between gap-2">
-                        {item.collection ? (
-                          <span
-                            onClick={() => setActiveFilter(item.collection!.id)}
-                            className="bg-[var(--paper)]/90 backdrop-blur-md border border-[var(--line)] text-[var(--rose)] text-[10px] font-semibold px-2 py-0.5 rounded-lg truncate max-w-[70%] shadow-sm hover:border-[var(--rose)] transition-colors cursor-pointer"
-                            title={`Filter by: ${item.collection.title}`}
-                          >
-                            {item.collection.title}
-                          </span>
-                        ) : <div />}
-
-                        <div className="flex items-center gap-1">
-                          {item.type === "VIDEO" && (
-                            <span className="p-1 rounded-md bg-black/60 backdrop-blur-md text-white border border-white/10 shadow-sm">
-                              <IconVideo className="w-3 h-3" />
-                            </span>
+                        <div
+                          onClick={(e) => {
+                            if (!selectMode) {
+                              setInspectingMedia(item);
+                            }
+                          }}
+                          className="absolute inset-0 cursor-pointer overflow-hidden bg-black/40"
+                        >
+                          {item.type === "VIDEO" ? (
+                            <video
+                              src={item.url}
+                              poster={item.thumbnailUrl || undefined}
+                              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                              muted
+                              loop
+                              playsInline
+                            />
+                          ) : (
+                            <img
+                              src={item.url}
+                              alt={item.altText || "Media item"}
+                              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                            />
                           )}
-                          <button
-                            onClick={() => setInspectingMedia(item)}
-                            className="p-1 rounded-md bg-black/60 hover:bg-black/80 backdrop-blur-md text-white/80 hover:text-white border border-white/10 transition-colors cursor-pointer opacity-0 group-hover:opacity-100"
-                            title="Inspect in Lightbox"
-                          >
-                            <IconEye className="w-3 h-3" />
-                          </button>
                         </div>
-                      </div>
 
-                      {/* Bottom Details & Persistent Mobile Action Bar */}
-                      <div className="relative z-10 p-3 pt-4 flex flex-col justify-end">
-                        <p className="text-xs font-medium text-[var(--cream)] truncate drop-shadow-sm">
-                          {item.caption || <span className="text-[var(--cream)]/40 italic">Untitled Asset</span>}
-                        </p>
-                        <span className="text-[10px] text-[var(--cream)]/50 mt-0.5">
-                          {new Date(item.createdAt).toLocaleDateString("en-US", {
-                            month: "short",
-                            day: "numeric",
-                            year: "numeric",
-                          })}
-                        </span>
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-black/30 pointer-events-none opacity-80 group-hover:opacity-95 transition-opacity" />
 
-                        <div className="grid grid-cols-2 gap-1.5 mt-2.5 pt-2 border-t border-white/15">
-                          <button
-                            onClick={() => setEditingMedia(item)}
-                            className="py-1 rounded-lg bg-[var(--paper)]/90 hover:bg-[var(--paper)] text-[var(--cream)] text-[11px] font-medium flex items-center justify-center gap-1 border border-[var(--line)] transition-colors cursor-pointer"
-                          >
-                            <IconEdit className="w-3 h-3" /> Edit
-                          </button>
-                          <button
-                            onClick={() => setConfirmDeleteMedia(item)}
-                            disabled={deletingId === item.id}
-                            className="py-1 rounded-lg bg-rose-500/20 hover:bg-rose-500/30 text-rose-300 text-[11px] font-medium flex items-center justify-center gap-1 border border-rose-500/30 transition-colors cursor-pointer"
-                          >
-                            {deletingId === item.id ? <IconSpinner className="w-3 h-3" /> : <IconTrash className="w-3 h-3" />} Delete
-                          </button>
+                        <div className="relative z-10 p-2.5 flex items-start justify-between gap-2">
+                          {selectMode ? (
+                            <div
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                toggleSelectMedia(item.id);
+                              }}
+                              className={`w-6 h-6 rounded-lg flex items-center justify-center transition-all cursor-pointer shadow-md ${
+                                isSelected
+                                  ? "bg-[var(--rose)] text-white"
+                                  : "bg-black/60 border border-white/40 text-transparent hover:border-white"
+                              }`}
+                            >
+                              <IconCheck className="w-3.5 h-3.5" />
+                            </div>
+                          ) : item.collection ? (
+                            <span
+                              onClick={() => setActiveFilter(item.collection!.id)}
+                              className="bg-[var(--paper)]/90 backdrop-blur-md border border-[var(--line)] text-[var(--rose)] text-[10px] font-semibold px-2 py-0.5 rounded-lg truncate max-w-[70%] shadow-sm hover:border-[var(--rose)] transition-colors cursor-pointer"
+                              title={`Filter by: ${item.collection.title}`}
+                            >
+                              {item.collection.title}
+                            </span>
+                          ) : (
+                            <div />
+                          )}
+
+                          <div className="flex items-center gap-1">
+                            {item.type === "VIDEO" && (
+                              <span className="p-1 rounded-md bg-black/60 backdrop-blur-md text-white border border-white/10 shadow-sm">
+                                <IconVideo className="w-3 h-3" />
+                              </span>
+                            )}
+                            {!selectMode && (
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setInspectingMedia(item);
+                                }}
+                                className="p-1 rounded-md bg-black/60 hover:bg-black/80 backdrop-blur-md text-white/80 hover:text-white border border-white/10 transition-colors cursor-pointer opacity-0 group-hover:opacity-100"
+                                title="Inspect in Lightbox"
+                              >
+                                <IconEye className="w-3 h-3" />
+                              </button>
+                            )}
+                          </div>
                         </div>
-                      </div>
-                    </motion.div>
-                  ))}
+
+                        <div className="relative z-10 p-3 pt-4 flex flex-col justify-end">
+                          <p className="text-xs font-medium text-[var(--cream)] truncate drop-shadow-sm">
+                            {item.caption || <span className="text-[var(--cream)]/40 italic">Untitled Asset</span>}
+                          </p>
+                          <span className="text-[10px] text-[var(--cream)]/50 mt-0.5">
+                            {new Date(item.createdAt).toLocaleDateString("en-US", {
+                              month: "short",
+                              day: "numeric",
+                              year: "numeric",
+                            })}
+                          </span>
+
+                          {!selectMode && (
+                            <div className="grid grid-cols-2 gap-1.5 mt-2.5 pt-2 border-t border-white/15">
+                              <button
+                                onClick={() => setEditingMedia(item)}
+                                className="py-1 rounded-lg bg-[var(--paper)]/90 hover:bg-[var(--paper)] text-[var(--cream)] text-[11px] font-medium flex items-center justify-center gap-1 border border-[var(--line)] transition-colors cursor-pointer"
+                              >
+                                <IconEdit className="w-3 h-3" /> Edit
+                              </button>
+                              <button
+                                onClick={() => setConfirmDeleteMedia(item)}
+                                disabled={deletingId === item.id}
+                                className="py-1 rounded-lg bg-rose-500/20 hover:bg-rose-500/30 text-rose-300 text-[11px] font-medium flex items-center justify-center gap-1 border border-rose-500/30 transition-colors cursor-pointer"
+                              >
+                                {deletingId === item.id ? <IconSpinner className="w-3.5 h-3.5" /> : <IconTrash className="w-3.5 h-3.5" />} Delete
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      </motion.div>
+                    );
+                  })}
                 </AnimatePresence>
               </div>
             )}
+
+            <AnimatePresence>
+              {selectMode && selectedMediaIds.size > 0 && (
+                <motion.div
+                  initial={{ opacity: 0, y: 40 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: 40 }}
+                  className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 bg-[var(--paper)] border border-[var(--line)] shadow-2xl p-3 px-6 rounded-2xl flex items-center gap-4 text-sm"
+                >
+                  <span className="text-[var(--cream)] font-medium">
+                    <strong className="text-[var(--rose)]">{selectedMediaIds.size}</strong> selected
+                  </span>
+
+                  <button
+                    onClick={() => setShowBulkDeleteModal(true)}
+                    className="inline-flex items-center gap-2 py-2 px-4 rounded-xl bg-rose-500 hover:bg-rose-600 text-white font-medium text-xs shadow-md transition-all active:scale-[0.98] cursor-pointer"
+                  >
+                    <IconTrash className="w-4 h-4" />
+                    <span>Delete Selected</span>
+                  </button>
+
+                  <button
+                    onClick={clearBulkSelection}
+                    className="text-xs text-[var(--cream)]/60 hover:text-[var(--cream)]"
+                  >
+                    Cancel
+                  </button>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </motion.div>
         )}
 
-        {/* Lightbox / Media Inspector Modal */}
+        {/* Batch Review Modal */}
+        <AnimatePresence>
+          {showBatchModal && (
+            <Modal
+              title={`Batch Review (${files.length} items)`}
+              maxWidth="max-w-2xl"
+              onClose={() => setShowBatchModal(false)}
+            >
+              <div className="space-y-4">
+                <div className="flex items-center justify-between text-xs text-[var(--cream)]/60 pb-2 border-b border-[var(--line)]">
+                  <span className="font-serif italic text-rose-300/80">
+                    Total size: {(files.reduce((acc, f) => acc + f.size, 0) / (1024 * 1024)).toFixed(2)} MB
+                  </span>
+                  <button
+                    type="button"
+                    onClick={clearSelectedFiles}
+                    className="text-xs font-semibold text-rose-400 hover:text-rose-300 hover:underline cursor-pointer"
+                  >
+                    Clear entire batch
+                  </button>
+                </div>
+
+                <div className="max-h-[60vh] overflow-y-auto space-y-2.5 pr-1 scrollbar-none">
+                  {files.map((file, idx) => (
+                    <div
+                      key={`${file.name}-${idx}`}
+                      className="flex items-center justify-between p-2.5 sm:p-3 rounded-2xl bg-[var(--bg)]/70 border border-[var(--line)] hover:border-[var(--rose)]/60 hover:bg-[var(--bg)] transition-all gap-3 group"
+                    >
+                      <div
+                        onClick={() => setInspectingFileIndex(idx)}
+                        className="flex items-center gap-3.5 min-w-0 flex-1 cursor-pointer"
+                      >
+                        <BatchFileThumbnail file={file} />
+
+                        <div className="min-w-0">
+                          <p className="text-xs font-medium text-[var(--cream)] group-hover:text-[var(--rose)] transition-colors truncate">
+                            {file.name}
+                          </p>
+                          <p className="text-[11px] text-[var(--cream)]/45 mt-1 font-serif italic">
+                            {(file.size / (1024 * 1024)).toFixed(2)} MB •{" "}
+                            {file.type.startsWith("video/") ? "Video clip" : "Photo"}
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-1 shrink-0">
+                        <button
+                          type="button"
+                          onClick={() => setInspectingFileIndex(idx)}
+                          className="p-2 rounded-xl text-[var(--cream)]/60 hover:text-[var(--cream)] hover:bg-[var(--paper)] transition-all cursor-pointer"
+                          title="View full preview"
+                        >
+                          <IconEye className="w-4 h-4" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            removeFileFromBatch(idx);
+                          }}
+                          className="p-2 rounded-xl text-rose-400 hover:text-white hover:bg-rose-500/20 border border-transparent hover:border-rose-500/30 transition-all cursor-pointer"
+                          title="Remove photo from batch"
+                        >
+                          <IconTrash className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="flex justify-end gap-2 pt-3 border-t border-[var(--line)]">
+                  <PrimaryButton onClick={() => setShowBatchModal(false)}>
+                    Done Reviewing ({files.length})
+                  </PrimaryButton>
+                </div>
+              </div>
+            </Modal>
+          )}
+        </AnimatePresence>
+
+        {/* Full-Size Interactive Single File Lightbox Preview */}
+        <AnimatePresence>
+          {inspectingFileIndex !== null && files[inspectingFileIndex] && (
+            <SingleFilePreviewModal
+              file={files[inspectingFileIndex]}
+              index={inspectingFileIndex}
+              total={files.length}
+              onClose={() => setInspectingFileIndex(null)}
+              onDelete={() => removeFileFromBatch(inspectingFileIndex)}
+              onNext={() => {
+                setInspectingFileIndex((prev) =>
+                  prev !== null && prev < files.length - 1 ? prev + 1 : 0
+                );
+              }}
+              onPrev={() => {
+                setInspectingFileIndex((prev) =>
+                  prev !== null && prev > 0 ? prev - 1 : files.length - 1
+                );
+              }}
+            />
+          )}
+        </AnimatePresence>
+
+        {/* Bulk Delete Confirmation Modal */}
+        <AnimatePresence>
+          {showBulkDeleteModal && (
+            <Modal title="Delete Selected Media?" onClose={() => !isBulkDeleting && setShowBulkDeleteModal(false)}>
+              <div className="space-y-4">
+                <p className="text-sm text-[var(--cream)]/75 leading-relaxed">
+                  Are you sure you want to permanently delete{" "}
+                  <strong className="text-rose-400 font-semibold">{selectedMediaIds.size} selected items</strong>? This action cannot be undone.
+                </p>
+
+                <div className="flex justify-end gap-2 pt-2">
+                  <GhostButton
+                    onClick={() => setShowBulkDeleteModal(false)}
+                    disabled={isBulkDeleting}
+                  >
+                    Cancel
+                  </GhostButton>
+                  <DangerButton
+                    onClick={handleBulkDelete}
+                    disabled={isBulkDeleting}
+                    className="flex items-center gap-2"
+                  >
+                    {isBulkDeleting ? <IconSpinner className="w-3.5 h-3.5" /> : <IconTrash className="w-3.5 h-3.5" />}
+                    <span>{isBulkDeleting ? "Deleting..." : `Delete ${selectedMediaIds.size} Items`}</span>
+                  </DangerButton>
+                </div>
+              </div>
+            </Modal>
+          )}
+        </AnimatePresence>
+
+        {/* Lightbox Modal */}
         <AnimatePresence>
           {inspectingMedia && (
             <Modal
@@ -1234,7 +1843,7 @@ export default function AdminDashboard() {
           )}
         </AnimatePresence>
 
-        {/* Confirm Delete Media Modal */}
+        {/* Confirm Delete Single Media Modal */}
         <AnimatePresence>
           {confirmDeleteMedia && (
             <Modal title="Delete Media Asset?" onClose={() => setConfirmDeleteMedia(null)}>
