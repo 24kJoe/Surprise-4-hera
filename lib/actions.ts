@@ -138,6 +138,77 @@ export async function deleteCollectionAction(collectionId: string) {
   }
 }
 
+// --- Direct Cloudinary Signature & Direct Save Actions ---
+
+export async function getCloudinarySignatureAction() {
+  try {
+    const config = cloudinary.config();
+    const timestamp = Math.round(new Date().getTime() / 1000);
+    const folder = "surprise_app";
+
+    if (!config.api_secret || !config.api_key || !config.cloud_name) {
+      throw new Error("Missing Cloudinary environment configuration");
+    }
+
+    const signature = cloudinary.utils.api_sign_request(
+      { timestamp, folder },
+      config.api_secret
+    );
+
+    return {
+      success: true,
+      timestamp,
+      signature,
+      apiKey: config.api_key,
+      cloudName: config.cloud_name,
+      folder,
+    };
+  } catch (error: any) {
+    console.error("Error generating signature:", error);
+    return { success: false, error: error.message || "Could not sign request" };
+  }
+}
+
+export async function saveDirectMediaAction(data: {
+  url: string;
+  publicId: string;
+  type: "IMAGE" | "VIDEO";
+  width?: number | null;
+  height?: number | null;
+  size?: number | null;
+  duration?: number | null;
+  mimeType?: string | null;
+  caption?: string | null;
+  altText?: string | null;
+  collectionId?: string | null;
+}) {
+  try {
+    const mediaType = data.type === "VIDEO" ? MediaType.VIDEO : MediaType.IMAGE;
+
+    const savedMedia = await prisma.mediaItem.create({
+      data: {
+        type: mediaType,
+        url: data.url,
+        publicId: data.publicId,
+        width: data.width || null,
+        height: data.height || null,
+        size: data.size || null,
+        duration: data.duration || null,
+        mimeType: data.mimeType || null,
+        altText: data.altText || null,
+        caption: data.caption || null,
+        collectionId: data.collectionId && data.collectionId !== "none" ? data.collectionId : null,
+      },
+    });
+
+    revalidatePath("/admin");
+    return { success: true, data: savedMedia };
+  } catch (error: any) {
+    console.error("Error saving direct media item:", error);
+    return { success: false, error: error.message || "Failed to save media item" };
+  }
+}
+
 // --- Media Actions ---
 
 export async function getMediaItems() {

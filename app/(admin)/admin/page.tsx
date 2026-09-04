@@ -12,6 +12,8 @@ import {
   createCollectionAction,
   updateCollectionAction,
   deleteCollectionAction,
+  getCloudinarySignatureAction,
+  saveDirectMediaAction,
 } from "@/lib/actions";
 
 export type MediaType = "IMAGE" | "VIDEO";
@@ -172,7 +174,7 @@ function IconSpinner(props: React.SVGProps<SVGSVGElement>) {
 }
 
 /* ---------------------------------------------------------------------- */
-/*  Android-Optimized Native Hardware Compression Engine                  */
+/*  Native Hardware Image Compression Engine                              */
 /* ---------------------------------------------------------------------- */
 
 type QualityPreset = "ultra" | "high" | "compact";
@@ -195,7 +197,7 @@ const QUALITY_PRESETS: Record<QualityPreset, PresetConfig> = {
     label: "High / 2K (Recommended)",
     maxDimension: 2560,
     quality: 0.88,
-    description: "Crisp clarity, lightning fast on Android (~900KB)",
+    description: "Crisp clarity, lightning fast (~900KB)",
   },
   compact: {
     label: "Compact / 1080p",
@@ -205,10 +207,6 @@ const QUALITY_PRESETS: Record<QualityPreset, PresetConfig> = {
   },
 };
 
-/**
- * Uses Android Chrome's C++ createImageBitmap where available to avoid
- * memory pressure on the V8 engine heap and prevent Chrome from crashing.
- */
 async function compressAndroidSafe(file: File, preset: QualityPreset): Promise<File> {
   if (!file.type.startsWith("image/")) return file;
 
@@ -219,7 +217,6 @@ async function compressAndroidSafe(file: File, preset: QualityPreset): Promise<F
     if ("createImageBitmap" in window) {
       bitmap = await createImageBitmap(file);
     } else {
-      // Fallback
       return file;
     }
 
@@ -245,12 +242,11 @@ async function compressAndroidSafe(file: File, preset: QualityPreset): Promise<F
     ctx.imageSmoothingEnabled = true;
     ctx.imageSmoothingQuality = "high";
     ctx.drawImage(bitmap, 0, 0, width, height);
-    bitmap.close(); // Immediately release hardware memory
+    bitmap.close();
 
     return new Promise((resolve) => {
       canvas.toBlob(
         (blob) => {
-          // Immediately wipe canvas memory buffer
           canvas.width = 0;
           canvas.height = 0;
 
@@ -269,9 +265,66 @@ async function compressAndroidSafe(file: File, preset: QualityPreset): Promise<F
       );
     });
   } catch {
-    // Return original if device fails bitmap creation
     return file;
   }
+}
+
+/* ---------------------------------------------------------------------- */
+/*  Direct Cloudinary Upload (XHR with Real-Time Progress)                */
+/* ---------------------------------------------------------------------- */
+
+function directUploadToCloudinary(
+  file: File,
+  signData: { timestamp: number; signature: string; apiKey: string; cloudName: string; folder: string },
+  onProgress: (percent: number) => void
+): Promise<{
+  secure_url: string;
+  public_id: string;
+  width?: number;
+  height?: number;
+  bytes?: number;
+  duration?: number;
+  format?: string;
+}> {
+  return new Promise((resolve, reject) => {
+    const isVideo = file.type.startsWith("video/");
+    const endpoint = `https://api.cloudinary.com/v1_1/${signData.cloudName}/${isVideo ? "video" : "image"}/upload`;
+
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("api_key", signData.apiKey);
+    formData.append("timestamp", String(signData.timestamp));
+    formData.append("signature", signData.signature);
+    formData.append("folder", signData.folder);
+
+    const xhr = new XMLHttpRequest();
+    xhr.open("POST", endpoint);
+    xhr.timeout = 300000; // 5-minute timeout for large video files
+
+    xhr.upload.onprogress = (event) => {
+      if (event.lengthComputable) {
+        const percent = Math.round((event.loaded / event.total) * 100);
+        onProgress(percent);
+      }
+    };
+
+    xhr.onload = () => {
+      if (xhr.status >= 200 && xhr.status < 300) {
+        try {
+          const res = JSON.parse(xhr.responseText);
+          resolve(res);
+        } catch {
+          reject(new Error("Invalid response received from Cloudinary"));
+        }
+      } else {
+        reject(new Error(`Cloudinary rejected file with status code ${xhr.status}`));
+      }
+    };
+
+    xhr.ontimeout = () => reject(new Error("Connection timed out. Check network stability."));
+    xhr.onerror = () => reject(new Error("Network error during direct upload"));
+    xhr.send(formData);
+  });
 }
 
 /* ---------------------------------------------------------------------- */
@@ -452,7 +505,7 @@ function BatchFileThumbnail({ file }: { file: File }) {
 }
 
 /* ---------------------------------------------------------------------- */
-/*  Lightbox Component for Batch Review                                   */
+/*  Full Single-File Lightbox Preview Component                           */
 /* ---------------------------------------------------------------------- */
 
 function SingleFilePreviewModal({
@@ -518,7 +571,7 @@ function SingleFilePreviewModal({
 }
 
 /* ---------------------------------------------------------------------- */
-/*  Main Dashboard Component                                              */
+/*  Main Component                                                        */
 /* ---------------------------------------------------------------------- */
 
 export default function AdminDashboard() {
@@ -532,7 +585,7 @@ export default function AdminDashboard() {
   const [searchQuery, setSearchQuery] = useState("");
   const [inspectingMedia, setInspectingMedia] = useState<MediaItem | null>(null);
 
-  // Multi-upload state
+  // Upload State
   const [files, setFiles] = useState<File[]>([]);
   const [singleCoverUrl, setSingleCoverUrl] = useState<string | null>(null);
   const [caption, setCaption] = useState("");
@@ -542,34 +595,34 @@ export default function AdminDashboard() {
   const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Batch Review Modal & Single File Inspection
+  // Batch Review Modal & File Inspection
   const [showBatchModal, setShowBatchModal] = useState(false);
   const [inspectingFileIndex, setInspectingFileIndex] = useState<number | null>(null);
 
-  // Batch upload progress state
+  // Progress State
   const [uploadProgress, setUploadProgress] = useState<{ current: number; total: number; statusText: string } | null>(null);
   const [isBatchUploading, setIsBatchUploading] = useState(false);
   const abortUploadRef = useRef(false);
 
-  // Multi-select state (Gallery)
+  // Multi-select state
   const [selectMode, setSelectMode] = useState(false);
   const [selectedMediaIds, setSelectedMediaIds] = useState<Set<string>>(new Set());
   const [isBulkDeleting, setIsBulkDeleting] = useState(false);
   const [showBulkDeleteModal, setShowBulkDeleteModal] = useState(false);
 
-  // Collection form state
+  // Collection State
   const [newColTitle, setNewColTitle] = useState("");
   const [newColDesc, setNewColDesc] = useState("");
   const [colError, setColError] = useState("");
   const [colSuccess, setColSuccess] = useState("");
 
-  // Edit Modals state
+  // Edit Modals
   const [editingCollection, setEditingCollection] = useState<CollectionItem | null>(null);
   const [editingMedia, setEditingMedia] = useState<MediaItem | null>(null);
   const [confirmDeleteCollection, setConfirmDeleteCollection] = useState<CollectionItem | null>(null);
   const [confirmDeleteMedia, setConfirmDeleteMedia] = useState<MediaItem | null>(null);
 
-  // Status & Filter state
+  // Status & Filters
   const [errorMsg, setErrorMsg] = useState("");
   const [successMsg, setSuccessMsg] = useState("");
   const [activeFilter, setActiveFilter] = useState<string>("all");
@@ -732,7 +785,7 @@ export default function AdminDashboard() {
     }
   };
 
-  /* Single-by-Single Queue specifically designed to prevent Android Chrome LMK Drops */
+  /* Hybrid Direct-to-Cloudinary Video & Android Hardware Safe Photo Pipeline */
   const handleUpload = async (e: React.FormEvent) => {
     e.preventDefault();
     if (files.length === 0) {
@@ -748,7 +801,7 @@ export default function AdminDashboard() {
     abortUploadRef.current = false;
 
     const total = files.length;
-    setUploadProgress({ current: 0, total, statusText: "Preparing mobile upload..." });
+    setUploadProgress({ current: 0, total, statusText: "Preparing upload..." });
 
     let completed = 0;
     let failed = 0;
@@ -757,39 +810,87 @@ export default function AdminDashboard() {
       if (abortUploadRef.current) break;
 
       const rawFile = files[i];
-      setUploadProgress({
-        current: i,
-        total,
-        statusText: `Optimizing ${i + 1}/${total}: ${rawFile.name}...`,
-      });
+      const isVideo = rawFile.type.startsWith("video/");
 
       try {
-        // Native Android C++ hardware compression
-        const readyFile = await compressAndroidSafe(rawFile, qualityPreset);
+        if (isVideo) {
+          // Direct to Cloudinary: Bypasses server action payload limits & timeouts
+          setUploadProgress({
+            current: i,
+            total,
+            statusText: `Signing video ${i + 1}/${total}...`,
+          });
 
-        setUploadProgress({
-          current: i,
-          total,
-          statusText: `Uploading ${i + 1}/${total}: ${(readyFile.size / (1024 * 1024)).toFixed(1)} MB...`,
-        });
+          const signResult = await getCloudinarySignatureAction();
+          if (!signResult.success || !signResult.signature) {
+            throw new Error(signResult.error || "Failed to generate upload signature");
+          }
 
-        const formData = new FormData();
-        formData.append("files", readyFile);
-        formData.append("caption", caption);
-        formData.append("altText", altText);
-        formData.append("collectionId", selectedCollectionId);
+          const uploadResult = await directUploadToCloudinary(
+            rawFile,
+            signResult as any,
+            (percent) => {
+              setUploadProgress({
+                current: i,
+                total,
+                statusText: `Uploading video ${i + 1}/${total}: ${percent}%`,
+              });
+            }
+          );
 
-        // Upload exactly 1 file per Server Action call to eliminate TCP and Memory drops
-        const res = await uploadMediaAction(formData);
-        if (!res.success) {
-          failed++;
-          console.error("Upload failed for:", rawFile.name, res.error);
-        } else {
+          // Save direct record to Prisma
+          const saveRes = await saveDirectMediaAction({
+            url: uploadResult.secure_url,
+            publicId: uploadResult.public_id,
+            type: "VIDEO",
+            width: uploadResult.width,
+            height: uploadResult.height,
+            size: uploadResult.bytes || rawFile.size,
+            duration: uploadResult.duration,
+            mimeType: rawFile.type || `${isVideo ? "video" : "image"}/${uploadResult.format}`,
+            caption,
+            altText,
+            collectionId: selectedCollectionId,
+          });
+
+          if (!saveRes.success) {
+            throw new Error(saveRes.error || "Failed to record video in database");
+          }
+
           completed++;
+        } else {
+          // Photo Pipeline: Android hardware compression + Server Action upload
+          setUploadProgress({
+            current: i,
+            total,
+            statusText: `Optimizing photo ${i + 1}/${total}...`,
+          });
+
+          const readyFile = await compressAndroidSafe(rawFile, qualityPreset);
+
+          setUploadProgress({
+            current: i,
+            total,
+            statusText: `Uploading photo ${i + 1}/${total} (${(readyFile.size / (1024 * 1024)).toFixed(1)} MB)...`,
+          });
+
+          const formData = new FormData();
+          formData.append("files", readyFile);
+          formData.append("caption", caption);
+          formData.append("altText", altText);
+          formData.append("collectionId", selectedCollectionId);
+
+          const res = await uploadMediaAction(formData);
+          if (!res.success) {
+            failed++;
+            console.error("Upload failed for photo:", rawFile.name, res.error);
+          } else {
+            completed++;
+          }
         }
-      } catch (err) {
+      } catch (err: any) {
         failed++;
-        console.error("Upload error for:", rawFile.name, err);
+        console.error("Upload error for file:", rawFile.name, err);
       }
 
       setUploadProgress({
@@ -803,9 +904,9 @@ export default function AdminDashboard() {
     setUploadProgress(null);
 
     if (failed > 0) {
-      setErrorMsg(`Uploaded ${completed} item(s), but ${failed} failed to upload.`);
+      setErrorMsg(`Uploaded ${completed} item(s), but ${failed} item(s) failed.`);
     } else {
-      setSuccessMsg(`All ${completed} item${completed > 1 ? "s" : ""} uploaded smoothly!`);
+      setSuccessMsg(`All ${completed} item${completed > 1 ? "s" : ""} uploaded successfully!`);
       clearSelectedFiles();
       setCaption("");
       setAltText("");
@@ -1168,7 +1269,6 @@ export default function AdminDashboard() {
                           </select>
                         </Field>
 
-                        {/* Android Compression Preset Selector */}
                         <div>
                           <label className="flex items-center gap-1.5 text-[11px] font-semibold tracking-wider text-[var(--gold-soft)] uppercase mb-1.5">
                             <IconSliders className="w-3 h-3" />
@@ -1226,7 +1326,6 @@ export default function AdminDashboard() {
                         </Field>
                       </div>
 
-                      {/* Real-time Progress Bar */}
                       {isBatchUploading && uploadProgress && (
                         <div className="bg-[var(--bg)]/80 p-3.5 rounded-2xl border border-[var(--line)] space-y-2">
                           <div className="flex items-center justify-between text-xs font-medium">
@@ -1321,7 +1420,7 @@ export default function AdminDashboard() {
               </AnimatePresence>
             </section>
 
-            {/* Albums & Collections Grid: our-memories pinned first & locked */}
+            {/* Collections Grid: our-memories sorted to the first spot & undeletable */}
             {collections.length > 0 && (
               <section className="space-y-4">
                 <h2 className="font-serif text-lg font-semibold text-[var(--cream)] flex items-center gap-2">
@@ -1396,7 +1495,7 @@ export default function AdminDashboard() {
           </motion.div>
         )}
 
-        {/* View 2: Enhanced Media Gallery Section */}
+        {/* View 2: Gallery */}
         {currentView === "gallery" && (
           <motion.div
             initial={{ opacity: 0, y: 10 }}
@@ -1794,7 +1893,7 @@ export default function AdminDashboard() {
           )}
         </AnimatePresence>
 
-        {/* Full-Size Interactive Single File Lightbox Preview */}
+        {/* Lightbox Single File Modal */}
         <AnimatePresence>
           {inspectingFileIndex !== null && files[inspectingFileIndex] && (
             <SingleFilePreviewModal
@@ -1817,7 +1916,7 @@ export default function AdminDashboard() {
           )}
         </AnimatePresence>
 
-        {/* Bulk Delete Confirmation Modal */}
+        {/* Bulk Delete Modal */}
         <AnimatePresence>
           {showBulkDeleteModal && (
             <Modal title="Delete Selected Media?" onClose={() => !isBulkDeleting && setShowBulkDeleteModal(false)}>
@@ -1848,7 +1947,7 @@ export default function AdminDashboard() {
           )}
         </AnimatePresence>
 
-        {/* Lightbox Modal */}
+        {/* Lightbox Media Modal */}
         <AnimatePresence>
           {inspectingMedia && (
             <Modal
@@ -2018,7 +2117,7 @@ export default function AdminDashboard() {
           )}
         </AnimatePresence>
 
-        {/* Confirm Delete Single Media Modal */}
+        {/* Confirm Delete Media Modal */}
         <AnimatePresence>
           {confirmDeleteMedia && (
             <Modal title="Delete Media Asset?" onClose={() => setConfirmDeleteMedia(null)}>
