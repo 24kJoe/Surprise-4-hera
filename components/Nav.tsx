@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
+import { usePathname, useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { twMerge } from "tailwind-merge";
 import { Settings, Menu, X } from "lucide-react";
@@ -14,6 +15,10 @@ interface NavProps {
 export default function Nav({ className }: NavProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
+
+  const pathname = usePathname();
+  const router = useRouter();
+  const isGallerySubpage = pathname?.startsWith("/gallery");
 
   const links = [
     { href: "/#letter", id: "#letter", label: "Letter" },
@@ -30,10 +35,16 @@ export default function Nav({ className }: NavProps) {
   const [activeTab, setActiveTab] = useState("#letter");
 
   useEffect(() => {
+    // If we are browsing an individual gallery album, highlight Gallery
+    if (isGallerySubpage) {
+      setActiveTab("#gallery");
+      return;
+    }
+
     if (scrolledActiveSection) {
       setActiveTab(`#${scrolledActiveSection}`);
     }
-  }, [scrolledActiveSection]);
+  }, [scrolledActiveSection, isGallerySubpage]);
 
   // Shrink the nav once the page is scrolled a bit — never hide it entirely.
   useEffect(() => {
@@ -58,22 +69,26 @@ export default function Nav({ className }: NavProps) {
 
   const scrollResetTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const handleLinkClick = (id: string, e?: React.MouseEvent) => {
+  const handleLinkClick = (link: { href: string; id: string }, e?: React.MouseEvent) => {
+    // If we're on a subpage like /gallery/[slug], let normal navigation take us back home
+    if (pathname !== "/") {
+      setIsOpen(false);
+      router.push(link.href);
+      return;
+    }
+
     e?.preventDefault();
-    setActiveTab(id);
+    setActiveTab(link.id);
 
     const wasOpenOnMobile = isOpen;
     setIsOpen(false);
 
-    const cleanId = id.replace("#", "");
+    const cleanId = link.id.replace("#", "");
 
     const performScroll = () => {
       const el = document.getElementById(cleanId);
       if (!el) return;
 
-      // Temporarily disable the global CSS smooth-scroll so it doesn't fight
-      // with the JS-driven smooth scroll below (this conflict is what was
-      // silently cancelling the scroll on mobile Safari).
       const html = document.documentElement;
       const prevScrollBehavior = html.style.scrollBehavior;
       html.style.scrollBehavior = "auto";
@@ -89,14 +104,12 @@ export default function Nav({ className }: NavProps) {
     };
 
     if (wasOpenOnMobile) {
-      // Let the mobile dropdown finish collapsing and layout settle first,
-      // then scroll — doing both at once was part of what broke on mobile.
       requestAnimationFrame(() => requestAnimationFrame(performScroll));
     } else {
       performScroll();
     }
 
-    window.history.pushState(null, "", `/${id}`);
+    window.history.pushState(null, "", `/${link.id}`);
   };
 
   return (
@@ -128,7 +141,7 @@ export default function Nav({ className }: NavProps) {
         <div className="flex items-center gap-8">
           <Link
             href="/#letter"
-            onClick={(e) => handleLinkClick("#letter", e)}
+            onClick={(e) => handleLinkClick({ href: "/#letter", id: "#letter" }, e)}
             className="font-serif text-lg md:text-xl text-[#4a2036] tracking-wider flex items-center gap-2 group shrink-0"
           >
             <span
@@ -162,7 +175,7 @@ export default function Nav({ className }: NavProps) {
                 <a
                   key={link.id}
                   href={link.href}
-                  onClick={(e) => handleLinkClick(link.id, e)}
+                  onClick={(e) => handleLinkClick(link, e)}
                   className={twMerge(
                     "relative text-xs uppercase tracking-widest px-4 py-2 rounded-full transition-colors duration-200 z-10 font-medium",
                     isActive
@@ -231,7 +244,7 @@ export default function Nav({ className }: NavProps) {
                 <a
                   key={link.id}
                   href={link.href}
-                  onClick={(e) => handleLinkClick(link.id, e)}
+                  onClick={(e) => handleLinkClick(link, e)}
                   className={twMerge(
                     "text-xs uppercase tracking-widest px-4 py-3 rounded-xl transition-all font-medium flex items-center justify-between border",
                     isActive
