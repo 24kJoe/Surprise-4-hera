@@ -14,6 +14,7 @@ import {
   deleteCollectionAction,
   getCloudinarySignatureAction,
   saveDirectMediaAction,
+  checkDuplicateMediaAction,
 } from "@/lib/actions";
 
 export type MediaType = "IMAGE" | "VIDEO";
@@ -37,6 +38,7 @@ interface MediaItem {
   collectionId?: string | null;
   collection?: CollectionItem | null;
   createdAt: Date;
+  size?: number | null;
 }
 
 /* ---------------------------------------------------------------------- */
@@ -118,6 +120,14 @@ function IconAlert(props: React.SVGProps<SVGSVGElement>) {
     </svg>
   );
 }
+function IconCopy(props: React.SVGProps<SVGSVGElement>) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" {...props}>
+      <rect width="13" height="13" x="9" y="9" rx="2" ry="2" {...iconStroke} />
+      <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" {...iconStroke} />
+    </svg>
+  );
+}
 function IconFolder(props: React.SVGProps<SVGSVGElement>) {
   return (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" {...props}>
@@ -191,13 +201,13 @@ const QUALITY_PRESETS: Record<QualityPreset, PresetConfig> = {
     label: "Ultra / 4K",
     maxDimension: 3840,
     quality: 0.94,
-    description: "Maximum resolution (~2MB)",
+    description: "Original uncompressed clarity (~2MB+)",
   },
   high: {
     label: "High / 2K (Recommended)",
     maxDimension: 2560,
     quality: 0.88,
-    description: "Crisp clarity, lightning fast (~900KB)",
+    description: "Crisp clarity, fast mobile upload (~900KB)",
   },
   compact: {
     label: "Compact / 1080p",
@@ -210,6 +220,10 @@ const QUALITY_PRESETS: Record<QualityPreset, PresetConfig> = {
 async function compressAndroidSafe(file: File, preset: QualityPreset): Promise<File> {
   if (!file.type.startsWith("image/")) return file;
 
+  if (preset === "ultra") {
+    return file;
+  }
+
   const config = QUALITY_PRESETS[preset];
 
   try {
@@ -221,12 +235,19 @@ async function compressAndroidSafe(file: File, preset: QualityPreset): Promise<F
     }
 
     let { width, height } = bitmap;
+    const needsResize = width > config.maxDimension || height > config.maxDimension;
+
     if (width > height && width > config.maxDimension) {
       height = Math.round((height * config.maxDimension) / width);
       width = config.maxDimension;
     } else if (height > config.maxDimension) {
       width = Math.round((width * config.maxDimension) / height);
       height = config.maxDimension;
+    }
+
+    if (!needsResize) {
+      bitmap.close();
+      return file;
     }
 
     const canvas = document.createElement("canvas");
@@ -250,10 +271,11 @@ async function compressAndroidSafe(file: File, preset: QualityPreset): Promise<F
           canvas.width = 0;
           canvas.height = 0;
 
-          if (!blob || blob.size >= file.size) {
+          if (!blob) {
             resolve(file);
             return;
           }
+
           const compressed = new File([blob], file.name.replace(/\.[^/.]+$/, ".jpg"), {
             type: "image/jpeg",
             lastModified: Date.now(),
@@ -270,7 +292,7 @@ async function compressAndroidSafe(file: File, preset: QualityPreset): Promise<F
 }
 
 /* ---------------------------------------------------------------------- */
-/*  Direct Cloudinary Upload (XHR with Real-Time Progress)                */
+/*  Direct Cloudinary Upload                                              */
 /* ---------------------------------------------------------------------- */
 
 function directUploadToCloudinary(
@@ -299,7 +321,7 @@ function directUploadToCloudinary(
 
     const xhr = new XMLHttpRequest();
     xhr.open("POST", endpoint);
-    xhr.timeout = 300000; // 5-minute timeout for large video files
+    xhr.timeout = 300000;
 
     xhr.upload.onprogress = (event) => {
       if (event.lengthComputable) {
@@ -458,7 +480,7 @@ function Modal({
 }
 
 /* ---------------------------------------------------------------------- */
-/*  Memory-Safe Batch Thumbnail Loader                                    */
+/*  Batch Thumbnail Loader                                                */
 /* ---------------------------------------------------------------------- */
 
 function BatchFileThumbnail({ file }: { file: File }) {
@@ -505,7 +527,7 @@ function BatchFileThumbnail({ file }: { file: File }) {
 }
 
 /* ---------------------------------------------------------------------- */
-/*  Full Single-File Lightbox Preview Component                           */
+/*  Single-File Lightbox Preview Component                                */
 /* ---------------------------------------------------------------------- */
 
 function SingleFilePreviewModal({
@@ -595,6 +617,9 @@ export default function AdminDashboard() {
   const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // Duplicate Tracking
+  const [duplicateNames, setDuplicateNames] = useState<Set<string>>(new Set());
+
   // Batch Review Modal & File Inspection
   const [showBatchModal, setShowBatchModal] = useState(false);
   const [inspectingFileIndex, setInspectingFileIndex] = useState<number | null>(null);
@@ -654,12 +679,44 @@ export default function AdminDashboard() {
     };
   }, [singleCoverUrl]);
 
+  // Check files for duplicates against database and batch
+  const detectDuplicates = useCallback(
+    async (fileList: File[]) => {
+      const dupes = new Set<string>();
+
+      // 1. In-batch duplicates
+      const seen = new Set<string>();
+      fileList.forEach((file) => {
+        const key = `${file.name}-${file.size}`;
+        if (seen.has(key)) {
+          dupes.add(file.name);
+        } else {
+          seen.add(key);
+        }
+      });
+
+      // 2. Existing database duplicates
+      if (fileList.length > 0) {
+        const checkRes = await checkDuplicateMediaAction(
+          fileList.map((f) => ({ name: f.name, size: f.size }))
+        );
+        if (checkRes.success && checkRes.duplicates) {
+          checkRes.duplicates.forEach((name) => dupes.add(name));
+        }
+      }
+
+      setDuplicateNames(dupes);
+    },
+    []
+  );
+
   const clearSelectedFiles = () => {
     if (singleCoverUrl) {
       URL.revokeObjectURL(singleCoverUrl);
       setSingleCoverUrl(null);
     }
     setFiles([]);
+    setDuplicateNames(new Set());
     setShowBatchModal(false);
     setInspectingFileIndex(null);
     if (fileInputRef.current) fileInputRef.current.value = "";
@@ -668,6 +725,7 @@ export default function AdminDashboard() {
   const removeFileFromBatch = (indexToRemove: number) => {
     const updated = files.filter((_, idx) => idx !== indexToRemove);
     setFiles(updated);
+    detectDuplicates(updated);
 
     if (inspectingFileIndex !== null) {
       if (updated.length === 0) {
@@ -694,6 +752,26 @@ export default function AdminDashboard() {
     }
   };
 
+  const removeAllDuplicates = () => {
+    const uniqueFiles: File[] = [];
+    const seen = new Set<string>();
+
+    files.forEach((file) => {
+      const key = `${file.name}-${file.size}`;
+      const isDbDupe = duplicateNames.has(file.name);
+      if (!seen.has(key) && !isDbDupe) {
+        seen.add(key);
+        uniqueFiles.push(file);
+      }
+    });
+
+    setFiles(uniqueFiles);
+    setDuplicateNames(new Set());
+    if (uniqueFiles.length === 0) {
+      clearSelectedFiles();
+    }
+  };
+
   const applyFiles = (selectedFiles: File[]) => {
     if (selectedFiles.length === 0) return;
 
@@ -704,7 +782,9 @@ export default function AdminDashboard() {
       }
     }
 
-    setFiles((prev) => [...prev, ...selectedFiles]);
+    const nextFiles = [...files, ...selectedFiles];
+    setFiles(nextFiles);
+    detectDuplicates(nextFiles);
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -716,7 +796,7 @@ export default function AdminDashboard() {
     e.preventDefault();
     setIsDragging(false);
     applyFiles(Array.from(e.dataTransfer.files || []));
-  }, []);
+  }, [files]);
 
   const handleCreateCollection = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -785,7 +865,7 @@ export default function AdminDashboard() {
     }
   };
 
-  /* Hybrid Direct-to-Cloudinary Video & Android Hardware Safe Photo Pipeline */
+  /* Upload pipeline with duplicate warnings & exact failure display */
   const handleUpload = async (e: React.FormEvent) => {
     e.preventDefault();
     if (files.length === 0) {
@@ -804,17 +884,21 @@ export default function AdminDashboard() {
     setUploadProgress({ current: 0, total, statusText: "Preparing upload..." });
 
     let completed = 0;
-    let failed = 0;
+    const failedItems: { name: string; reason?: string }[] = [];
 
     for (let i = 0; i < total; i++) {
-      if (abortUploadRef.current) break;
+      if (abortUploadRef.current) {
+        for (let j = i; j < total; j++) {
+          failedItems.push({ name: files[j].name, reason: "Cancelled by user" });
+        }
+        break;
+      }
 
       const rawFile = files[i];
       const isVideo = rawFile.type.startsWith("video/");
 
       try {
         if (isVideo) {
-          // Direct to Cloudinary: Bypasses server action payload limits & timeouts
           setUploadProgress({
             current: i,
             total,
@@ -838,7 +922,6 @@ export default function AdminDashboard() {
             }
           );
 
-          // Save direct record to Prisma
           const saveRes = await saveDirectMediaAction({
             url: uploadResult.secure_url,
             publicId: uploadResult.public_id,
@@ -859,7 +942,6 @@ export default function AdminDashboard() {
 
           completed++;
         } else {
-          // Photo Pipeline: Android hardware compression + Server Action upload
           setUploadProgress({
             current: i,
             total,
@@ -882,15 +964,13 @@ export default function AdminDashboard() {
 
           const res = await uploadMediaAction(formData);
           if (!res.success) {
-            failed++;
-            console.error("Upload failed for photo:", rawFile.name, res.error);
+            failedItems.push({ name: rawFile.name, reason: res.error || "Upload rejected" });
           } else {
             completed++;
           }
         }
       } catch (err: any) {
-        failed++;
-        console.error("Upload error for file:", rawFile.name, err);
+        failedItems.push({ name: rawFile.name, reason: err.message || "Network error" });
       }
 
       setUploadProgress({
@@ -903,8 +983,19 @@ export default function AdminDashboard() {
     setIsBatchUploading(false);
     setUploadProgress(null);
 
-    if (failed > 0) {
-      setErrorMsg(`Uploaded ${completed} item(s), but ${failed} item(s) failed.`);
+    if (failedItems.length > 0) {
+      const failedNames = new Set(failedItems.map((f) => f.name));
+      const remainingFailedFiles = files.filter((f) => failedNames.has(f.name));
+      setFiles(remainingFailedFiles);
+
+      const formattedError = `Failed (${failedItems.length}/${total}):\n` +
+        failedItems.map((f) => `• ${f.name}${f.reason ? ` (${f.reason})` : ""}`).join("\n");
+      setErrorMsg(formattedError);
+
+      if (completed > 0) {
+        setSuccessMsg(`Successfully uploaded ${completed} item${completed > 1 ? "s" : ""}.`);
+      }
+      await loadData();
     } else {
       setSuccessMsg(`All ${completed} item${completed > 1 ? "s" : ""} uploaded successfully!`);
       clearSelectedFiles();
@@ -1196,19 +1287,36 @@ export default function AdminDashboard() {
                             </div>
                           </div>
 
-                          <div className="flex items-center gap-2">
-                            <p className="text-xs font-medium text-rose-950/80 text-center font-serif italic">
-                              {(files.reduce((acc, f) => acc + f.size, 0) / (1024 * 1024)).toFixed(1)} MB selected
-                            </p>
-                            <span className="text-rose-300 text-xs">•</span>
-                            <button
-                              type="button"
-                              onClick={() => setShowBatchModal(true)}
-                              className="text-xs font-semibold text-[var(--rose)] hover:underline flex items-center gap-1 cursor-pointer"
-                            >
-                              <IconEye className="w-3.5 h-3.5" />
-                              <span>View files</span>
-                            </button>
+                          <div className="flex flex-col items-center gap-1.5">
+                            <div className="flex items-center gap-2">
+                              <p className="text-xs font-medium text-rose-950/80 text-center font-serif italic">
+                                {(files.reduce((acc, f) => acc + f.size, 0) / (1024 * 1024)).toFixed(1)} MB selected
+                              </p>
+                              <span className="text-rose-300 text-xs">•</span>
+                              <button
+                                type="button"
+                                onClick={() => setShowBatchModal(true)}
+                                className="text-xs font-semibold text-[var(--rose)] hover:underline flex items-center gap-1 cursor-pointer"
+                              >
+                                <IconEye className="w-3.5 h-3.5" />
+                                <span>View files</span>
+                              </button>
+                            </div>
+
+                            {/* Duplicate Alert Notice */}
+                            {duplicateNames.size > 0 && (
+                              <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-300 text-[11px]">
+                                <IconCopy className="w-3.5 h-3.5" />
+                                <span>{duplicateNames.size} duplicate(s) detected</span>
+                                <button
+                                  type="button"
+                                  onClick={removeAllDuplicates}
+                                  className="underline font-semibold hover:text-amber-200 ml-1 cursor-pointer"
+                                >
+                                  Remove them
+                                </button>
+                              </div>
+                            )}
                           </div>
 
                           <div className="flex items-center gap-3 mt-4">
@@ -1292,7 +1400,7 @@ export default function AdminDashboard() {
                                 >
                                   <span className="text-xs font-semibold block leading-tight">{config.label}</span>
                                   <span className="text-[10px] text-[var(--cream)]/40 mt-1 block leading-none">
-                                    {preset === "ultra" ? "4K / Max" : preset === "high" ? "2K / Fast" : "1080p"}
+                                    {preset === "ultra" ? "4K / Original" : preset === "high" ? "2K / Fast" : "1080p"}
                                   </span>
                                 </button>
                               );
@@ -1326,6 +1434,7 @@ export default function AdminDashboard() {
                         </Field>
                       </div>
 
+                      {/* Real-time Progress Bar */}
                       {isBatchUploading && uploadProgress && (
                         <div className="bg-[var(--bg)]/80 p-3.5 rounded-2xl border border-[var(--line)] space-y-2">
                           <div className="flex items-center justify-between text-xs font-medium">
@@ -1357,7 +1466,19 @@ export default function AdminDashboard() {
                         </div>
                       )}
 
-                      {errorMsg && <Banner tone="error">{errorMsg}</Banner>}
+                      {/* Detailed Multi-line Error Banner */}
+                      {errorMsg && (
+                        <div className="flex flex-col gap-1.5 p-3.5 rounded-xl text-xs font-medium border bg-rose-500/10 text-rose-300 border-rose-500/25">
+                          <div className="flex items-center gap-2 font-semibold">
+                            <IconAlert className="w-4 h-4 shrink-0 text-rose-400" />
+                            <span>Upload Issues Encountered</span>
+                          </div>
+                          <div className="mt-1 pl-6 space-y-1 max-h-36 overflow-y-auto font-mono text-[11px] text-rose-200/90 whitespace-pre-line scrollbar-thin">
+                            {errorMsg}
+                          </div>
+                        </div>
+                      )}
+
                       {successMsg && <Banner tone="success">{successMsg}</Banner>}
 
                       <PrimaryButton
@@ -1823,9 +1944,20 @@ export default function AdminDashboard() {
             >
               <div className="space-y-4">
                 <div className="flex items-center justify-between text-xs text-[var(--cream)]/60 pb-2 border-b border-[var(--line)]">
-                  <span className="font-serif italic text-rose-300/80">
-                    Total size: {(files.reduce((acc, f) => acc + f.size, 0) / (1024 * 1024)).toFixed(2)} MB
-                  </span>
+                  <div className="flex items-center gap-2">
+                    <span className="font-serif italic text-rose-300/80">
+                      Total size: {(files.reduce((acc, f) => acc + f.size, 0) / (1024 * 1024)).toFixed(2)} MB
+                    </span>
+                    {duplicateNames.size > 0 && (
+                      <button
+                        type="button"
+                        onClick={removeAllDuplicates}
+                        className="text-amber-400 hover:text-amber-300 font-semibold underline ml-2 cursor-pointer"
+                      >
+                        Remove {duplicateNames.size} duplicate(s)
+                      </button>
+                    )}
+                  </div>
                   <button
                     type="button"
                     onClick={clearSelectedFiles}
@@ -1836,51 +1968,65 @@ export default function AdminDashboard() {
                 </div>
 
                 <div className="max-h-[60vh] overflow-y-auto space-y-2.5 pr-1 scrollbar-none">
-                  {files.map((file, idx) => (
-                    <div
-                      key={`${file.name}-${idx}`}
-                      className="flex items-center justify-between p-2.5 sm:p-3 rounded-2xl bg-[var(--bg)]/70 border border-[var(--line)] hover:border-[var(--rose)]/60 hover:bg-[var(--bg)] transition-all gap-3 group"
-                    >
+                  {files.map((file, idx) => {
+                    const isDupe = duplicateNames.has(file.name);
+                    return (
                       <div
-                        onClick={() => setInspectingFileIndex(idx)}
-                        className="flex items-center gap-3.5 min-w-0 flex-1 cursor-pointer"
+                        key={`${file.name}-${idx}`}
+                        className={`flex items-center justify-between p-2.5 sm:p-3 rounded-2xl border transition-all gap-3 group ${
+                          isDupe
+                            ? "bg-amber-500/10 border-amber-500/40"
+                            : "bg-[var(--bg)]/70 border-[var(--line)] hover:border-[var(--rose)]/60 hover:bg-[var(--bg)]"
+                        }`}
                       >
-                        <BatchFileThumbnail file={file} />
+                        <div
+                          onClick={() => setInspectingFileIndex(idx)}
+                          className="flex items-center gap-3.5 min-w-0 flex-1 cursor-pointer"
+                        >
+                          <BatchFileThumbnail file={file} />
 
-                        <div className="min-w-0">
-                          <p className="text-xs font-medium text-[var(--cream)] group-hover:text-[var(--rose)] transition-colors truncate">
-                            {file.name}
-                          </p>
-                          <p className="text-[11px] text-[var(--cream)]/45 mt-1 font-serif italic">
-                            {(file.size / (1024 * 1024)).toFixed(2)} MB •{" "}
-                            {file.type.startsWith("video/") ? "Video clip" : "Photo"}
-                          </p>
+                          <div className="min-w-0">
+                            <div className="flex items-center gap-2">
+                              <p className="text-xs font-medium text-[var(--cream)] group-hover:text-[var(--rose)] transition-colors truncate">
+                                {file.name}
+                              </p>
+                              {isDupe && (
+                                <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 shrink-0">
+                                  Duplicate
+                                </span>
+                              )}
+                            </div>
+                            <p className="text-[11px] text-[var(--cream)]/45 mt-1 font-serif italic">
+                              {(file.size / (1024 * 1024)).toFixed(2)} MB •{" "}
+                              {file.type.startsWith("video/") ? "Video clip" : "Photo"}
+                            </p>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-1 shrink-0">
+                          <button
+                            type="button"
+                            onClick={() => setInspectingFileIndex(idx)}
+                            className="p-2 rounded-xl text-[var(--cream)]/60 hover:text-[var(--cream)] hover:bg-[var(--paper)] transition-all cursor-pointer"
+                            title="View full preview"
+                          >
+                            <IconEye className="w-4 h-4" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              removeFileFromBatch(idx);
+                            }}
+                            className="p-2 rounded-xl text-rose-400 hover:text-white hover:bg-rose-500/20 border border-transparent hover:border-rose-500/30 transition-all cursor-pointer"
+                            title="Remove from batch"
+                          >
+                            <IconTrash className="w-4 h-4" />
+                          </button>
                         </div>
                       </div>
-
-                      <div className="flex items-center gap-1 shrink-0">
-                        <button
-                          type="button"
-                          onClick={() => setInspectingFileIndex(idx)}
-                          className="p-2 rounded-xl text-[var(--cream)]/60 hover:text-[var(--cream)] hover:bg-[var(--paper)] transition-all cursor-pointer"
-                          title="View full preview"
-                        >
-                          <IconEye className="w-4 h-4" />
-                        </button>
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            removeFileFromBatch(idx);
-                          }}
-                          className="p-2 rounded-xl text-rose-400 hover:text-white hover:bg-rose-500/20 border border-transparent hover:border-rose-500/30 transition-all cursor-pointer"
-                          title="Remove photo from batch"
-                        >
-                          <IconTrash className="w-4 h-4" />
-                        </button>
-                      </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
 
                 <div className="flex justify-end gap-2 pt-3 border-t border-[var(--line)]">
@@ -2117,7 +2263,7 @@ export default function AdminDashboard() {
           )}
         </AnimatePresence>
 
-        {/* Confirm Delete Media Modal */}
+        {/* Confirm Delete Single Media Modal */}
         <AnimatePresence>
           {confirmDeleteMedia && (
             <Modal title="Delete Media Asset?" onClose={() => setConfirmDeleteMedia(null)}>

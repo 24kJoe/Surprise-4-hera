@@ -169,6 +169,35 @@ export async function getCloudinarySignatureAction() {
   }
 }
 
+export async function checkDuplicateMediaAction(items: { name: string; size: number }[]) {
+  try {
+    const sizes = items.map((i) => i.size).filter((s) => typeof s === "number" && s > 0);
+
+    if (sizes.length === 0) {
+      return { success: true, duplicates: [] };
+    }
+
+    const existing = await prisma.mediaItem.findMany({
+      where: {
+        size: { in: sizes },
+      },
+      select: {
+        size: true,
+      },
+    });
+
+    const existingSizes = new Set(existing.map((e) => e.size).filter(Boolean));
+    const duplicates = items
+      .filter((item) => existingSizes.has(item.size))
+      .map((item) => item.name);
+
+    return { success: true, duplicates };
+  } catch (error: any) {
+    console.error("Error checking duplicate media:", error);
+    return { success: false, duplicates: [] };
+  }
+}
+
 export async function saveDirectMediaAction(data: {
   url: string;
   publicId: string;
