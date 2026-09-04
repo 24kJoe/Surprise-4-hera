@@ -48,7 +48,7 @@ export async function getCollections() {
       orderBy: { createdAt: "desc" },
       include: {
         media: {
-          orderBy: { createdAt: "desc" },
+          orderBy: [{ order: "asc" }, { createdAt: "desc" }],
         },
       },
     });
@@ -178,7 +178,7 @@ export async function checkDuplicateMediaAction(items: { name: string; size: num
       return { success: true, duplicates: [] };
     }
 
-    const existing = await prisma.mediaItem.findMany({
+    const existing: { id: string; size: number | null; url: string }[] = await prisma.mediaItem.findMany({
       where: {
         OR: [
           { size: { in: validSizes } },
@@ -192,7 +192,12 @@ export async function checkDuplicateMediaAction(items: { name: string; size: num
       },
     });
 
-    const existingSizes = new Set(existing.map((e) => e.size).filter(Boolean));
+    const existingSizes = new Set(
+      existing
+        .map((e) => e.size)
+        .filter((s): s is number => typeof s === "number" && s > 0)
+    );
+
     const duplicates: string[] = [];
 
     items.forEach((item) => {
@@ -201,7 +206,9 @@ export async function checkDuplicateMediaAction(items: { name: string; size: num
         return;
       }
       const cleanName = item.name.trim().toLowerCase();
-      const nameMatch = existing.some((e) => e.url.toLowerCase().includes(cleanName));
+      const nameMatch = existing.some(
+        (e) => Boolean(e.url && e.url.toLowerCase().includes(cleanName))
+      );
       if (nameMatch) {
         duplicates.push(item.name);
       }
@@ -259,12 +266,31 @@ export async function saveDirectMediaAction(data: {
 export async function getMediaItems() {
   try {
     return await prisma.mediaItem.findMany({
-      orderBy: { createdAt: "desc" },
+      orderBy: [{ order: "asc" }, { createdAt: "desc" }],
       include: { collection: true },
     });
   } catch (error) {
     console.error("Error fetching media items:", error);
     return [];
+  }
+}
+
+export async function reorderMediaAction(items: { id: string; order: number }[]) {
+  try {
+    await Promise.all(
+      items.map((item) =>
+        prisma.mediaItem.update({
+          where: { id: item.id },
+          data: { order: item.order },
+        })
+      )
+    );
+
+    revalidatePath("/admin");
+    return { success: true };
+  } catch (error: any) {
+    console.error("Error updating media order:", error);
+    return { success: false, error: error.message || "Failed to update order" };
   }
 }
 

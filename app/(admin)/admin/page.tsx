@@ -15,6 +15,7 @@ import {
   getCloudinarySignatureAction,
   saveDirectMediaAction,
   checkDuplicateMediaAction,
+  reorderMediaAction,
 } from "@/lib/actions";
 
 export type MediaType = "IMAGE" | "VIDEO";
@@ -39,6 +40,7 @@ interface MediaItem {
   collection?: CollectionItem | null;
   createdAt: Date;
   size?: number | null;
+  order?: number;
 }
 
 /* ---------------------------------------------------------------------- */
@@ -51,6 +53,13 @@ function IconArrowLeft(props: React.SVGProps<SVGSVGElement>) {
   return (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" {...props}>
       <path {...iconStroke} d="M10.5 19.5 3 12m0 0 7.5-7.5M3 12h18" />
+    </svg>
+  );
+}
+function IconArrowRight(props: React.SVGProps<SVGSVGElement>) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" {...props}>
+      <path {...iconStroke} d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" />
     </svg>
   );
 }
@@ -775,6 +784,7 @@ export default function AdminDashboard() {
   const [isPendingEdit, startTransitionEdit] = useTransition();
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [deletingColId, setDeletingColId] = useState<string | null>(null);
+  const [isReordering, setIsReordering] = useState(false);
 
   const requestWakeLock = async () => {
     try {
@@ -797,7 +807,6 @@ export default function AdminDashboard() {
     }
   };
 
-  // Kills active network stream instantly
   const stopAllUploads = useCallback(() => {
     abortUploadRef.current = true;
     if (activeXhrRef.current) {
@@ -837,7 +846,6 @@ export default function AdminDashboard() {
     };
   }, [singleCoverUrl]);
 
-  // Check files for duplicates against database and batch (Mobile-Ready)
   const detectDuplicates = useCallback(
     async (fileList: File[]) => {
       if (!fileList || fileList.length === 0) {
@@ -847,7 +855,6 @@ export default function AdminDashboard() {
 
       const dupes = new Set<string>();
 
-      // 1. In-batch duplicate check
       const seenKeys = new Set<string>();
       fileList.forEach((file) => {
         const sizeKey = `size-${file.size}`;
@@ -861,7 +868,6 @@ export default function AdminDashboard() {
         }
       });
 
-      // 2. Database duplicate check
       try {
         const payload = fileList.map((f) => ({ name: f.name, size: f.size }));
         const checkRes = await checkDuplicateMediaAction(payload);
@@ -1073,7 +1079,6 @@ export default function AdminDashboard() {
 
       try {
         if (isVideo) {
-          // Direct video upload to Cloudinary
           setUploadProgress({
             current: i,
             total,
@@ -1125,7 +1130,6 @@ export default function AdminDashboard() {
 
           completed++;
         } else {
-          // Direct photo upload to Cloudinary (bypasses Node Server Action buffer entirely)
           setUploadProgress({
             current: i,
             total,
@@ -1295,6 +1299,31 @@ export default function AdminDashboard() {
 
     return result;
   }, [mediaItems, activeFilter, searchQuery]);
+
+  /* Shift arrangement of items in the current collection */
+  const moveMediaItem = async (index: number, direction: "left" | "right") => {
+    if (isReordering) return;
+
+    const targetIndex = direction === "left" ? index - 1 : index + 1;
+    if (targetIndex < 0 || targetIndex >= filteredMedia.length) return;
+
+    const newArr = [...filteredMedia];
+    const temp = newArr[index];
+    newArr[index] = newArr[targetIndex];
+    newArr[targetIndex] = temp;
+
+    // Optimistically update the UI
+    const updatedIds = new Set(newArr.map((m) => m.id));
+    setMediaItems((prev) => {
+      const others = prev.filter((m) => !updatedIds.has(m.id));
+      return [...newArr, ...others];
+    });
+
+    setIsReordering(true);
+    const payload = newArr.map((item, idx) => ({ id: item.id, order: idx }));
+    await reorderMediaAction(payload);
+    setIsReordering(false);
+  };
 
   const toggleSelectMedia = (id: string) => {
     setSelectedMediaIds((prev) => {
@@ -2019,7 +2048,7 @@ export default function AdminDashboard() {
             ) : (
               <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
                 <AnimatePresence mode="popLayout">
-                  {filteredMedia.map((item) => {
+                  {filteredMedia.map((item, index) => {
                     const isSelected = selectedMediaIds.has(item.id);
 
                     return (
@@ -2126,21 +2155,57 @@ export default function AdminDashboard() {
                             })}
                           </span>
 
+                          {/* Reorder Buttons (Arrangement) */}
                           {!selectMode && (
-                            <div className="grid grid-cols-2 gap-1.5 mt-2.5 pt-2 border-t border-white/15">
-                              <button
-                                onClick={() => setEditingMedia(item)}
-                                className="py-1 rounded-lg bg-[var(--paper)]/90 hover:bg-[var(--paper)] text-[var(--cream)] text-[11px] font-medium flex items-center justify-center gap-1 border border-[var(--line)] transition-colors cursor-pointer"
-                              >
-                                <IconEdit className="w-3 h-3" /> Edit
-                              </button>
-                              <button
-                                onClick={() => setConfirmDeleteMedia(item)}
-                                disabled={deletingId === item.id}
-                                className="py-1 rounded-lg bg-rose-500/20 hover:bg-rose-500/30 text-rose-300 text-[11px] font-medium flex items-center justify-center gap-1 border border-rose-500/30 transition-colors cursor-pointer"
-                              >
-                                {deletingId === item.id ? <IconSpinner className="w-3.5 h-3.5" /> : <IconTrash className="w-3.5 h-3.5" />} Delete
-                              </button>
+                            <div className="flex items-center justify-between gap-1 mt-2 pt-2 border-t border-white/15">
+                              <div className="flex items-center gap-1">
+                                <button
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    moveMediaItem(index, "left");
+                                  }}
+                                  disabled={index === 0 || isReordering}
+                                  className="p-1 rounded-lg bg-black/40 hover:bg-black/70 disabled:opacity-30 disabled:pointer-events-none text-white text-[10px] border border-white/10 transition-colors"
+                                  title="Move earlier"
+                                >
+                                  <IconArrowLeft className="w-3.5 h-3.5" />
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    moveMediaItem(index, "right");
+                                  }}
+                                  disabled={index === filteredMedia.length - 1 || isReordering}
+                                  className="p-1 rounded-lg bg-black/40 hover:bg-black/70 disabled:opacity-30 disabled:pointer-events-none text-white text-[10px] border border-white/10 transition-colors"
+                                  title="Move later"
+                                >
+                                  <IconArrowRight className="w-3.5 h-3.5" />
+                                </button>
+                              </div>
+
+                              <div className="flex items-center gap-1">
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setEditingMedia(item);
+                                  }}
+                                  className="py-1 px-2 rounded-lg bg-[var(--paper)]/90 hover:bg-[var(--paper)] text-[var(--cream)] text-[11px] font-medium flex items-center justify-center gap-1 border border-[var(--line)] transition-colors cursor-pointer"
+                                >
+                                  <IconEdit className="w-3 h-3" />
+                                </button>
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setConfirmDeleteMedia(item);
+                                  }}
+                                  disabled={deletingId === item.id}
+                                  className="py-1 px-2 rounded-lg bg-rose-500/20 hover:bg-rose-500/30 text-rose-300 text-[11px] font-medium flex items-center justify-center gap-1 border border-rose-500/30 transition-colors cursor-pointer"
+                                >
+                                  {deletingId === item.id ? <IconSpinner className="w-3.5 h-3.5" /> : <IconTrash className="w-3.5 h-3.5" />}
+                                </button>
+                              </div>
                             </div>
                           )}
                         </div>

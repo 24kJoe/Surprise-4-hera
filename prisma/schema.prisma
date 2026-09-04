@@ -36,6 +36,7 @@ model MediaItem {
   width            Int?
   height           Int?
   mimeType         String?
+  order            Int?        @default(0) // Custom arrangement index inside a collection
   collectionId     String?     @db.ObjectId
   collection       Collection? @relation(fields: [collectionId], references: [id], onDelete: Cascade)
 
@@ -48,6 +49,6 @@ model MediaItem {
   // (e.g. editing a caption shouldn't change Memories order).
   memorySelectedAt DateTime?
 
-  createdAt    DateTime    @default(now())
-  updatedAt    DateTime    @updatedAt
+  createdAt        DateTime    @default(now())
+  updatedAt        DateTime    @updatedAt
 }
