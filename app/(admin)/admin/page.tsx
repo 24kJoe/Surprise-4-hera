@@ -147,6 +147,21 @@ function IconCheckSquare(props: React.SVGProps<SVGSVGElement>) {
     </svg>
   );
 }
+function IconSliders(props: React.SVGProps<SVGSVGElement>) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" {...props}>
+      <line x1="4" y1="21" x2="4" y2="14" {...iconStroke} />
+      <line x1="4" y1="10" x2="4" y2="3" {...iconStroke} />
+      <line x1="12" y1="21" x2="12" y2="12" {...iconStroke} />
+      <line x1="12" y1="8" x2="12" y2="3" {...iconStroke} />
+      <line x1="20" y1="21" x2="20" y2="16" {...iconStroke} />
+      <line x1="20" y1="12" x2="20" y2="3" {...iconStroke} />
+      <line x1="1" y1="14" x2="7" y2="14" {...iconStroke} />
+      <line x1="9" y1="8" x2="15" y2="8" {...iconStroke} />
+      <line x1="17" y1="16" x2="23" y2="16" {...iconStroke} />
+    </svg>
+  );
+}
 function IconSpinner(props: React.SVGProps<SVGSVGElement>) {
   return (
     <svg viewBox="0 0 24 24" fill="none" className={`animate-spin ${props.className || ""}`}>
@@ -154,6 +169,109 @@ function IconSpinner(props: React.SVGProps<SVGSVGElement>) {
       <path d="M21 12a9 9 0 0 0-9-9" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
     </svg>
   );
+}
+
+/* ---------------------------------------------------------------------- */
+/*  Android-Optimized Native Hardware Compression Engine                  */
+/* ---------------------------------------------------------------------- */
+
+type QualityPreset = "ultra" | "high" | "compact";
+
+interface PresetConfig {
+  label: string;
+  maxDimension: number;
+  quality: number;
+  description: string;
+}
+
+const QUALITY_PRESETS: Record<QualityPreset, PresetConfig> = {
+  ultra: {
+    label: "Ultra / 4K",
+    maxDimension: 3840,
+    quality: 0.94,
+    description: "Maximum resolution (~2MB)",
+  },
+  high: {
+    label: "High / 2K (Recommended)",
+    maxDimension: 2560,
+    quality: 0.88,
+    description: "Crisp clarity, lightning fast on Android (~900KB)",
+  },
+  compact: {
+    label: "Compact / 1080p",
+    maxDimension: 1920,
+    quality: 0.78,
+    description: "Mobile data saver (~450KB)",
+  },
+};
+
+/**
+ * Uses Android Chrome's C++ createImageBitmap where available to avoid
+ * memory pressure on the V8 engine heap and prevent Chrome from crashing.
+ */
+async function compressAndroidSafe(file: File, preset: QualityPreset): Promise<File> {
+  if (!file.type.startsWith("image/")) return file;
+
+  const config = QUALITY_PRESETS[preset];
+
+  try {
+    let bitmap: ImageBitmap;
+    if ("createImageBitmap" in window) {
+      bitmap = await createImageBitmap(file);
+    } else {
+      // Fallback
+      return file;
+    }
+
+    let { width, height } = bitmap;
+    if (width > height && width > config.maxDimension) {
+      height = Math.round((height * config.maxDimension) / width);
+      width = config.maxDimension;
+    } else if (height > config.maxDimension) {
+      width = Math.round((width * config.maxDimension) / height);
+      height = config.maxDimension;
+    }
+
+    const canvas = document.createElement("canvas");
+    canvas.width = width;
+    canvas.height = height;
+    const ctx = canvas.getContext("2d", { alpha: false });
+
+    if (!ctx) {
+      bitmap.close();
+      return file;
+    }
+
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = "high";
+    ctx.drawImage(bitmap, 0, 0, width, height);
+    bitmap.close(); // Immediately release hardware memory
+
+    return new Promise((resolve) => {
+      canvas.toBlob(
+        (blob) => {
+          // Immediately wipe canvas memory buffer
+          canvas.width = 0;
+          canvas.height = 0;
+
+          if (!blob || blob.size >= file.size) {
+            resolve(file);
+            return;
+          }
+          const compressed = new File([blob], file.name.replace(/\.[^/.]+$/, ".jpg"), {
+            type: "image/jpeg",
+            lastModified: Date.now(),
+          });
+          resolve(compressed);
+        },
+        "image/jpeg",
+        config.quality
+      );
+    });
+  } catch {
+    // Return original if device fails bitmap creation
+    return file;
+  }
 }
 
 /* ---------------------------------------------------------------------- */
@@ -334,7 +452,7 @@ function BatchFileThumbnail({ file }: { file: File }) {
 }
 
 /* ---------------------------------------------------------------------- */
-/*  Full Single-File Lightbox Preview Component                           */
+/*  Lightbox Component for Batch Review                                   */
 /* ---------------------------------------------------------------------- */
 
 function SingleFilePreviewModal({
@@ -400,7 +518,7 @@ function SingleFilePreviewModal({
 }
 
 /* ---------------------------------------------------------------------- */
-/*  Main Component                                                        */
+/*  Main Dashboard Component                                              */
 /* ---------------------------------------------------------------------- */
 
 export default function AdminDashboard() {
@@ -420,6 +538,7 @@ export default function AdminDashboard() {
   const [caption, setCaption] = useState("");
   const [altText, setAltText] = useState("");
   const [selectedCollectionId, setSelectedCollectionId] = useState("none");
+  const [qualityPreset, setQualityPreset] = useState<QualityPreset>("high");
   const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -428,7 +547,7 @@ export default function AdminDashboard() {
   const [inspectingFileIndex, setInspectingFileIndex] = useState<number | null>(null);
 
   // Batch upload progress state
-  const [uploadProgress, setUploadProgress] = useState<{ current: number; total: number } | null>(null);
+  const [uploadProgress, setUploadProgress] = useState<{ current: number; total: number; statusText: string } | null>(null);
   const [isBatchUploading, setIsBatchUploading] = useState(false);
   const abortUploadRef = useRef(false);
 
@@ -613,6 +732,7 @@ export default function AdminDashboard() {
     }
   };
 
+  /* Single-by-Single Queue specifically designed to prevent Android Chrome LMK Drops */
   const handleUpload = async (e: React.FormEvent) => {
     e.preventDefault();
     if (files.length === 0) {
@@ -628,45 +748,64 @@ export default function AdminDashboard() {
     abortUploadRef.current = false;
 
     const total = files.length;
-    setUploadProgress({ current: 0, total });
+    setUploadProgress({ current: 0, total, statusText: "Preparing mobile upload..." });
 
     let completed = 0;
     let failed = 0;
-    const batchSize = 2;
 
-    for (let i = 0; i < total; i += batchSize) {
+    for (let i = 0; i < total; i++) {
       if (abortUploadRef.current) break;
 
-      const chunk = files.slice(i, i + batchSize);
-      const formData = new FormData();
-      chunk.forEach((file) => formData.append("files", file));
-      formData.append("caption", caption);
-      formData.append("altText", altText);
-      formData.append("collectionId", selectedCollectionId);
+      const rawFile = files[i];
+      setUploadProgress({
+        current: i,
+        total,
+        statusText: `Optimizing ${i + 1}/${total}: ${rawFile.name}...`,
+      });
 
       try {
+        // Native Android C++ hardware compression
+        const readyFile = await compressAndroidSafe(rawFile, qualityPreset);
+
+        setUploadProgress({
+          current: i,
+          total,
+          statusText: `Uploading ${i + 1}/${total}: ${(readyFile.size / (1024 * 1024)).toFixed(1)} MB...`,
+        });
+
+        const formData = new FormData();
+        formData.append("files", readyFile);
+        formData.append("caption", caption);
+        formData.append("altText", altText);
+        formData.append("collectionId", selectedCollectionId);
+
+        // Upload exactly 1 file per Server Action call to eliminate TCP and Memory drops
         const res = await uploadMediaAction(formData);
         if (!res.success) {
-          failed += chunk.length;
-          console.error("Batch upload failed:", res.error);
+          failed++;
+          console.error("Upload failed for:", rawFile.name, res.error);
         } else {
-          completed += chunk.length;
+          completed++;
         }
       } catch (err) {
-        failed += chunk.length;
-        console.error("Batch upload error:", err);
+        failed++;
+        console.error("Upload error for:", rawFile.name, err);
       }
 
-      setUploadProgress({ current: Math.min(i + batchSize, total), total });
+      setUploadProgress({
+        current: i + 1,
+        total,
+        statusText: `Uploaded ${i + 1} of ${total}`,
+      });
     }
 
     setIsBatchUploading(false);
     setUploadProgress(null);
 
     if (failed > 0) {
-      setErrorMsg(`Uploaded ${completed} items, but ${failed} item(s) failed.`);
+      setErrorMsg(`Uploaded ${completed} item(s), but ${failed} failed to upload.`);
     } else {
-      setSuccessMsg(`${completed} item${completed > 1 ? "s" : ""} uploaded successfully!`);
+      setSuccessMsg(`All ${completed} item${completed > 1 ? "s" : ""} uploaded smoothly!`);
       clearSelectedFiles();
       setCaption("");
       setAltText("");
@@ -958,7 +1097,7 @@ export default function AdminDashboard() {
 
                           <div className="flex items-center gap-2">
                             <p className="text-xs font-medium text-rose-950/80 text-center font-serif italic">
-                              {(files.reduce((acc, f) => acc + f.size, 0) / (1024 * 1024)).toFixed(1)} MB total
+                              {(files.reduce((acc, f) => acc + f.size, 0) / (1024 * 1024)).toFixed(1)} MB selected
                             </p>
                             <span className="text-rose-300 text-xs">•</span>
                             <button
@@ -1005,7 +1144,7 @@ export default function AdminDashboard() {
                             Drop files here, or browse from device
                           </span>
                           <span className="text-[11px] text-[var(--cream)]/45 mt-1.5">
-                            Supports high-res PNG, JPG, WEBP, and MP4 videos (bulk enabled)
+                            Supports high-res PNG, JPG, WEBP, and MP4 videos
                           </span>
                         </label>
                       )}
@@ -1028,6 +1167,41 @@ export default function AdminDashboard() {
                             ))}
                           </select>
                         </Field>
+
+                        {/* Android Compression Preset Selector */}
+                        <div>
+                          <label className="flex items-center gap-1.5 text-[11px] font-semibold tracking-wider text-[var(--gold-soft)] uppercase mb-1.5">
+                            <IconSliders className="w-3 h-3" />
+                            <span>Mobile Optimization Quality</span>
+                          </label>
+                          <div className="grid grid-cols-3 gap-2">
+                            {(["ultra", "high", "compact"] as QualityPreset[]).map((preset) => {
+                              const config = QUALITY_PRESETS[preset];
+                              const isSelected = qualityPreset === preset;
+                              return (
+                                <button
+                                  key={preset}
+                                  type="button"
+                                  onClick={() => setQualityPreset(preset)}
+                                  disabled={isBatchUploading}
+                                  className={`px-2.5 py-2 rounded-xl border text-left flex flex-col justify-between transition-all cursor-pointer disabled:opacity-50 ${
+                                    isSelected
+                                      ? "border-[var(--rose)] bg-[var(--rose)]/15 text-white ring-1 ring-[var(--rose)]/40"
+                                      : "border-[var(--line)] bg-[var(--bg)] text-[var(--cream)]/60 hover:text-[var(--cream)] hover:border-[var(--cream)]/25"
+                                  }`}
+                                >
+                                  <span className="text-xs font-semibold block leading-tight">{config.label}</span>
+                                  <span className="text-[10px] text-[var(--cream)]/40 mt-1 block leading-none">
+                                    {preset === "ultra" ? "4K / Max" : preset === "high" ? "2K / Fast" : "1080p"}
+                                  </span>
+                                </button>
+                              );
+                            })}
+                          </div>
+                          <p className="text-[11px] text-[var(--cream)]/40 mt-1 font-serif italic">
+                            {QUALITY_PRESETS[qualityPreset].description}
+                          </p>
+                        </div>
 
                         <Field label="Caption or Note">
                           <input
@@ -1052,14 +1226,15 @@ export default function AdminDashboard() {
                         </Field>
                       </div>
 
+                      {/* Real-time Progress Bar */}
                       {isBatchUploading && uploadProgress && (
                         <div className="bg-[var(--bg)]/80 p-3.5 rounded-2xl border border-[var(--line)] space-y-2">
                           <div className="flex items-center justify-between text-xs font-medium">
-                            <span className="text-[var(--cream)]/80 flex items-center gap-2">
-                              <IconSpinner className="w-3.5 h-3.5 text-[var(--rose)]" />
-                              Uploading in mobile-safe queue...
+                            <span className="text-[var(--cream)]/80 flex items-center gap-2 truncate max-w-[80%]">
+                              <IconSpinner className="w-3.5 h-3.5 text-[var(--rose)] shrink-0" />
+                              <span className="truncate">{uploadProgress.statusText}</span>
                             </span>
-                            <span className="text-[var(--rose)] font-semibold">
+                            <span className="text-[var(--rose)] font-semibold shrink-0">
                               {uploadProgress.current} / {uploadProgress.total}
                             </span>
                           </div>
@@ -1146,7 +1321,7 @@ export default function AdminDashboard() {
               </AnimatePresence>
             </section>
 
-            {/* Albums & Collections: our-memories sorted to the first spot & delete locked */}
+            {/* Albums & Collections Grid: our-memories pinned first & locked */}
             {collections.length > 0 && (
               <section className="space-y-4">
                 <h2 className="font-serif text-lg font-semibold text-[var(--cream)] flex items-center gap-2">
