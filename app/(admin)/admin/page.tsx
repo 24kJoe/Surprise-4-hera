@@ -182,6 +182,16 @@ function IconSpinner(props: React.SVGProps<SVGSVGElement>) {
     </svg>
   );
 }
+function IconCoffee(props: React.SVGProps<SVGSVGElement>) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" {...props}>
+      <path {...iconStroke} d="M17 8h1a4 4 0 1 1 0 8h-1M3 8h14v9a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4Z" />
+      <line x1="6" y1="2" x2="6" y2="4" {...iconStroke} />
+      <line x1="10" y1="2" x2="10" y2="4" {...iconStroke} />
+      <line x1="14" y1="2" x2="14" y2="4" {...iconStroke} />
+    </svg>
+  );
+}
 
 /* ---------------------------------------------------------------------- */
 /*  Native Hardware Image Compression Engine                              */
@@ -292,13 +302,14 @@ async function compressAndroidSafe(file: File, preset: QualityPreset): Promise<F
 }
 
 /* ---------------------------------------------------------------------- */
-/*  Direct Cloudinary Upload                                              */
+/*  Direct Cloudinary Upload (Instantly Abortable)                        */
 /* ---------------------------------------------------------------------- */
 
 function directUploadToCloudinary(
   file: File,
   signData: { timestamp: number; signature: string; apiKey: string; cloudName: string; folder: string },
-  onProgress: (percent: number) => void
+  onProgress: (percent: number) => void,
+  onAttachXhr?: (xhr: XMLHttpRequest) => void
 ): Promise<{
   secure_url: string;
   public_id: string;
@@ -320,6 +331,8 @@ function directUploadToCloudinary(
     formData.append("folder", signData.folder);
 
     const xhr = new XMLHttpRequest();
+    if (onAttachXhr) onAttachXhr(xhr);
+
     xhr.open("POST", endpoint);
     xhr.timeout = 300000;
 
@@ -343,6 +356,7 @@ function directUploadToCloudinary(
       }
     };
 
+    xhr.onabort = () => reject(new Error("Upload cancelled by user"));
     xhr.ontimeout = () => reject(new Error("Connection timed out. Check network stability."));
     xhr.onerror = () => reject(new Error("Network error during direct upload"));
     xhr.send(formData);
@@ -593,6 +607,105 @@ function SingleFilePreviewModal({
 }
 
 /* ---------------------------------------------------------------------- */
+/*  AFK Fullscreen Overlay Component                                      */
+/* ---------------------------------------------------------------------- */
+
+function AfkUploadOverlay({
+  current,
+  total,
+  currentFileName,
+  statusText,
+  onCancel,
+}: {
+  current: number;
+  total: number;
+  currentFileName: string;
+  statusText: string;
+  onCancel: () => void;
+}) {
+  const percent = total > 0 ? Math.round((current / total) * 100) : 0;
+
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="fixed inset-0 z-50 bg-[#0c060a] text-[var(--cream)] flex flex-col items-center justify-between p-6 sm:p-12 select-none overflow-hidden"
+    >
+      <div className="w-full flex items-center justify-between max-w-xl">
+        <div className="flex items-center gap-2.5 px-3 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/25 text-emerald-300 text-xs font-medium">
+          <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+          <span>AFK Mode Active (Screen Kept Awake)</span>
+        </div>
+
+        <button
+          type="button"
+          onClick={onCancel}
+          className="text-xs text-rose-400 hover:text-rose-300 underline font-medium cursor-pointer"
+        >
+          Cancel Upload
+        </button>
+      </div>
+
+      <div className="flex flex-col items-center justify-center text-center space-y-6 max-w-md w-full">
+        <div className="relative w-44 h-44 sm:w-52 sm:h-52 flex items-center justify-center">
+          <div className="absolute inset-0 rounded-full bg-[var(--rose)]/15 blur-2xl animate-pulse" />
+          <svg className="w-full h-full -rotate-90 transform" viewBox="0 0 120 120">
+            <circle
+              cx="60"
+              cy="60"
+              r="52"
+              className="text-white/10"
+              strokeWidth="6"
+              stroke="currentColor"
+              fill="transparent"
+            />
+            <circle
+              cx="60"
+              cy="60"
+              r="52"
+              className="text-[var(--rose)] transition-all duration-500 ease-out"
+              strokeWidth="6"
+              strokeDasharray={2 * Math.PI * 52}
+              strokeDashoffset={2 * Math.PI * 52 * (1 - percent / 100)}
+              strokeLinecap="round"
+              stroke="currentColor"
+              fill="transparent"
+            />
+          </svg>
+
+          <div className="absolute flex flex-col items-center">
+            <span className="font-serif text-4xl sm:text-5xl font-bold text-white tracking-tight">
+              {percent}%
+            </span>
+            <span className="text-[11px] text-[var(--gold-soft)] uppercase tracking-wider font-semibold mt-1">
+              {current} of {total} items
+            </span>
+          </div>
+        </div>
+
+        <div className="space-y-2">
+          <h2 className="font-serif text-xl sm:text-2xl font-bold text-[var(--cream)]">
+            Relax while we upload your memories
+          </h2>
+          <p className="text-xs text-[var(--cream)]/60 truncate max-w-sm mx-auto">
+            {statusText}
+          </p>
+          <p className="text-[11px] font-mono text-[var(--rose)]/80 truncate max-w-xs mx-auto">
+            {currentFileName}
+          </p>
+        </div>
+      </div>
+
+      <div className="text-center text-[11px] text-[var(--cream)]/40 flex items-center gap-2">
+        <IconCoffee className="w-4 h-4 text-[var(--gold-soft)]" />
+        <span>Your screen will remain on until upload completes.</span>
+      </div>
+    </motion.div>
+  );
+}
+
+/* ---------------------------------------------------------------------- */
 /*  Main Component                                                        */
 /* ---------------------------------------------------------------------- */
 
@@ -617,6 +730,11 @@ export default function AdminDashboard() {
   const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // AFK Mode State & WakeLock Ref
+  const [afkModeEnabled, setAfkModeEnabled] = useState(true);
+  const [isAfkActive, setIsAfkActive] = useState(false);
+  const wakeLockRef = useRef<any>(null);
+
   // Duplicate Tracking
   const [duplicateNames, setDuplicateNames] = useState<Set<string>>(new Set());
 
@@ -624,10 +742,11 @@ export default function AdminDashboard() {
   const [showBatchModal, setShowBatchModal] = useState(false);
   const [inspectingFileIndex, setInspectingFileIndex] = useState<number | null>(null);
 
-  // Progress State
-  const [uploadProgress, setUploadProgress] = useState<{ current: number; total: number; statusText: string } | null>(null);
+  // Progress State & Immediate Abort Controllers
+  const [uploadProgress, setUploadProgress] = useState<{ current: number; total: number; statusText: string; currentFileName: string } | null>(null);
   const [isBatchUploading, setIsBatchUploading] = useState(false);
   const abortUploadRef = useRef(false);
+  const activeXhrRef = useRef<XMLHttpRequest | null>(null);
 
   // Multi-select state
   const [selectMode, setSelectMode] = useState(false);
@@ -657,6 +776,42 @@ export default function AdminDashboard() {
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [deletingColId, setDeletingColId] = useState<string | null>(null);
 
+  const requestWakeLock = async () => {
+    try {
+      if ("wakeLock" in navigator) {
+        wakeLockRef.current = await (navigator as any).wakeLock.request("screen");
+      }
+    } catch (err) {
+      console.warn("Screen WakeLock could not be acquired:", err);
+    }
+  };
+
+  const releaseWakeLock = () => {
+    if (wakeLockRef.current) {
+      try {
+        wakeLockRef.current.release();
+      } catch (err) {
+        console.warn("Error releasing wakeLock:", err);
+      }
+      wakeLockRef.current = null;
+    }
+  };
+
+  // Kills active network stream instantly
+  const stopAllUploads = useCallback(() => {
+    abortUploadRef.current = true;
+    if (activeXhrRef.current) {
+      try {
+        activeXhrRef.current.abort();
+      } catch (e) {
+        console.warn("Could not abort active XHR:", e);
+      }
+      activeXhrRef.current = null;
+    }
+    releaseWakeLock();
+    setIsAfkActive(false);
+  }, []);
+
   const loadData = async () => {
     const [mediaData, collectionsData] = await Promise.all([
       getMediaItems(),
@@ -669,6 +824,9 @@ export default function AdminDashboard() {
 
   useEffect(() => {
     loadData();
+    return () => {
+      releaseWakeLock();
+    };
   }, []);
 
   useEffect(() => {
@@ -876,7 +1034,7 @@ export default function AdminDashboard() {
     }
   };
 
-  /* Hybrid Direct-to-Cloudinary Video & Android Hardware Safe Photo Pipeline with Precise Item-Level Error Reporting */
+  /* Unified Direct-to-Cloudinary (Photos + Videos) Upload Pipeline */
   const handleUpload = async (e: React.FormEvent) => {
     e.preventDefault();
     if (files.length === 0) {
@@ -891,8 +1049,13 @@ export default function AdminDashboard() {
     setIsBatchUploading(true);
     abortUploadRef.current = false;
 
+    if (afkModeEnabled) {
+      setIsAfkActive(true);
+      await requestWakeLock();
+    }
+
     const total = files.length;
-    setUploadProgress({ current: 0, total, statusText: "Preparing upload..." });
+    setUploadProgress({ current: 0, total, statusText: "Preparing upload...", currentFileName: files[0].name });
 
     let completed = 0;
     const failedItems: { name: string; reason?: string }[] = [];
@@ -910,10 +1073,12 @@ export default function AdminDashboard() {
 
       try {
         if (isVideo) {
+          // Direct video upload to Cloudinary
           setUploadProgress({
             current: i,
             total,
-            statusText: `Signing video ${i + 1}/${total}...`,
+            statusText: `Signing video...`,
+            currentFileName: rawFile.name,
           });
 
           const signResult = await getCloudinarySignatureAction();
@@ -928,10 +1093,17 @@ export default function AdminDashboard() {
               setUploadProgress({
                 current: i,
                 total,
-                statusText: `Uploading video ${i + 1}/${total}: ${percent}%`,
+                statusText: `Uploading video (${percent}%)...`,
+                currentFileName: rawFile.name,
               });
+            },
+            (xhr) => {
+              activeXhrRef.current = xhr;
             }
           );
+          activeXhrRef.current = null;
+
+          if (abortUploadRef.current) break;
 
           const saveRes = await saveDirectMediaAction({
             url: uploadResult.secure_url,
@@ -941,7 +1113,7 @@ export default function AdminDashboard() {
             height: uploadResult.height,
             size: uploadResult.bytes || rawFile.size,
             duration: uploadResult.duration,
-            mimeType: rawFile.type || `${isVideo ? "video" : "image"}/${uploadResult.format}`,
+            mimeType: rawFile.type || `video/${uploadResult.format}`,
             caption,
             altText,
             collectionId: selectedCollectionId,
@@ -953,44 +1125,87 @@ export default function AdminDashboard() {
 
           completed++;
         } else {
+          // Direct photo upload to Cloudinary (bypasses Node Server Action buffer entirely)
           setUploadProgress({
             current: i,
             total,
-            statusText: `Optimizing photo ${i + 1}/${total}...`,
+            statusText: `Optimizing photo...`,
+            currentFileName: rawFile.name,
           });
 
           const readyFile = await compressAndroidSafe(rawFile, qualityPreset);
 
+          if (abortUploadRef.current) break;
+
           setUploadProgress({
             current: i,
             total,
-            statusText: `Uploading photo ${i + 1}/${total} (${(readyFile.size / (1024 * 1024)).toFixed(1)} MB)...`,
+            statusText: `Signing photo upload...`,
+            currentFileName: rawFile.name,
           });
 
-          const formData = new FormData();
-          formData.append("files", readyFile);
-          formData.append("caption", caption);
-          formData.append("altText", altText);
-          formData.append("collectionId", selectedCollectionId);
-
-          const res = await uploadMediaAction(formData);
-          if (!res.success) {
-            failedItems.push({ name: rawFile.name, reason: res.error || "Upload rejected" });
-          } else {
-            completed++;
+          const signResult = await getCloudinarySignatureAction();
+          if (!signResult.success || !signResult.signature) {
+            throw new Error(signResult.error || "Failed to generate upload signature");
           }
+
+          const uploadResult = await directUploadToCloudinary(
+            readyFile,
+            signResult as any,
+            (percent) => {
+              setUploadProgress({
+                current: i,
+                total,
+                statusText: `Uploading photo (${percent}%)...`,
+                currentFileName: rawFile.name,
+              });
+            },
+            (xhr) => {
+              activeXhrRef.current = xhr;
+            }
+          );
+          activeXhrRef.current = null;
+
+          if (abortUploadRef.current) break;
+
+          const saveRes = await saveDirectMediaAction({
+            url: uploadResult.secure_url,
+            publicId: uploadResult.public_id,
+            type: "IMAGE",
+            width: uploadResult.width,
+            height: uploadResult.height,
+            size: uploadResult.bytes || readyFile.size,
+            mimeType: readyFile.type || "image/jpeg",
+            caption,
+            altText,
+            collectionId: selectedCollectionId,
+          });
+
+          if (!saveRes.success) {
+            throw new Error(saveRes.error || "Failed to record photo in database");
+          }
+
+          completed++;
         }
       } catch (err: any) {
-        failedItems.push({ name: rawFile.name, reason: err.message || "Network error" });
+        if (err.message === "Upload cancelled by user") {
+          failedItems.push({ name: rawFile.name, reason: "Cancelled by user" });
+        } else {
+          failedItems.push({ name: rawFile.name, reason: err.message || "Network error" });
+        }
       }
 
       setUploadProgress({
         current: i + 1,
         total,
         statusText: `Uploaded ${i + 1} of ${total}`,
+        currentFileName: rawFile.name,
       });
     }
 
+    activeXhrRef.current = null;
+    releaseWakeLock();
+    setIsAfkActive(false);
     setIsBatchUploading(false);
     setUploadProgress(null);
 
@@ -1424,6 +1639,29 @@ export default function AdminDashboard() {
                           </p>
                         </div>
 
+                        {/* AFK Mode Toggle Switch */}
+                        <div className="flex items-center justify-between p-3 rounded-2xl bg-[var(--bg)] border border-[var(--line)]">
+                          <div className="flex items-center gap-2.5">
+                            <div className="w-8 h-8 rounded-xl bg-amber-500/10 text-amber-300 flex items-center justify-center">
+                              <IconCoffee className="w-4 h-4" />
+                            </div>
+                            <div>
+                              <span className="text-xs font-semibold text-[var(--cream)] block">AFK Screen Keep-Awake</span>
+                              <span className="text-[10px] text-[var(--cream)]/50 block">Prevents phone sleep & timeouts</span>
+                            </div>
+                          </div>
+
+                          <label className="relative inline-flex items-center cursor-pointer">
+                            <input
+                              type="checkbox"
+                              checked={afkModeEnabled}
+                              onChange={(e) => setAfkModeEnabled(e.target.checked)}
+                              className="sr-only peer"
+                            />
+                            <div className="w-10 h-5 bg-gray-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-[var(--rose)]"></div>
+                          </label>
+                        </div>
+
                         <Field label="Caption or Note">
                           <input
                             type="text"
@@ -1448,7 +1686,7 @@ export default function AdminDashboard() {
                       </div>
 
                       {/* Real-time Progress Bar */}
-                      {isBatchUploading && uploadProgress && (
+                      {isBatchUploading && uploadProgress && !isAfkActive && (
                         <div className="bg-[var(--bg)]/80 p-3.5 rounded-2xl border border-[var(--line)] space-y-2">
                           <div className="flex items-center justify-between text-xs font-medium">
                             <span className="text-[var(--cream)]/80 flex items-center gap-2 truncate max-w-[80%]">
@@ -1468,10 +1706,8 @@ export default function AdminDashboard() {
                           <div className="flex justify-end">
                             <button
                               type="button"
-                              onClick={() => {
-                                abortUploadRef.current = true;
-                              }}
-                              className="text-[10px] text-rose-300/80 hover:text-rose-200 underline"
+                              onClick={stopAllUploads}
+                              className="text-[10px] text-rose-300/80 hover:text-rose-200 underline cursor-pointer"
                             >
                               Stop remaining
                             </button>
@@ -1554,7 +1790,7 @@ export default function AdminDashboard() {
               </AnimatePresence>
             </section>
 
-            {/* Collections Grid: our-memories sorted to the first spot & undeletable */}
+            {/* Collections Grid */}
             {collections.length > 0 && (
               <section className="space-y-4">
                 <h2 className="font-serif text-lg font-semibold text-[var(--cream)] flex items-center gap-2">
@@ -1708,7 +1944,7 @@ export default function AdminDashboard() {
                 </div>
               )}
 
-              {/* Filter Chips: our-memories placed directly after Unassigned */}
+              {/* Filter Chips */}
               <div className="flex gap-1.5 overflow-x-auto pb-1 scrollbar-none border-t border-[var(--line)] pt-3">
                 {(() => {
                   const ourMemoriesCol = collections.find(
@@ -2071,6 +2307,19 @@ export default function AdminDashboard() {
                   prev !== null && prev > 0 ? prev - 1 : files.length - 1
                 );
               }}
+            />
+          )}
+        </AnimatePresence>
+
+        {/* Fullscreen Ambient AFK Mode Overlay */}
+        <AnimatePresence>
+          {isAfkActive && uploadProgress && (
+            <AfkUploadOverlay
+              current={uploadProgress.current}
+              total={uploadProgress.total}
+              currentFileName={uploadProgress.currentFileName}
+              statusText={uploadProgress.statusText}
+              onCancel={stopAllUploads}
             />
           )}
         </AnimatePresence>
