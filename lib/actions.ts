@@ -171,27 +171,43 @@ export async function getCloudinarySignatureAction() {
 
 export async function checkDuplicateMediaAction(items: { name: string; size: number }[]) {
   try {
-    const sizes = items.map((i) => i.size).filter((s) => typeof s === "number" && s > 0);
+    const validSizes = items.map((i) => i.size).filter((s) => typeof s === "number" && s > 0);
+    const validNames = items.map((i) => i.name.trim().toLowerCase()).filter(Boolean);
 
-    if (sizes.length === 0) {
+    if (validSizes.length === 0 && validNames.length === 0) {
       return { success: true, duplicates: [] };
     }
 
     const existing = await prisma.mediaItem.findMany({
       where: {
-        size: { in: sizes },
+        OR: [
+          { size: { in: validSizes } },
+          { url: { in: validNames } },
+        ],
       },
       select: {
+        id: true,
         size: true,
+        url: true,
       },
     });
 
     const existingSizes = new Set(existing.map((e) => e.size).filter(Boolean));
-    const duplicates = items
-      .filter((item) => existingSizes.has(item.size))
-      .map((item) => item.name);
+    const duplicates: string[] = [];
 
-    return { success: true, duplicates };
+    items.forEach((item) => {
+      if (existingSizes.has(item.size)) {
+        duplicates.push(item.name);
+        return;
+      }
+      const cleanName = item.name.trim().toLowerCase();
+      const nameMatch = existing.some((e) => e.url.toLowerCase().includes(cleanName));
+      if (nameMatch) {
+        duplicates.push(item.name);
+      }
+    });
+
+    return { success: true, duplicates: Array.from(new Set(duplicates)) };
   } catch (error: any) {
     console.error("Error checking duplicate media:", error);
     return { success: false, duplicates: [] };

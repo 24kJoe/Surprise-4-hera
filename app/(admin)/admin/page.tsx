@@ -679,33 +679,42 @@ export default function AdminDashboard() {
     };
   }, [singleCoverUrl]);
 
-  // Check files for duplicates against database and batch
+  // Check files for duplicates against database and batch (Mobile-Ready)
   const detectDuplicates = useCallback(
     async (fileList: File[]) => {
+      if (!fileList || fileList.length === 0) {
+        setDuplicateNames(new Set());
+        return;
+      }
+
       const dupes = new Set<string>();
 
-      // 1. In-batch duplicates
-      const seen = new Set<string>();
+      // 1. In-batch duplicate check
+      const seenKeys = new Set<string>();
       fileList.forEach((file) => {
-        const key = `${file.name}-${file.size}`;
-        if (seen.has(key)) {
+        const sizeKey = `size-${file.size}`;
+        const nameKey = `name-${file.name.toLowerCase()}`;
+
+        if (seenKeys.has(sizeKey) || seenKeys.has(nameKey)) {
           dupes.add(file.name);
         } else {
-          seen.add(key);
+          seenKeys.add(sizeKey);
+          seenKeys.add(nameKey);
         }
       });
 
-      // 2. Existing database duplicates
-      if (fileList.length > 0) {
-        const checkRes = await checkDuplicateMediaAction(
-          fileList.map((f) => ({ name: f.name, size: f.size }))
-        );
+      // 2. Database duplicate check
+      try {
+        const payload = fileList.map((f) => ({ name: f.name, size: f.size }));
+        const checkRes = await checkDuplicateMediaAction(payload);
         if (checkRes.success && checkRes.duplicates) {
           checkRes.duplicates.forEach((name) => dupes.add(name));
         }
+      } catch (err) {
+        console.error("Duplicate check failed:", err);
       }
 
-      setDuplicateNames(dupes);
+      setDuplicateNames(new Set(dupes));
     },
     []
   );
@@ -773,7 +782,7 @@ export default function AdminDashboard() {
   };
 
   const applyFiles = (selectedFiles: File[]) => {
-    if (selectedFiles.length === 0) return;
+    if (!selectedFiles || selectedFiles.length === 0) return;
 
     if (!singleCoverUrl) {
       const firstImage = selectedFiles.find((f) => f.type.startsWith("image/"));
@@ -782,9 +791,11 @@ export default function AdminDashboard() {
       }
     }
 
-    const nextFiles = [...files, ...selectedFiles];
-    setFiles(nextFiles);
-    detectDuplicates(nextFiles);
+    setFiles((prev) => {
+      const combined = [...prev, ...selectedFiles];
+      detectDuplicates(combined);
+      return combined;
+    });
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -796,7 +807,7 @@ export default function AdminDashboard() {
     e.preventDefault();
     setIsDragging(false);
     applyFiles(Array.from(e.dataTransfer.files || []));
-  }, [files]);
+  }, [applyFiles]);
 
   const handleCreateCollection = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -865,7 +876,7 @@ export default function AdminDashboard() {
     }
   };
 
-  /* Upload pipeline with duplicate warnings & exact failure display */
+  /* Hybrid Direct-to-Cloudinary Video & Android Hardware Safe Photo Pipeline with Precise Item-Level Error Reporting */
   const handleUpload = async (e: React.FormEvent) => {
     e.preventDefault();
     if (files.length === 0) {
@@ -1303,17 +1314,19 @@ export default function AdminDashboard() {
                               </button>
                             </div>
 
-                            {/* Duplicate Alert Notice */}
+                            {/* Mobile-Friendly Duplicate Alert Notice */}
                             {duplicateNames.size > 0 && (
-                              <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-300 text-[11px]">
-                                <IconCopy className="w-3.5 h-3.5" />
-                                <span>{duplicateNames.size} duplicate(s) detected</span>
+                              <div className="w-full max-w-xs flex items-center justify-between gap-2 px-3 py-1.5 rounded-xl bg-amber-500/20 border border-amber-500/40 text-amber-200 text-xs font-medium shadow-sm">
+                                <div className="flex items-center gap-1.5 truncate">
+                                  <IconCopy className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+                                  <span className="truncate">{duplicateNames.size} duplicate(s)</span>
+                                </div>
                                 <button
                                   type="button"
                                   onClick={removeAllDuplicates}
-                                  className="underline font-semibold hover:text-amber-200 ml-1 cursor-pointer"
+                                  className="underline font-bold text-amber-300 hover:text-white shrink-0 cursor-pointer text-[11px]"
                                 >
-                                  Remove them
+                                  Remove
                                 </button>
                               </div>
                             )}
@@ -2067,7 +2080,7 @@ export default function AdminDashboard() {
           {showBulkDeleteModal && (
             <Modal title="Delete Selected Media?" onClose={() => !isBulkDeleting && setShowBulkDeleteModal(false)}>
               <div className="space-y-4">
-                <p className="text-sm text-[var(--cream)]/75 leading-relaxed">
+                <p className="text-sm text-[var(--cream)]/75 leading-relaxed mb-6">
                   Are you sure you want to permanently delete{" "}
                   <strong className="text-rose-400 font-semibold">{selectedMediaIds.size} selected items</strong>? This action cannot be undone.
                 </p>
