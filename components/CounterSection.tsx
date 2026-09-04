@@ -3,9 +3,9 @@
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { CONFIG } from "@/lib/config";
-import { Heart, Sparkles } from "lucide-react";
+import { Heart, Sparkles, CalendarHeart } from "lucide-react";
 
-function diff(start: Date = new Date("2026-01-17T13:21:00+02:00"), now: Date = new Date()) {
+function diff(start: Date, now: Date = new Date()) {
   let ms = now.getTime() - start.getTime();
   if (ms < 0) ms = 0;
   const days = Math.floor(ms / 86400000);
@@ -16,6 +16,24 @@ function diff(start: Date = new Date("2026-01-17T13:21:00+02:00"), now: Date = n
   ms -= mins * 60000;
   const secs = Math.floor(ms / 1000);
   return { days, hours, mins, secs };
+}
+
+function getMonthsDiff(start: Date, now: Date = new Date()) {
+  if (now < start) return { months: 0, extraDays: 0 };
+
+  let months = (now.getFullYear() - start.getFullYear()) * 12 + (now.getMonth() - start.getMonth());
+  
+  // Calculate if the day-of-month has passed
+  const anchor = new Date(start);
+  anchor.setMonth(anchor.getMonth() + months);
+
+  if (now < anchor) {
+    months--;
+    anchor.setMonth(anchor.getMonth() - 1);
+  }
+
+  const extraDays = Math.floor((now.getTime() - anchor.getTime()) / 86400000);
+  return { months, extraDays };
 }
 
 function AnimatedDigit({ digit }: { digit: string }) {
@@ -50,11 +68,14 @@ function AnimatedNumber({ value, pad = 2 }: { value: number; pad?: number }) {
 
 export default function CounterSection() {
   const [values, setValues] = useState({ days: 0, hours: 0, mins: 0, secs: 0 });
+  const [monthData, setMonthData] = useState({ months: 0, extraDays: 0 });
 
   useEffect(() => {
     const start = new Date(CONFIG.startDate);
     function update() {
-      setValues(diff(start, new Date()));
+      const now = new Date();
+      setValues(diff(start, now));
+      setMonthData(getMonthsDiff(start, now));
     }
     update();
     const interval = setInterval(update, 1000);
@@ -116,6 +137,22 @@ export default function CounterSection() {
             </div>
           ))}
         </div>
+
+        {/* Months Tracker Note */}
+        <motion.div 
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.3 }}
+          className="mt-8 inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/60 border border-[var(--line)] shadow-2xs backdrop-blur-xs text-xs font-serif text-[#4a2036]/80"
+        >
+          <CalendarHeart className="w-3.5 h-3.5 text-[var(--rose)]" />
+          <span>
+            That&apos;s roughly <strong className="font-semibold text-[var(--rose)] font-sans">{monthData.months}</strong> {monthData.months === 1 ? "month" : "months"}
+            {monthData.extraDays > 0 && (
+              <> and <strong className="font-semibold text-[var(--rose)] font-sans">{monthData.extraDays}</strong> {monthData.extraDays === 1 ? "day" : "days"}</>
+            )} of loving each other
+          </span>
+        </motion.div>
       </div>
     </section>
   );
