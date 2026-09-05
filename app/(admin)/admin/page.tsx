@@ -57,13 +57,6 @@ function IconArrowLeft(props: React.SVGProps<SVGSVGElement>) {
     </svg>
   );
 }
-function IconArrowRight(props: React.SVGProps<SVGSVGElement>) {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" {...props}>
-      <path {...iconStroke} d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" />
-    </svg>
-  );
-}
 function IconImage(props: React.SVGProps<SVGSVGElement>) {
   return (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" {...props}>
@@ -199,6 +192,18 @@ function IconCoffee(props: React.SVGProps<SVGSVGElement>) {
       <line x1="6" y1="2" x2="6" y2="4" {...iconStroke} />
       <line x1="10" y1="2" x2="10" y2="4" {...iconStroke} />
       <line x1="14" y1="2" x2="14" y2="4" {...iconStroke} />
+    </svg>
+  );
+}
+function IconGrip(props: React.SVGProps<SVGSVGElement>) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+      <circle cx="9" cy="5" r="1" />
+      <circle cx="9" cy="12" r="1" />
+      <circle cx="9" cy="19" r="1" />
+      <circle cx="15" cy="5" r="1" />
+      <circle cx="15" cy="12" r="1" />
+      <circle cx="15" cy="19" r="1" />
     </svg>
   );
 }
@@ -790,7 +795,13 @@ export default function AdminDashboard() {
   const [isPendingEdit, startTransitionEdit] = useTransition();
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [deletingColId, setDeletingColId] = useState<string | null>(null);
+  
+  // New Visual Drag-and-Drop Reordering State
   const [isReordering, setIsReordering] = useState(false);
+  const [reorderMode, setReorderMode] = useState(false);
+  const [localOrderedMedia, setLocalOrderedMedia] = useState<MediaItem[]>([]);
+  const dragItemRef = useRef<number | null>(null);
+  const dragOverItemRef = useRef<number | null>(null);
 
   const requestWakeLock = async () => {
     try {
@@ -1305,27 +1316,47 @@ export default function AdminDashboard() {
     return result;
   }, [mediaItems, activeFilter, searchQuery]);
 
-  const moveMediaItem = async (index: number, direction: "left" | "right") => {
-    if (isReordering) return;
+  // --- Visual Drag & Drop Handlers ---
+  
+  const startReorderMode = () => {
+    setLocalOrderedMedia([...filteredMedia]);
+    setReorderMode(true);
+  };
 
-    const targetIndex = direction === "left" ? index - 1 : index + 1;
-    if (targetIndex < 0 || targetIndex >= filteredMedia.length) return;
+  const handleDragStart = (index: number) => {
+    dragItemRef.current = index;
+  };
 
-    const newArr = [...filteredMedia];
-    const temp = newArr[index];
-    newArr[index] = newArr[targetIndex];
-    newArr[targetIndex] = temp;
+  const handleDragEnter = (index: number) => {
+    dragOverItemRef.current = index;
+    if (dragItemRef.current === null || dragOverItemRef.current === null) return;
+    if (dragItemRef.current === dragOverItemRef.current) return;
 
-    const updatedIds = new Set(newArr.map((m) => m.id));
-    setMediaItems((prev) => {
-      const others = prev.filter((m) => !updatedIds.has(m.id));
-      return [...newArr, ...others];
-    });
+    const items = [...localOrderedMedia];
+    const draggedItemContent = items.splice(dragItemRef.current, 1)[0];
+    items.splice(dragOverItemRef.current, 0, draggedItemContent);
 
+    dragItemRef.current = dragOverItemRef.current;
+    setLocalOrderedMedia(items);
+  };
+
+  const handleDragEnd = () => {
+    dragItemRef.current = null;
+    dragOverItemRef.current = null;
+  };
+
+  const saveNewOrder = async () => {
     setIsReordering(true);
-    const payload = newArr.map((item, idx) => ({ id: item.id, order: idx }));
-    await reorderMediaAction(payload);
+    const payload = localOrderedMedia.map((item, idx) => ({ id: item.id, order: idx }));
+    const res = await reorderMediaAction(payload);
     setIsReordering(false);
+    
+    if (res.success) {
+      setReorderMode(false);
+      loadData(); // refresh from db
+    } else {
+      alert(res.error || "Failed to save order");
+    }
   };
 
   const toggleSelectMedia = (id: string) => {
@@ -1401,6 +1432,8 @@ export default function AdminDashboard() {
       alert(res.error || "Could not assign items");
     }
   };
+
+  const displayMedia = reorderMode ? localOrderedMedia : filteredMedia;
 
   return (
     <div className="min-h-screen bg-[var(--bg)] text-[var(--cream)] p-4 sm:p-8 font-sans selection:bg-[var(--gold)] selection:text-white">
@@ -1934,42 +1967,56 @@ export default function AdminDashboard() {
                     </span>
                   </div>
 
-                  {filteredMedia.length > 0 && (
-                    <button
-                      onClick={() => {
-                        setSelectMode(!selectMode);
-                        clearBulkSelection();
-                      }}
-                      className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-semibold transition-all cursor-pointer border ${
-                        selectMode
-                          ? "bg-[var(--rose)] text-white border-[var(--rose)] shadow-sm"
-                          : "bg-[var(--bg)] text-[var(--cream)]/75 border-[var(--line)] hover:border-[var(--cream)]/30 hover:text-[var(--cream)]"
-                      }`}
-                    >
-                      <IconCheckSquare className="w-3.5 h-3.5" />
-                      <span>{selectMode ? "Exit Selection" : "Select Multiple"}</span>
-                    </button>
+                  {filteredMedia.length > 0 && !reorderMode && (
+                    <>
+                      <button
+                        onClick={() => {
+                          setSelectMode(!selectMode);
+                          clearBulkSelection();
+                        }}
+                        className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-semibold transition-all cursor-pointer border ${
+                          selectMode
+                            ? "bg-[var(--rose)] text-white border-[var(--rose)] shadow-sm"
+                            : "bg-[var(--bg)] text-[var(--cream)]/75 border-[var(--line)] hover:border-[var(--cream)]/30 hover:text-[var(--cream)]"
+                        }`}
+                      >
+                        <IconCheckSquare className="w-3.5 h-3.5" />
+                        <span>{selectMode ? "Exit Selection" : "Select Multiple"}</span>
+                      </button>
+
+                      {!selectMode && filteredMedia.length > 1 && (
+                        <button
+                          onClick={startReorderMode}
+                          className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-semibold bg-[var(--bg)] text-[var(--cream)]/75 border border-[var(--line)] hover:border-[var(--cream)]/30 hover:text-[var(--cream)] transition-all cursor-pointer"
+                        >
+                          <IconGrip className="w-3.5 h-3.5" />
+                          <span>Rearrange Album</span>
+                        </button>
+                      )}
+                    </>
                   )}
                 </div>
 
-                <div className="relative w-full sm:w-64">
-                  <IconSearch className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-[var(--cream)]/40 pointer-events-none" />
-                  <input
-                    type="text"
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    placeholder="Search caption or album..."
-                    className="w-full pl-9 pr-8 py-1.5 rounded-xl bg-[var(--bg)] border border-[var(--line)] text-xs text-[var(--cream)] placeholder:text-[var(--cream)]/35 focus:outline-none focus:border-[var(--rose)]"
-                  />
-                  {searchQuery && (
-                    <button
-                      onClick={() => setSearchQuery("")}
-                      className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[var(--cream)]/40 hover:text-[var(--cream)]"
-                    >
-                      <IconX className="w-3 h-3" />
-                    </button>
-                  )}
-                </div>
+                {!reorderMode && (
+                  <div className="relative w-full sm:w-64">
+                    <IconSearch className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-[var(--cream)]/40 pointer-events-none" />
+                    <input
+                      type="text"
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      placeholder="Search caption or album..."
+                      className="w-full pl-9 pr-8 py-1.5 rounded-xl bg-[var(--bg)] border border-[var(--line)] text-xs text-[var(--cream)] placeholder:text-[var(--cream)]/35 focus:outline-none focus:border-[var(--rose)]"
+                    />
+                    {searchQuery && (
+                      <button
+                        onClick={() => setSearchQuery("")}
+                        className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[var(--cream)]/40 hover:text-[var(--cream)]"
+                      >
+                        <IconX className="w-3 h-3" />
+                      </button>
+                    )}
+                  </div>
+                )}
               </div>
 
               {selectMode && (
@@ -1995,62 +2042,87 @@ export default function AdminDashboard() {
                 </div>
               )}
 
+              {/* Reorder Mode Banner */}
+              <AnimatePresence>
+                {reorderMode && (
+                  <motion.div
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: "auto" }}
+                    exit={{ opacity: 0, height: 0 }}
+                    className="overflow-hidden"
+                  >
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-[var(--plum)]/30 border border-[var(--rose)]/30 p-3.5 px-4 rounded-xl">
+                      <div className="flex items-center gap-2 text-[var(--rose)]">
+                        <IconGrip className="w-4 h-4 shrink-0" />
+                        <span className="text-sm font-medium">Drag and drop the photos to arrange their order</span>
+                      </div>
+                      <div className="flex gap-2 shrink-0">
+                        <GhostButton onClick={() => setReorderMode(false)} disabled={isReordering}>Cancel</GhostButton>
+                        <PrimaryButton onClick={saveNewOrder} loading={isReordering}>Save Order</PrimaryButton>
+                      </div>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+
               {/* Filter Chips */}
-              <div className="flex gap-1.5 overflow-x-auto pb-1 scrollbar-none border-t border-[var(--line)] pt-3">
-                {(() => {
-                  const ourMemoriesCol = collections.find(
-                    (c) => c.title.toLowerCase() === "our-memories" || (c as any).slug === "our-memories"
-                  );
-                  const remainingCols = collections.filter(
-                    (c) => c.id !== ourMemoriesCol?.id
-                  );
+              {!reorderMode && (
+                <div className="flex gap-1.5 overflow-x-auto pb-1 scrollbar-none border-t border-[var(--line)] pt-3">
+                  {(() => {
+                    const ourMemoriesCol = collections.find(
+                      (c) => c.title.toLowerCase() === "our-memories" || (c as any).slug === "our-memories"
+                    );
+                    const remainingCols = collections.filter(
+                      (c) => c.id !== ourMemoriesCol?.id
+                    );
 
-                  const chips = [
-                    { id: "all", label: "All Items", count: mediaItems.length },
-                    { id: "none", label: "Unassigned", count: mediaItems.filter((m) => !m.collectionId).length },
-                    ...(ourMemoriesCol
-                      ? [
-                          {
-                            id: ourMemoriesCol.id,
-                            label: ourMemoriesCol.title,
-                            count: ourMemoriesCol.media?.length || 0,
-                          },
-                        ]
-                      : []),
-                    ...remainingCols.map((c) => ({ id: c.id, label: c.title, count: c.media?.length || 0 })),
-                  ];
+                    const chips = [
+                      { id: "all", label: "All Items", count: mediaItems.length },
+                      { id: "none", label: "Unassigned", count: mediaItems.filter((m) => !m.collectionId).length },
+                      ...(ourMemoriesCol
+                        ? [
+                            {
+                              id: ourMemoriesCol.id,
+                              label: ourMemoriesCol.title,
+                              count: ourMemoriesCol.media?.length || 0,
+                            },
+                          ]
+                        : []),
+                      ...remainingCols.map((c) => ({ id: c.id, label: c.title, count: c.media?.length || 0 })),
+                    ];
 
-                  return chips.map((f) => {
-                    const isActive = activeFilter === f.id;
-                    return (
-                      <button
-                        key={f.id}
-                        onClick={() => setActiveFilter(f.id)}
-                        className={`shrink-0 px-3 py-1.5 rounded-xl text-xs font-medium transition-all cursor-pointer border flex items-center gap-1.5 ${
-                          isActive
-                            ? "bg-[var(--rose)] text-white border-[var(--rose)] shadow-sm"
-                            : "bg-[var(--bg)]/70 text-[var(--cream)]/65 hover:text-[var(--cream)] border-[var(--line)]"
-                        }`}
-                      >
-                        <span>{f.label}</span>
-                        <span
-                          className={`text-[10px] px-1.5 py-0.2 rounded-full ${
-                            isActive ? "bg-white/25 text-white" : "bg-[var(--paper)] text-[var(--cream)]/50"
+                    return chips.map((f) => {
+                      const isActive = activeFilter === f.id;
+                      return (
+                        <button
+                          key={f.id}
+                          onClick={() => setActiveFilter(f.id)}
+                          className={`shrink-0 px-3 py-1.5 rounded-xl text-xs font-medium transition-all cursor-pointer border flex items-center gap-1.5 ${
+                            isActive
+                              ? "bg-[var(--rose)] text-white border-[var(--rose)] shadow-sm"
+                              : "bg-[var(--bg)]/70 text-[var(--cream)]/65 hover:text-[var(--cream)] border-[var(--line)]"
                           }`}
                         >
-                          {f.count}
-                        </span>
-                      </button>
-                    );
-                  });
-                })()}
-              </div>
+                          <span>{f.label}</span>
+                          <span
+                            className={`text-[10px] px-1.5 py-0.2 rounded-full ${
+                              isActive ? "bg-white/25 text-white" : "bg-[var(--paper)] text-[var(--cream)]/50"
+                            }`}
+                          >
+                            {f.count}
+                          </span>
+                        </button>
+                      );
+                    });
+                  })()}
+                </div>
+              )}
             </div>
 
             {!loaded ? (
               <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
                 {Array.from({ length: 8 }).map((_, i) => (
-                  <div key={i} className="aspect-[3/4] rounded-2xl bg-[var(--paper)] border border-[var(--line)] animate-pulse" />
+                  <div key={i} className="aspect-[3/4] sm:aspect-[3/4] min-h-[270px] sm:min-h-0 rounded-2xl bg-[var(--paper)] border border-[var(--line)] animate-pulse" />
                 ))}
               </div>
             ) : filteredMedia.length === 0 ? (
@@ -2070,38 +2142,40 @@ export default function AdminDashboard() {
             ) : (
               <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
                 <AnimatePresence mode="popLayout">
-                  {filteredMedia.map((item, index) => {
+                  {displayMedia.map((item, index) => {
                     const isSelected = selectedMediaIds.has(item.id);
 
                     return (
                       <motion.div
                         key={item.id}
                         layout
-                        initial={{ opacity: 0, scale: 0.96 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        exit={{ opacity: 0, scale: 0.96 }}
+                        draggable={reorderMode}
+                        onDragStart={() => reorderMode && handleDragStart(index)}
+                        onDragEnter={() => reorderMode && handleDragEnter(index)}
+                        onDragEnd={() => reorderMode && handleDragEnd()}
+                        onDragOver={(e) => e.preventDefault()}
                         onClick={() => {
                           if (selectMode) toggleSelectMedia(item.id);
                         }}
-                        className={`group relative aspect-[3/4] rounded-2xl overflow-hidden border transition-all flex flex-col justify-between ${
+                        className={`group relative aspect-[3/4] sm:aspect-[3/4] min-h-[270px] sm:min-h-0 rounded-2xl overflow-hidden border transition-all flex flex-col justify-between ${
                           isSelected
                             ? "border-[var(--rose)] ring-3 ring-[var(--rose)]/40 shadow-lg shadow-[var(--rose)]/20"
                             : "border-[var(--line)] bg-[var(--paper)] shadow-sm hover:shadow-lg hover:border-[var(--cream)]/25"
-                        } ${selectMode ? "cursor-pointer" : ""}`}
+                        } ${selectMode ? "cursor-pointer" : ""} ${reorderMode ? "cursor-grab active:cursor-grabbing hover:ring-2 hover:ring-[var(--rose)]/50" : ""}`}
                       >
                         <div
                           onClick={(e) => {
-                            if (!selectMode) {
+                            if (!selectMode && !reorderMode) {
                               setInspectingMedia(item);
                             }
                           }}
-                          className="absolute inset-0 cursor-pointer overflow-hidden bg-black/40"
+                          className={`absolute inset-0 overflow-hidden bg-black/40 ${!reorderMode ? 'cursor-pointer' : ''}`}
                         >
                           {item.type === "VIDEO" ? (
                             <video
                               src={item.url}
                               poster={item.thumbnailUrl || undefined}
-                              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 pointer-events-none"
                               muted
                               loop
                               playsInline
@@ -2110,7 +2184,7 @@ export default function AdminDashboard() {
                             <img
                               src={item.url}
                               alt={item.altText || "Media item"}
-                              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 pointer-events-none"
                             />
                           )}
                         </div>
@@ -2134,7 +2208,7 @@ export default function AdminDashboard() {
                             </div>
                           ) : item.collection ? (
                             <span
-                              onClick={() => setActiveFilter(item.collection!.id)}
+                              onClick={() => !reorderMode && setActiveFilter(item.collection!.id)}
                               className="bg-[var(--paper)]/90 backdrop-blur-md border border-[var(--line)] text-[var(--rose)] text-[10px] font-semibold px-2 py-0.5 rounded-lg truncate max-w-[70%] shadow-sm hover:border-[var(--rose)] transition-colors cursor-pointer"
                               title={`Filter by: ${item.collection.title}`}
                             >
@@ -2150,7 +2224,7 @@ export default function AdminDashboard() {
                                 <IconVideo className="w-3 h-3" />
                               </span>
                             )}
-                            {!selectMode && (
+                            {!selectMode && !reorderMode && (
                               <button
                                 onClick={(e) => {
                                   e.stopPropagation();
@@ -2177,58 +2251,38 @@ export default function AdminDashboard() {
                             })}
                           </span>
 
-                          {/* Reorder Buttons (Arrangement) */}
-                          {!selectMode && (
-                            <div className="flex items-center justify-between gap-1 mt-2 pt-2 border-t border-white/15">
-                              <div className="flex items-center gap-1">
-                                <button
-                                  type="button"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    moveMediaItem(index, "left");
-                                  }}
-                                  disabled={index === 0 || isReordering}
-                                  className="p-1 rounded-lg bg-black/40 hover:bg-black/70 disabled:opacity-30 disabled:pointer-events-none text-white text-[10px] border border-white/10 transition-colors"
-                                  title="Move earlier"
-                                >
-                                  <IconArrowLeft className="w-3.5 h-3.5" />
-                                </button>
-                                <button
-                                  type="button"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    moveMediaItem(index, "right");
-                                  }}
-                                  disabled={index === filteredMedia.length - 1 || isReordering}
-                                  className="p-1 rounded-lg bg-black/40 hover:bg-black/70 disabled:opacity-30 disabled:pointer-events-none text-white text-[10px] border border-white/10 transition-colors"
-                                  title="Move later"
-                                >
-                                  <IconArrowRight className="w-3.5 h-3.5" />
-                                </button>
-                              </div>
-
-                              <div className="flex items-center gap-1">
-                                <button
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    setEditingMedia(item);
-                                  }}
-                                  className="py-1 px-2 rounded-lg bg-[var(--paper)]/90 hover:bg-[var(--paper)] text-[var(--cream)] text-[11px] font-medium flex items-center justify-center gap-1 border border-[var(--line)] transition-colors cursor-pointer"
-                                >
-                                  <IconEdit className="w-3 h-3" />
-                                </button>
-                                <button
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    setConfirmDeleteMedia(item);
-                                  }}
-                                  disabled={deletingId === item.id}
-                                  className="py-1 px-2 rounded-lg bg-rose-500/20 hover:bg-rose-500/30 text-rose-300 text-[11px] font-medium flex items-center justify-center gap-1 border border-rose-500/30 transition-colors cursor-pointer"
-                                >
-                                  {deletingId === item.id ? <IconSpinner className="w-3.5 h-3.5" /> : <IconTrash className="w-3.5 h-3.5" />}
-                                </button>
-                              </div>
+                          {/* Edit / Delete Buttons */}
+                          {!selectMode && !reorderMode && (
+                            <div className="flex items-center justify-end gap-1.5 mt-2.5 pt-2 border-t border-white/15">
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setEditingMedia(item);
+                                }}
+                                className="py-1 px-3 rounded-lg bg-[var(--paper)]/90 hover:bg-[var(--paper)] text-[var(--cream)] text-[11px] font-medium flex items-center justify-center gap-1 border border-[var(--line)] transition-colors cursor-pointer"
+                              >
+                                <IconEdit className="w-3 h-3" /> Edit
+                              </button>
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setConfirmDeleteMedia(item);
+                                }}
+                                disabled={deletingId === item.id}
+                                className="py-1 px-3 rounded-lg bg-rose-500/20 hover:bg-rose-500/30 text-rose-300 text-[11px] font-medium flex items-center justify-center gap-1 border border-rose-500/30 transition-colors cursor-pointer"
+                              >
+                                {deletingId === item.id ? <IconSpinner className="w-3.5 h-3.5" /> : <IconTrash className="w-3.5 h-3.5" />}
+                              </button>
                             </div>
+                          )}
+
+                          {/* Reorder Mode Indicator */}
+                          {reorderMode && (
+                             <div className="flex items-center justify-center mt-2.5 pt-2 border-t border-white/15">
+                               <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-black/50 text-white/70 text-[10px] font-medium uppercase tracking-wider">
+                                 <IconGrip className="w-3 h-3" /> Drag to move
+                               </div>
+                             </div>
                           )}
                         </div>
                       </motion.div>
@@ -2244,34 +2298,36 @@ export default function AdminDashboard() {
                   initial={{ opacity: 0, y: 40 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: 40 }}
-                  className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 bg-[var(--paper)] border border-[var(--line)] shadow-2xl p-3 px-6 rounded-2xl flex items-center gap-4 text-sm"
+                  className="fixed bottom-4 left-1/2 -translate-x-1/2 z-40 bg-[var(--paper)] border border-[var(--line)] shadow-2xl p-2.5 px-3.5 rounded-2xl flex flex-wrap items-center justify-between gap-2 text-xs w-[92vw] max-w-md backdrop-blur-md"
                 >
-                  <span className="text-[var(--cream)] font-medium">
+                  <span className="text-[var(--cream)] font-medium text-xs">
                     <strong className="text-[var(--rose)]">{selectedMediaIds.size}</strong> selected
                   </span>
 
-                  <button
-                    onClick={() => setShowBulkAssignModal(true)}
-                    className="inline-flex items-center gap-2 py-2 px-4 rounded-xl bg-[var(--paper)] border border-[var(--line)] hover:bg-[var(--bg)] text-[var(--cream)] font-medium text-xs shadow-md transition-all active:scale-[0.98] cursor-pointer"
-                  >
-                    <IconFolder className="w-4 h-4 text-[var(--gold-soft)]" />
-                    <span>Move to Album</span>
-                  </button>
+                  <div className="flex items-center gap-1.5 ml-auto">
+                    <button
+                      onClick={() => setShowBulkAssignModal(true)}
+                      className="inline-flex items-center gap-1.5 py-1.5 px-2.5 rounded-xl bg-[var(--paper)] border border-[var(--line)] text-[var(--cream)] font-medium text-[11px] shadow-sm cursor-pointer"
+                    >
+                      <IconFolder className="w-3.5 h-3.5 text-[var(--gold-soft)]" />
+                      <span>Move</span>
+                    </button>
 
-                  <button
-                    onClick={() => setShowBulkDeleteModal(true)}
-                    className="inline-flex items-center gap-2 py-2 px-4 rounded-xl bg-rose-500 hover:bg-rose-600 text-white font-medium text-xs shadow-md transition-all active:scale-[0.98] cursor-pointer"
-                  >
-                    <IconTrash className="w-4 h-4" />
-                    <span>Delete Selected</span>
-                  </button>
+                    <button
+                      onClick={() => setShowBulkDeleteModal(true)}
+                      className="inline-flex items-center gap-1 py-1.5 px-2.5 rounded-xl bg-rose-500 text-white font-medium text-[11px] shadow-sm cursor-pointer"
+                    >
+                      <IconTrash className="w-3.5 h-3.5" />
+                      <span>Delete</span>
+                    </button>
 
-                  <button
-                    onClick={clearBulkSelection}
-                    className="text-xs text-[var(--cream)]/60 hover:text-[var(--cream)] cursor-pointer"
-                  >
-                    Cancel
-                  </button>
+                    <button
+                      onClick={clearBulkSelection}
+                      className="text-[11px] text-[var(--cream)]/60 hover:text-[var(--cream)] px-1 cursor-pointer"
+                    >
+                      Cancel
+                    </button>
+                  </div>
                 </motion.div>
               )}
             </AnimatePresence>
