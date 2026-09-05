@@ -419,3 +419,18 @@ export async function deleteMediaAction(mediaId: string) {
     return { success: false, error: error.message || "An error occurred while deleting the media item" };
   }
 }
+
+export async function bulkAssignMediaAction(mediaIds: string[], collectionId: string | null) {
+  try {
+    await prisma.mediaItem.updateMany({
+      where: { id: { in: mediaIds } },
+      data: { collectionId },
+    });
+
+    revalidatePath("/admin");
+    return { success: true };
+  } catch (error: any) {
+    console.error("Error bulk assigning media:", error);
+    return { success: false, error: error.message || "Failed to assign items" };
+  }
+}

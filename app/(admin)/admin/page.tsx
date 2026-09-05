@@ -16,6 +16,7 @@ import {
   saveDirectMediaAction,
   checkDuplicateMediaAction,
   reorderMediaAction,
+  bulkAssignMediaAction,
 } from "@/lib/actions";
 
 export type MediaType = "IMAGE" | "VIDEO";
@@ -763,6 +764,11 @@ export default function AdminDashboard() {
   const [isBulkDeleting, setIsBulkDeleting] = useState(false);
   const [showBulkDeleteModal, setShowBulkDeleteModal] = useState(false);
 
+  // Bulk Assign State
+  const [showBulkAssignModal, setShowBulkAssignModal] = useState(false);
+  const [isBulkAssigning, setIsBulkAssigning] = useState(false);
+  const [bulkCollectionId, setBulkCollectionId] = useState("none");
+
   // Collection State
   const [newColTitle, setNewColTitle] = useState("");
   const [newColDesc, setNewColDesc] = useState("");
@@ -1040,7 +1046,6 @@ export default function AdminDashboard() {
     }
   };
 
-  /* Unified Direct-to-Cloudinary (Photos + Videos) Upload Pipeline */
   const handleUpload = async (e: React.FormEvent) => {
     e.preventDefault();
     if (files.length === 0) {
@@ -1300,7 +1305,6 @@ export default function AdminDashboard() {
     return result;
   }, [mediaItems, activeFilter, searchQuery]);
 
-  /* Shift arrangement of items in the current collection */
   const moveMediaItem = async (index: number, direction: "left" | "right") => {
     if (isReordering) return;
 
@@ -1312,7 +1316,6 @@ export default function AdminDashboard() {
     newArr[index] = newArr[targetIndex];
     newArr[targetIndex] = temp;
 
-    // Optimistically update the UI
     const updatedIds = new Set(newArr.map((m) => m.id));
     setMediaItems((prev) => {
       const others = prev.filter((m) => !updatedIds.has(m.id));
@@ -1377,6 +1380,25 @@ export default function AdminDashboard() {
       alert(`Deleted ${deletedCount} items. ${failedIds.length} failed to delete.`);
     } else {
       setSelectMode(false);
+    }
+  };
+
+  const handleBulkAssign = async () => {
+    const ids = Array.from(selectedMediaIds);
+    if (ids.length === 0) return;
+
+    setIsBulkAssigning(true);
+    const colId = bulkCollectionId === "none" ? null : bulkCollectionId;
+    const res = await bulkAssignMediaAction(ids, colId);
+    setIsBulkAssigning(false);
+
+    if (res.success) {
+      setShowBulkAssignModal(false);
+      setSelectMode(false);
+      clearBulkSelection();
+      await loadData();
+    } else {
+      alert(res.error || "Could not assign items");
     }
   };
 
@@ -2229,6 +2251,14 @@ export default function AdminDashboard() {
                   </span>
 
                   <button
+                    onClick={() => setShowBulkAssignModal(true)}
+                    className="inline-flex items-center gap-2 py-2 px-4 rounded-xl bg-[var(--paper)] border border-[var(--line)] hover:bg-[var(--bg)] text-[var(--cream)] font-medium text-xs shadow-md transition-all active:scale-[0.98] cursor-pointer"
+                  >
+                    <IconFolder className="w-4 h-4 text-[var(--gold-soft)]" />
+                    <span>Move to Album</span>
+                  </button>
+
+                  <button
                     onClick={() => setShowBulkDeleteModal(true)}
                     className="inline-flex items-center gap-2 py-2 px-4 rounded-xl bg-rose-500 hover:bg-rose-600 text-white font-medium text-xs shadow-md transition-all active:scale-[0.98] cursor-pointer"
                   >
@@ -2238,7 +2268,7 @@ export default function AdminDashboard() {
 
                   <button
                     onClick={clearBulkSelection}
-                    className="text-xs text-[var(--cream)]/60 hover:text-[var(--cream)]"
+                    className="text-xs text-[var(--cream)]/60 hover:text-[var(--cream)] cursor-pointer"
                   >
                     Cancel
                   </button>
@@ -2386,6 +2416,51 @@ export default function AdminDashboard() {
               statusText={uploadProgress.statusText}
               onCancel={stopAllUploads}
             />
+          )}
+        </AnimatePresence>
+
+        {/* Bulk Assign Modal */}
+        <AnimatePresence>
+          {showBulkAssignModal && (
+            <Modal title="Move Selected to Album" onClose={() => !isBulkAssigning && setShowBulkAssignModal(false)}>
+              <div className="space-y-4">
+                <p className="text-sm text-[var(--cream)]/75 leading-relaxed mb-4">
+                  Assign <strong className="text-[var(--rose)] font-semibold">{selectedMediaIds.size} selected items</strong> to:
+                </p>
+
+                <Field label="Target Album">
+                  <select
+                    value={bulkCollectionId}
+                    onChange={(e) => setBulkCollectionId(e.target.value)}
+                    disabled={isBulkAssigning}
+                    className={inputCls}
+                  >
+                    <option value="none">General (Unassigned)</option>
+                    {collections.map((col) => (
+                      <option key={col.id} value={col.id} className="bg-[var(--paper)] text-[var(--cream)]">
+                        {col.title}
+                      </option>
+                    ))}
+                  </select>
+                </Field>
+
+                <div className="flex justify-end gap-2 pt-4">
+                  <GhostButton
+                    onClick={() => setShowBulkAssignModal(false)}
+                    disabled={isBulkAssigning}
+                  >
+                    Cancel
+                  </GhostButton>
+                  <PrimaryButton
+                    onClick={handleBulkAssign}
+                    disabled={isBulkAssigning}
+                    loading={isBulkAssigning}
+                  >
+                    Move {selectedMediaIds.size} Items
+                  </PrimaryButton>
+                </div>
+              </div>
+            </Modal>
           )}
         </AnimatePresence>
 
