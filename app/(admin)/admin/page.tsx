@@ -57,13 +57,6 @@ function IconArrowLeft(props: React.SVGProps<SVGSVGElement>) {
     </svg>
   );
 }
-function IconArrowRight(props: React.SVGProps<SVGSVGElement>) {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" {...props}>
-      <path {...iconStroke} d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" />
-    </svg>
-  );
-}
 function IconImage(props: React.SVGProps<SVGSVGElement>) {
   return (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" {...props}>
@@ -2026,6 +2019,29 @@ export default function AdminDashboard() {
                 )}
               </div>
 
+              {selectMode && (
+                <div className="flex items-center justify-between bg-[var(--bg)]/70 p-2.5 px-3.5 rounded-xl border border-[var(--line)]">
+                  <div className="flex items-center gap-3">
+                    <button
+                      onClick={selectAllFiltered}
+                      className="text-xs font-semibold text-[var(--rose)] hover:underline cursor-pointer"
+                    >
+                      Select All ({filteredMedia.length})
+                    </button>
+                    <span className="text-[var(--cream)]/20 text-xs">•</span>
+                    <button
+                      onClick={clearBulkSelection}
+                      className="text-xs text-[var(--cream)]/60 hover:text-[var(--cream)] cursor-pointer"
+                    >
+                      Deselect All
+                    </button>
+                  </div>
+                  <span className="text-xs font-semibold text-[var(--cream)]">
+                    {selectedMediaIds.size} selected
+                  </span>
+                </div>
+              )}
+
               {/* Reorder Mode Banner */}
               <AnimatePresence>
                 {reorderMode && (
@@ -2276,44 +2292,40 @@ export default function AdminDashboard() {
               </div>
             )}
 
-            {/* Bulk Selection Floating Bar */}
             <AnimatePresence>
               {selectMode && selectedMediaIds.size > 0 && (
                 <motion.div
                   initial={{ opacity: 0, y: 40 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: 40 }}
-                  className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 bg-[var(--paper)] border border-[var(--line)] shadow-2xl p-3 px-4 sm:px-6 rounded-2xl flex items-center justify-between gap-3 w-[92vw] max-w-fit backdrop-blur-md"
+                  className="fixed bottom-4 left-1/2 -translate-x-1/2 z-40 bg-[var(--paper)] border border-[var(--line)] shadow-2xl p-2.5 px-3.5 rounded-2xl flex flex-wrap items-center justify-between gap-2 text-xs w-[92vw] max-w-md backdrop-blur-md"
                 >
-                  <span className="text-[var(--cream)] font-medium text-xs sm:text-sm whitespace-nowrap">
-                    <strong className="text-[var(--rose)] text-sm sm:text-base">{selectedMediaIds.size}</strong> selected
+                  <span className="text-[var(--cream)] font-medium text-xs">
+                    <strong className="text-[var(--rose)]">{selectedMediaIds.size}</strong> selected
                   </span>
 
-                  <div className="flex items-center gap-2 sm:gap-4">
+                  <div className="flex items-center gap-1.5 ml-auto">
                     <button
                       onClick={() => setShowBulkAssignModal(true)}
-                      className="inline-flex items-center gap-1.5 py-2 px-3 rounded-xl bg-[var(--paper)] border border-[var(--line)] hover:bg-[var(--bg)] text-[var(--cream)] font-medium text-xs shadow-md transition-all active:scale-[0.98] cursor-pointer whitespace-nowrap"
+                      className="inline-flex items-center gap-1.5 py-1.5 px-2.5 rounded-xl bg-[var(--paper)] border border-[var(--line)] text-[var(--cream)] font-medium text-[11px] shadow-sm cursor-pointer"
                     >
-                      <IconFolder className="w-4 h-4 text-[var(--gold-soft)]" />
-                      <span className="hidden sm:inline">Move to Album</span>
-                      <span className="sm:hidden">Move</span>
+                      <IconFolder className="w-3.5 h-3.5 text-[var(--gold-soft)]" />
+                      <span>Move</span>
                     </button>
 
                     <button
                       onClick={() => setShowBulkDeleteModal(true)}
-                      className="inline-flex items-center gap-1.5 py-2 px-3 rounded-xl bg-rose-500 hover:bg-rose-600 text-white font-medium text-xs shadow-md transition-all active:scale-[0.98] cursor-pointer whitespace-nowrap"
+                      className="inline-flex items-center gap-1 py-1.5 px-2.5 rounded-xl bg-rose-500 text-white font-medium text-[11px] shadow-sm cursor-pointer"
                     >
-                      <IconTrash className="w-4 h-4" />
-                      <span className="hidden sm:inline">Delete Selected</span>
-                      <span className="sm:hidden">Delete</span>
+                      <IconTrash className="w-3.5 h-3.5" />
+                      <span>Delete</span>
                     </button>
 
                     <button
                       onClick={clearBulkSelection}
-                      className="text-xs text-[var(--cream)]/60 hover:text-[var(--cream)] cursor-pointer whitespace-nowrap p-1"
+                      className="text-[11px] text-[var(--cream)]/60 hover:text-[var(--cream)] px-1 cursor-pointer"
                     >
-                      <span className="hidden sm:inline">Cancel</span>
-                      <IconX className="w-5 h-5 sm:hidden" />
+                      Cancel
                     </button>
                   </div>
                 </motion.div>
