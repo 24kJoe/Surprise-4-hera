@@ -373,19 +373,30 @@ export async function updateMediaAction(formData: FormData) {
     const caption = formData.get("caption") as string;
     const altText = formData.get("altText") as string;
     const collectionId = formData.get("collectionId") as string;
+    const thumbnailUrl = formData.get("thumbnailUrl") as string | null;
 
-    if (!id) return { success: false, error: "Media ID is missing" };
+    if (!id) {
+      return { success: false, error: "Media ID is missing" };
+    }
+
+    const dataToUpdate: any = {
+      caption: caption || null,
+      altText: altText || null,
+      collectionId: collectionId && collectionId !== "none" ? collectionId : null,
+    };
+
+    if (thumbnailUrl) {
+      dataToUpdate.thumbnailUrl = thumbnailUrl;
+    }
 
     const updatedMedia = await prisma.mediaItem.update({
       where: { id },
-      data: {
-        caption: caption || null,
-        altText: altText || null,
-        collectionId: collectionId && collectionId !== "none" ? collectionId : null,
-      },
+      data: dataToUpdate,
     });
 
     revalidatePath("/admin");
+    revalidatePath("/gallery");
+
     return { success: true, data: updatedMedia };
   } catch (error: any) {
     console.error("Update media error:", error);
