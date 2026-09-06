@@ -1971,47 +1971,47 @@ export default function AdminDashboard() {
             className="space-y-6 pb-20"
           >
             <div className="bg-[var(--paper)]/80 backdrop-blur-md p-4 sm:p-5 rounded-3xl border border-[var(--line)] shadow-sm space-y-4">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                <div className="flex items-center gap-3">
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm font-semibold text-[var(--cream)]">All Media</span>
-                    <span className="text-xs px-2 py-0.5 rounded-full bg-[var(--plum)] text-[var(--rose)] font-semibold">
+              <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
+                <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+                  <div className="flex items-center gap-2 pr-1 sm:pr-2">
+                    <span className="text-sm font-semibold text-[var(--cream)] whitespace-nowrap">All Media</span>
+                    <span className="text-xs px-2 py-0.5 rounded-full bg-[var(--plum)] text-[var(--rose)] font-semibold whitespace-nowrap">
                       {filteredMedia.length} of {mediaItems.length}
                     </span>
                   </div>
 
                   {filteredMedia.length > 0 && !reorderMode && (
-                    <>
+                    <div className="flex items-center gap-2">
                       <button
                         onClick={() => {
                           setSelectMode(!selectMode);
                           clearBulkSelection();
                         }}
-                        className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-semibold transition-all cursor-pointer border ${
+                        className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer border ${
                           selectMode
                             ? "bg-[var(--rose)] text-white border-[var(--rose)] shadow-sm"
                             : "bg-[var(--bg)] text-[var(--cream)]/75 border-[var(--line)] hover:border-[var(--cream)]/30 hover:text-[var(--cream)]"
                         }`}
                       >
                         <IconCheckSquare className="w-3.5 h-3.5" />
-                        <span>{selectMode ? "Exit Selection" : "Select Multiple"}</span>
+                        <span className="whitespace-nowrap">{selectMode ? "Exit Selection" : "Select Multiple"}</span>
                       </button>
 
                       {!selectMode && filteredMedia.length > 1 && (
                         <button
                           onClick={startReorderMode}
-                          className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-semibold bg-[var(--bg)] text-[var(--cream)]/75 border border-[var(--line)] hover:border-[var(--cream)]/30 hover:text-[var(--cream)] transition-all cursor-pointer"
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-[var(--bg)] text-[var(--cream)]/75 border border-[var(--line)] hover:border-[var(--cream)]/30 hover:text-[var(--cream)] transition-all cursor-pointer"
                         >
                           <IconGrip className="w-3.5 h-3.5" />
-                          <span>Rearrange Album</span>
+                          <span className="whitespace-nowrap">Rearrange</span>
                         </button>
                       )}
-                    </>
+                    </div>
                   )}
                 </div>
 
                 {!reorderMode && (
-                  <div className="relative w-full sm:w-64">
+                  <div className="relative w-full md:w-64">
                     <IconSearch className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-[var(--cream)]/40 pointer-events-none" />
                     <input
                       type="text"
@@ -2110,9 +2110,9 @@ export default function AdminDashboard() {
             </div>
 
             {!loaded ? (
-              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
                 {Array.from({ length: 8 }).map((_, i) => (
-                  <div key={i} className="aspect-[3/4] sm:aspect-[3/4] min-h-[270px] sm:min-h-0 rounded-2xl bg-[var(--paper)] border border-[var(--line)] animate-pulse" />
+                  <div key={i} className="aspect-[3/4] rounded-2xl bg-[var(--paper)] border border-[var(--line)] animate-pulse" />
                 ))}
               </div>
             ) : filteredMedia.length === 0 ? (
@@ -2130,7 +2130,7 @@ export default function AdminDashboard() {
                 </button>
               </div>
             ) : (
-              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
                 <AnimatePresence mode="popLayout">
                   {displayMedia.map((item, index) => {
                     const isSelected = selectedMediaIds.has(item.id);
@@ -2147,9 +2147,9 @@ export default function AdminDashboard() {
                         onClick={() => {
                           if (selectMode) toggleSelectMedia(item.id);
                         }}
-                        className={`group relative aspect-[3/4] sm:aspect-[3/4] min-h-[270px] sm:min-h-0 rounded-2xl overflow-hidden border transition-all flex flex-col justify-between ${
+                        className={`group relative aspect-[3/4] rounded-2xl overflow-hidden border transition-all flex flex-col justify-between ${
                           isSelected
-                            ? "border-[var(--rose)] ring-3 ring-[var(--rose)]/40 shadow-lg shadow-[var(--rose)]/20"
+                            ? "border-[var(--rose)] ring-2 sm:ring-3 ring-[var(--rose)]/40 shadow-lg shadow-[var(--rose)]/20"
                             : "border-[var(--line)] bg-[var(--paper)] shadow-sm hover:shadow-lg hover:border-[var(--cream)]/25"
                         } ${selectMode ? "cursor-pointer" : ""} ${reorderMode ? "cursor-grab active:cursor-grabbing hover:ring-2 hover:ring-[var(--rose)]/50" : ""}`}
                       >
@@ -2181,22 +2181,22 @@ export default function AdminDashboard() {
 
                         <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-black/30 pointer-events-none opacity-80 group-hover:opacity-95 transition-opacity" />
 
-                        <div className="relative z-10 p-2.5 flex items-start justify-between gap-2">
+                        <div className="relative z-10 p-2 sm:p-2.5 flex items-start justify-between gap-1.5 sm:gap-2">
                           {/* Left Side: Checkbox AND Album Label */}
-                          <div className="flex items-start gap-2 min-w-0">
+                          <div className="flex items-start gap-1.5 sm:gap-2 min-w-0">
                             {selectMode && (
                               <div
                                 onClick={(e) => {
                                   e.stopPropagation();
                                   toggleSelectMedia(item.id);
                                 }}
-                                className={`w-6 h-6 shrink-0 rounded-lg flex items-center justify-center transition-all cursor-pointer shadow-md ${
+                                className={`w-5 h-5 sm:w-6 sm:h-6 shrink-0 rounded-lg flex items-center justify-center transition-all cursor-pointer shadow-md ${
                                   isSelected
                                     ? "bg-[var(--rose)] text-white"
                                     : "bg-black/60 border border-white/40 text-transparent hover:border-white"
                                 }`}
                               >
-                                <IconCheck className="w-3.5 h-3.5" />
+                                <IconCheck className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
                               </div>
                             )}
                             
@@ -2208,7 +2208,7 @@ export default function AdminDashboard() {
                                     setActiveFilter(item.collection!.id);
                                   }
                                 }}
-                                className="bg-[var(--paper)]/90 backdrop-blur-md border border-[var(--line)] text-[var(--rose)] text-[10px] font-semibold px-2 py-0.5 rounded-lg truncate max-w-[80px] sm:max-w-[120px] shadow-sm hover:border-[var(--rose)] transition-colors cursor-pointer"
+                                className="bg-[var(--paper)]/90 backdrop-blur-md border border-[var(--line)] text-[var(--rose)] text-[9px] sm:text-[10px] font-semibold px-1.5 py-0.5 sm:px-2 rounded-lg truncate max-w-[75px] sm:max-w-[120px] shadow-sm hover:border-[var(--rose)] transition-colors cursor-pointer"
                                 title={`Filter by: ${item.collection.title}`}
                               >
                                 {item.collection.title}
@@ -2238,51 +2238,54 @@ export default function AdminDashboard() {
                           </div>
                         </div>
 
-                        <div className="relative z-10 p-3 pt-4 flex flex-col justify-end">
-                          <p className="text-xs font-medium text-[var(--cream)] truncate drop-shadow-sm">
-                            {item.caption || <span className="text-[var(--cream)]/40 italic">Untitled Asset</span>}
-                          </p>
-                          <span className="text-[10px] text-[var(--cream)]/50 mt-0.5">
-                            {new Date(item.createdAt).toLocaleDateString("en-US", {
-                              month: "short",
-                              day: "numeric",
-                              year: "numeric",
-                            })}
-                          </span>
+                        <div className="relative z-10 p-1.5 sm:p-2 flex flex-col justify-end mt-auto">
+                          <div className="bg-black/60 backdrop-blur-md rounded-xl p-2 sm:p-2.5 border border-white/10 shadow-sm">
+                            <p className="text-[11px] sm:text-xs font-medium text-white w-full truncate drop-shadow-md">
+                              {item.caption || <span className="text-white/60 italic font-normal">Untitled Asset</span>}
+                            </p>
+                            <span className="text-[9px] sm:text-[10px] text-white/50 mt-0.5 block font-medium tracking-wide">
+                              {new Date(item.createdAt).toLocaleDateString("en-US", {
+                                month: "short",
+                                day: "numeric",
+                                year: "numeric",
+                              })}
+                            </span>
 
-                          {/* Edit / Delete Buttons */}
-                          {!selectMode && !reorderMode && (
-                            <div className="flex items-center justify-end gap-1.5 mt-2.5 pt-2 border-t border-white/15">
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  setEditingMedia(item);
-                                }}
-                                className="py-1 px-3 rounded-lg bg-[var(--paper)]/90 hover:bg-[var(--paper)] text-[var(--cream)] text-[11px] font-medium flex items-center justify-center gap-1 border border-[var(--line)] transition-colors cursor-pointer"
-                              >
-                                <IconEdit className="w-3 h-3" /> Edit
-                              </button>
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  setConfirmDeleteMedia(item);
-                                }}
-                                disabled={deletingId === item.id}
-                                className="py-1 px-3 rounded-lg bg-rose-500/20 hover:bg-rose-500/30 text-rose-300 text-[11px] font-medium flex items-center justify-center gap-1 border border-rose-500/30 transition-colors cursor-pointer"
-                              >
-                                {deletingId === item.id ? <IconSpinner className="w-3.5 h-3.5" /> : <IconTrash className="w-3.5 h-3.5" />}
-                              </button>
-                            </div>
-                          )}
+                            {/* Edit / Delete Buttons */}
+                            {!selectMode && !reorderMode && (
+                              <div className="flex items-center justify-end gap-1.5 mt-2 pt-2 border-t border-white/15">
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setEditingMedia(item);
+                                  }}
+                                  className="py-1 px-2 sm:px-3 rounded-lg bg-white/10 hover:bg-white/20 text-white text-[10px] sm:text-[11px] font-medium flex items-center justify-center gap-1 border border-white/5 transition-colors cursor-pointer"
+                                >
+                                  <IconEdit className="w-2.5 h-2.5 sm:w-3 sm:h-3" /> 
+                                  <span className="hidden sm:inline">Edit</span>
+                                </button>
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setConfirmDeleteMedia(item);
+                                  }}
+                                  disabled={deletingId === item.id}
+                                  className="py-1 px-2 sm:px-3 rounded-lg bg-rose-500/30 hover:bg-rose-500/50 text-rose-100 text-[10px] sm:text-[11px] font-medium flex items-center justify-center gap-1 border border-rose-500/30 transition-colors cursor-pointer"
+                                >
+                                  {deletingId === item.id ? <IconSpinner className="w-3.5 h-3.5" /> : <IconTrash className="w-3 h-3 sm:w-3.5 sm:h-3.5" />}
+                                </button>
+                              </div>
+                            )}
 
-                          {/* Reorder Mode Indicator */}
-                          {reorderMode && (
-                             <div className="flex items-center justify-center mt-2.5 pt-2 border-t border-white/15">
-                               <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-black/50 text-white/70 text-[10px] font-medium uppercase tracking-wider">
-                                 <IconGrip className="w-3 h-3" /> Drag to move
+                            {/* Reorder Mode Indicator */}
+                            {reorderMode && (
+                               <div className="flex items-center justify-center mt-2 pt-2 border-t border-white/15">
+                                 <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/20 text-white text-[9px] sm:text-[10px] font-medium uppercase tracking-wider shadow-sm">
+                                   <IconGrip className="w-3 h-3" /> Drag
+                                 </div>
                                </div>
-                             </div>
-                          )}
+                            )}
+                          </div>
                         </div>
                       </motion.div>
                     );
