@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { getCollectionBySlug } from "@/lib/get";
+import InteractiveGalleryGrid from "@/components/InteractiveGalleryGrid";
 
 interface CollectionPageProps {
   params: Promise<{ slug: string }>;
@@ -53,50 +54,8 @@ export default async function CollectionPage({ params }: CollectionPageProps) {
         )}
       </header>
 
-      {collection.media && collection.media.length > 0 ? (
-        <div className="flex flex-wrap items-center justify-center gap-6">
-          {collection.media.map((item: any, idx: number) => {
-            const isVideo = item.type === "VIDEO" || item.url?.match(/\.(mp4|webm|mov)$/i);
-            const tilt = ((idx % 5) - 2) * 1.5;
-
-            return (
-              <div
-                key={item.id || idx}
-                style={{ transform: `rotate(${tilt}deg)` }}
-                className="bg-[var(--paper)] p-3 pb-5 rounded-2xl border border-[var(--line)] shadow-md hover:shadow-xl hover:scale-[1.02] hover:rotate-0 transition-all duration-300 flex flex-col justify-between w-64"
-              >
-                <div className="relative aspect-square w-full rounded-xl overflow-hidden bg-black/20 border border-[var(--line)]">
-                  {isVideo ? (
-                    <video
-                      src={item.url}
-                      poster={item.thumbnailUrl || undefined}
-                      controls
-                      playsInline
-                      className="w-full h-full object-cover"
-                    />
-                  ) : (
-                    <img
-                      src={item.url}
-                      alt={item.caption || "Collection item"}
-                      className="w-full h-full object-cover"
-                    />
-                  )}
-                </div>
-
-                <div className="pt-3 px-1 text-center">
-                  <p className="font-serif text-sm text-[var(--cream)] truncate">
-                    {item.caption || "A sweet moment"}
-                  </p>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      ) : (
-        <div className="text-center py-20 text-[var(--cream)]/50 font-serif italic">
-          No memories have been added to this collection yet.
-        </div>
-      )}
+      {/* Render the new interactive drag-and-drop grid component */}
+      <InteractiveGalleryGrid initialMedia={collection.media || []} />
     </main>
   );
 }
