@@ -96,10 +96,11 @@ export async function getAllCollections() {
   noStore();
   try {
     return await prisma.collection.findMany({
-      orderBy: { createdAt: "desc" }, // Keeps the collections themselves sorted by newest first
+      // Sorts the collections themselves by your custom order
+      orderBy: [{ order: "asc" }, { createdAt: "desc" }], 
       include: {
         media: {
-          orderBy: [{ order: "asc" }, { createdAt: "desc" }], // Sorts the media inside them by your custom order
+          orderBy: [{ order: "asc" }, { createdAt: "desc" }], 
         },
       },
     });

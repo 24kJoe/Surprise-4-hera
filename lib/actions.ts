@@ -46,7 +46,8 @@ export async function getCollections() {
   noStore(); // Prevents Next.js from aggressively caching the old order
   try {
     return await prisma.collection.findMany({
-      orderBy: { createdAt: "desc" },
+      // Updated to respect the new custom album order first
+      orderBy: [{ order: "asc" }, { createdAt: "desc" }], 
       include: {
         media: {
           orderBy: [{ order: "asc" }, { createdAt: "desc" }],
@@ -136,6 +137,26 @@ export async function deleteCollectionAction(collectionId: string) {
   } catch (error: any) {
     console.error("Delete collection error:", error);
     return { success: false, error: error.message || "An error occurred while deleting the collection" };
+  }
+}
+
+// NEW ACTION: Reorder Collections
+export async function reorderCollectionsAction(items: { id: string; order: number }[]) {
+  try {
+    await Promise.all(
+      items.map((item) =>
+        prisma.collection.update({
+          where: { id: item.id },
+          data: { order: item.order },
+        })
+      )
+    );
+
+    revalidatePath("/", "layout");
+    return { success: true };
+  } catch (error: any) {
+    console.error("Error updating collection order:", error);
+    return { success: false, error: error.message || "Failed to update collection order" };
   }
 }
 
