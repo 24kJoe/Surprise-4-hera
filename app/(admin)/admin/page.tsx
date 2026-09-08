@@ -249,7 +249,7 @@ function SingleFilePreviewModal({
   useEffect(() => {
     const url = URL.createObjectURL(file);
     setFileUrl(url);
-    setScale(1); // Reset zoom on new file
+    setScale(1);
     return () => URL.revokeObjectURL(url);
   }, [file]);
 
@@ -383,7 +383,7 @@ export default function AdminDashboard() {
   const [confirmDeleteCollection, setConfirmDeleteCollection] = useState<CollectionItem | null>(null);
   const [confirmDeleteMedia, setConfirmDeleteMedia] = useState<MediaItem | null>(null);
 
-  // NEW: Video Cover Capture States
+  // Video Cover Capture States
   const [generatedThumb, setGeneratedThumb] = useState<string | null>(null);
   const videoScrubRef = useRef<HTMLVideoElement>(null);
 
@@ -422,7 +422,7 @@ export default function AdminDashboard() {
 
   useEffect(() => { loadData(); return () => { releaseWakeLock(); }; }, []);
   useEffect(() => { return () => { if (singleCoverUrl) { URL.revokeObjectURL(singleCoverUrl); } }; }, [singleCoverUrl]);
-  useEffect(() => { setPreviewScale(1); }, [inspectingMedia]); // Reset zoom when modal opens/changes
+  useEffect(() => { setPreviewScale(1); }, [inspectingMedia]);
 
   const collectionOptions = useMemo(() => {
     return [ { id: "none", label: "General (Unassigned)" }, ...collections.map((col) => ({ id: col.id, label: col.title })) ];
@@ -626,9 +626,38 @@ export default function AdminDashboard() {
     dragItemRef.current = dragOverItemRef.current; setLocalOrderedMedia(items);
   };
   const handleDragEnd = () => { dragItemRef.current = null; dragOverItemRef.current = null; };
+  
+  // 🚀 OPTIMISTIC UI UPDATE for Reordering
   const saveNewOrder = async () => {
-    setIsReordering(true); const payload = localOrderedMedia.map((item, idx) => ({ id: item.id, order: idx })); const res = await reorderMediaAction(payload); setIsReordering(false);
-    if (res.success) { setReorderMode(false); loadData(); } else { alert(res.error || "Failed to save order"); }
+    setIsReordering(true); 
+    const payload = localOrderedMedia.map((item, idx) => ({ id: item.id, order: idx })); 
+    const res = await reorderMediaAction(payload); 
+    setIsReordering(false);
+    
+    if (res.success) { 
+      setReorderMode(false); 
+      
+      // Instantly update the UI so the new order sticks permanently without waiting for the server
+      setMediaItems((prev) => {
+        const updated = [...prev];
+        payload.forEach((update) => {
+          const idx = updated.findIndex((m) => m.id === update.id);
+          if (idx !== -1) updated[idx] = { ...updated[idx], order: update.order };
+        });
+        
+        // Match the backend sorting logic perfectly (Order ASC, then Date DESC)
+        return updated.sort((a, b) => {
+          const orderA = a.order !== null && a.order !== undefined ? a.order : 999999;
+          const orderB = b.order !== null && b.order !== undefined ? b.order : 999999;
+          if (orderA !== orderB) return orderA - orderB;
+          return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+        });
+      });
+
+      loadData(); // Background refresh
+    } else { 
+      alert(res.error || "Failed to save order"); 
+    }
   };
 
   const toggleSelectMedia = (id: string) => { setSelectedMediaIds((prev) => { const next = new Set(prev); if (next.has(id)) next.delete(id); else next.add(id); return next; }); };

@@ -2,8 +2,10 @@
 
 import { prisma } from "@/lib/prisma";
 import { MediaType } from "@prisma/client";
+import { unstable_noStore as noStore } from "next/cache";
 
 export async function getCollectionBySlug(slug: string) {
+  noStore();
   if (!slug) return null;
   try {
     const decodedSlug = decodeURIComponent(slug);
@@ -11,7 +13,7 @@ export async function getCollectionBySlug(slug: string) {
       where: { slug: decodedSlug },
       include: {
         media: {
-          orderBy: { createdAt: "desc" },
+          orderBy: [{ order: "asc" }, { createdAt: "desc" }],
         },
       },
     });
@@ -23,6 +25,7 @@ export async function getCollectionBySlug(slug: string) {
 }
 
 export async function getImagesByCollectionSlug(slug: string) {
+  noStore();
   if (!slug) return [];
   try {
     const decodedSlug = decodeURIComponent(slug);
@@ -31,7 +34,7 @@ export async function getImagesByCollectionSlug(slug: string) {
       select: {
         media: {
           where: { type: MediaType.IMAGE },
-          orderBy: { createdAt: "desc" },
+          orderBy: [{ order: "asc" }, { createdAt: "desc" }],
         },
       },
     });
@@ -43,6 +46,7 @@ export async function getImagesByCollectionSlug(slug: string) {
 }
 
 export async function getVideosByCollectionSlug(slug: string) {
+  noStore();
   if (!slug) return [];
   try {
     const decodedSlug = decodeURIComponent(slug);
@@ -51,7 +55,7 @@ export async function getVideosByCollectionSlug(slug: string) {
       select: {
         media: {
           where: { type: MediaType.VIDEO },
-          orderBy: { createdAt: "desc" },
+          orderBy: [{ order: "asc" }, { createdAt: "desc" }],
         },
       },
     });
@@ -63,6 +67,7 @@ export async function getVideosByCollectionSlug(slug: string) {
 }
 
 export async function getMediaByCollectionSlug(slug: string) {
+  noStore();
   if (!slug) return { images: [], videos: [] };
   try {
     const decodedSlug = decodeURIComponent(slug);
@@ -70,7 +75,7 @@ export async function getMediaByCollectionSlug(slug: string) {
       where: { slug: decodedSlug },
       select: {
         media: {
-          orderBy: { createdAt: "desc" },
+          orderBy: [{ order: "asc" }, { createdAt: "desc" }],
         },
       },
     });
@@ -88,12 +93,13 @@ export async function getMediaByCollectionSlug(slug: string) {
 }
 
 export async function getAllCollections() {
+  noStore();
   try {
     return await prisma.collection.findMany({
-      orderBy: { createdAt: "desc" },
+      orderBy: { createdAt: "desc" }, // Keeps the collections themselves sorted by newest first
       include: {
         media: {
-          orderBy: { createdAt: "desc" },
+          orderBy: [{ order: "asc" }, { createdAt: "desc" }], // Sorts the media inside them by your custom order
         },
       },
     });

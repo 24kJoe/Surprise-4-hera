@@ -2,7 +2,7 @@
 
 import { v2 as cloudinary } from "cloudinary";
 import { prisma } from "@/lib/prisma";
-import { revalidatePath } from "next/cache";
+import { revalidatePath, unstable_noStore as noStore } from "next/cache";
 import { MediaType } from "@prisma/client";
 
 cloudinary.config({
@@ -43,6 +43,7 @@ async function generateUniqueSlug(title: string, currentId?: string): Promise<st
 // --- Collections Actions ---
 
 export async function getCollections() {
+  noStore(); // Prevents Next.js from aggressively caching the old order
   try {
     return await prisma.collection.findMany({
       orderBy: { createdAt: "desc" },
@@ -77,7 +78,7 @@ export async function createCollectionAction(formData: FormData) {
       },
     });
 
-    revalidatePath("/admin");
+    revalidatePath("/", "layout"); // Clears the entire site's cache
     return { success: true, data: newCollection };
   } catch (error: any) {
     console.error("Collection creation error:", error);
@@ -105,7 +106,7 @@ export async function updateCollectionAction(formData: FormData) {
       },
     });
 
-    revalidatePath("/admin");
+    revalidatePath("/", "layout");
     return { success: true, data: updated };
   } catch (error: any) {
     console.error("Update collection error:", error);
@@ -130,7 +131,7 @@ export async function deleteCollectionAction(collectionId: string) {
       where: { id: collectionId },
     });
 
-    revalidatePath("/admin");
+    revalidatePath("/", "layout");
     return { success: true };
   } catch (error: any) {
     console.error("Delete collection error:", error);
@@ -253,7 +254,7 @@ export async function saveDirectMediaAction(data: {
       },
     });
 
-    revalidatePath("/admin");
+    revalidatePath("/", "layout");
     return { success: true, data: savedMedia };
   } catch (error: any) {
     console.error("Error saving direct media item:", error);
@@ -264,6 +265,7 @@ export async function saveDirectMediaAction(data: {
 // --- Media Actions ---
 
 export async function getMediaItems() {
+  noStore(); // Prevents Next.js from aggressively caching the old order
   try {
     return await prisma.mediaItem.findMany({
       orderBy: [{ order: "asc" }, { createdAt: "desc" }],
@@ -286,7 +288,7 @@ export async function reorderMediaAction(items: { id: string; order: number }[])
       )
     );
 
-    revalidatePath("/admin");
+    revalidatePath("/", "layout");
     return { success: true };
   } catch (error: any) {
     console.error("Error updating media order:", error);
@@ -359,7 +361,7 @@ export async function uploadMediaAction(formData: FormData) {
       createdMedia.push(savedMedia);
     }
 
-    revalidatePath("/admin");
+    revalidatePath("/", "layout");
     return { success: true, data: createdMedia };
   } catch (error: any) {
     console.error("Upload error:", error);
@@ -394,8 +396,7 @@ export async function updateMediaAction(formData: FormData) {
       data: dataToUpdate,
     });
 
-    revalidatePath("/admin");
-    revalidatePath("/gallery");
+    revalidatePath("/", "layout");
 
     return { success: true, data: updatedMedia };
   } catch (error: any) {
@@ -423,7 +424,7 @@ export async function deleteMediaAction(mediaId: string) {
       where: { id: mediaId },
     });
 
-    revalidatePath("/admin");
+    revalidatePath("/", "layout");
     return { success: true };
   } catch (error: any) {
     console.error("Delete error:", error);
@@ -438,7 +439,7 @@ export async function bulkAssignMediaAction(mediaIds: string[], collectionId: st
       data: { collectionId },
     });
 
-    revalidatePath("/admin");
+    revalidatePath("/", "layout");
     return { success: true };
   } catch (error: any) {
     console.error("Error bulk assigning media:", error);
