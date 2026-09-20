@@ -7,6 +7,7 @@ import MemoriesSection from "@/components/MemoriesSection";
 import CounterSection from "@/components/CounterSection";
 import Gallery from "@/components/Gallery";
 import VoiceNote from "@/components/VoiceNote";
+import DailyReasons from "@/components/DailyReasons";
 import FutureLetters from "@/components/FutureLetters";
 
 export default function Page() {
@@ -24,6 +25,11 @@ export default function Page() {
         <VoiceNote />
       </section>
       <div className="stitch-divider" />
+      
+      {/* Daily Reasons added right here */}
+      <DailyReasons />
+      <div className="stitch-divider" />
+
       <section id="future-letters">
         <FutureLetters />
       </section>

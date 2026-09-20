@@ -25,6 +25,7 @@ export default function Nav({ className }: NavProps) {
     { href: "/#memories", id: "#memories", label: "Memories" },
     { href: "/#gallery", id: "#gallery", label: "Gallery" },
     { href: "/#voicenotes", id: "#voicenotes", label: "Voicenotes" },
+    { href: "/#daily-reasons", id: "#daily-reasons", label: "Daily Reasons" },
     { href: "/#future-letters", id: "#future-letters", label: "Secret Letters" },
     { href: "/#counter", id: "#counter", label: "Counter" },
   ];
@@ -177,7 +178,7 @@ export default function Nav({ className }: NavProps) {
                   href={link.href}
                   onClick={(e) => handleLinkClick(link, e)}
                   className={twMerge(
-                    "relative text-xs uppercase tracking-widest px-4 py-2 rounded-full transition-colors duration-200 z-10 font-medium",
+                    "relative text-xs uppercase tracking-widest px-4 py-2 rounded-full transition-colors duration-200 z-10 font-medium whitespace-nowrap",
                     isActive
                       ? "text-white"
                       : "text-[#4a2036]/80 hover:text-[#4a2036]"
