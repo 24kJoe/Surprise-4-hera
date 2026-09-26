@@ -272,7 +272,7 @@ export default function DailyReasons() {
               {/* Centered Title */}
               <div className="flex flex-col items-center text-center">
                 <h2 className="font-serif text-[1.4rem] sm:text-2xl font-semibold text-[#4a2036] tracking-wide leading-tight mb-1">
-                  Reason Archive
+                  New Day, New Reason
                 </h2>
                 <div className="flex items-center gap-1.5">
                   <span className="w-1 h-1 rounded-full bg-[#ff758f]" />
