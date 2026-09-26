@@ -145,7 +145,10 @@ function getCardCountdown(targetDate: string, now: number) {
   if (days > 0) {
     return `${days}d ${hours}h left`;
   }
-  return `${String(hours).padStart(2, "0")}h ${String(minutes).padStart(2, "0")}m left`;
+  if (hours > 0) {
+    return `${hours}h ${minutes}m left`;
+  }
+  return `${String(minutes).padStart(2, "0")}m left`;
 }
 
 export default function DailyReasons() {
@@ -195,33 +198,35 @@ export default function DailyReasons() {
           ))}
         </div>
 
-        <div className="max-w-xl mx-auto">
-          {/* The New Compact Entry Card */}
-          <div className="relative p-8 sm:p-10 rounded-[2.5rem] bg-white/70 backdrop-blur-md border border-rose-200/60 shadow-[0_20px_50px_-12px_rgba(224,85,134,0.15)] flex flex-col items-center text-center overflow-hidden">
+        <div className="max-w-xl mx-auto mt-4">
+          {/* THE UPGRADED MAIN ENTRY CARD (Frosted Glassmorphism) */}
+          <div className="relative p-8 sm:p-12 rounded-[2.5rem] bg-white/50 backdrop-blur-xl border border-white/80 shadow-[0_20px_50px_-12px_rgba(224,85,134,0.12)] flex flex-col items-center text-center overflow-hidden">
             
-            <div className="absolute top-6 inset-x-0 flex justify-center gap-2 text-[0.5rem] text-[#e66496] opacity-80 pointer-events-none">
+            <div className="absolute top-6 inset-x-0 flex justify-center gap-2 text-[0.5rem] text-[#e66496] opacity-60 pointer-events-none">
               <span>♥</span><span>♥</span><span>♥</span>
             </div>
 
-            <div className="w-14 h-14 mt-2 mb-5 rounded-full bg-rose-50 flex items-center justify-center text-[var(--rose)] shadow-inner border border-rose-100/50">
-              <BookOpen className="w-6 h-6" />
+            <div className="w-16 h-16 mt-2 mb-6 rounded-full bg-white/60 shadow-[0_4px_15px_rgba(224,85,134,0.05)] border border-white flex items-center justify-center text-[#ff758f]">
+              <BookOpen className="w-7 h-7 stroke-[1.5]" />
             </div>
 
-            <h2 className="text-3xl sm:text-4xl font-serif text-[rgb(74,32,58)] tracking-tight font-medium mb-3">
-              A New Reason, Every Day
+            <h2 className="text-3xl sm:text-[2.5rem] font-serif text-[rgb(74,32,58)] tracking-tight font-medium mb-4 leading-tight">
+              A New Reason,<br/>Every Day
             </h2>
             
-            <p className="text-sm sm:text-base text-rose-900/65 italic font-serif mb-8 max-w-sm">
+            <p className="text-sm sm:text-base text-[rgb(74,32,58)]/70 italic font-serif mb-10 max-w-xs leading-relaxed">
               100 reasons why I fell in love with you, sealed away and unlocking one by one.
             </p>
 
-            {/* Next Unlock Countdown */}
+            {/* Next Unlock Countdown (Glassy Pill) */}
             {nextUnlock && (
-              <div className="mb-8 flex flex-col items-center gap-2">
-                <span className="text-[10px] uppercase tracking-widest font-bold text-rose-400">Next reason unlocks in:</span>
-                <div className="inline-flex items-center gap-2 bg-white px-5 py-2.5 rounded-2xl border border-rose-100 shadow-sm">
-                  <Clock className="w-4 h-4 text-rose-300" />
-                  <span className="font-mono text-sm font-bold text-[var(--rose)]">
+              <div className="mb-10 flex flex-col items-center gap-3">
+                <span className="text-[10px] uppercase tracking-[0.2em] font-bold text-[#ff758f]/80">
+                  Next reason unlocks in
+                </span>
+                <div className="flex items-center gap-2 bg-white/70 backdrop-blur-md px-6 py-3 rounded-2xl border border-white shadow-sm">
+                  <Clock className="w-4 h-4 text-[#ff758f]/60" />
+                  <span className="font-mono text-sm sm:text-base font-bold text-[#d6336c] tracking-wide">
                     {nextUnlock.days > 0 && `${nextUnlock.days}d `}
                     {String(nextUnlock.hours).padStart(2, "0")}h{" "}
                     {String(nextUnlock.minutes).padStart(2, "0")}m{" "}
@@ -234,9 +239,9 @@ export default function DailyReasons() {
             {/* Button to Open the Archive */}
             <button
               onClick={() => setIsArchiveOpen(true)}
-              className="w-full sm:w-auto relative rounded-2xl bg-[#d65385] px-8 py-3.5 font-bold tracking-wider uppercase text-xs text-white shadow-[0_8px_20px_rgba(224,85,134,0.2)] transition-all duration-300 hover:bg-[#c24675] hover:shadow-[0_8px_25px_rgba(224,85,134,0.3)] active:scale-[0.98]"
+              className="w-full sm:w-auto relative rounded-full bg-gradient-to-b from-[#ff758f] to-[#e65c77] px-10 py-4 font-bold tracking-[0.15em] uppercase text-xs text-white shadow-[0_8px_20px_rgba(224,85,134,0.25)] transition-all duration-300 hover:shadow-[0_12px_25px_rgba(224,85,134,0.35)] hover:-translate-y-0.5 active:scale-[0.98]"
             >
-              Open The Archive ({unlockedCount}/100)
+              Open ({unlockedCount}/100)
             </button>
           </div>
         </div>
@@ -251,38 +256,36 @@ export default function DailyReasons() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 20 }}
-            className="fixed inset-0 z-[80] bg-[#fff5fa] overflow-y-auto"
+            className="fixed inset-0 z-[80] bg-[#FAFAFA] overflow-y-auto"
           >
-            {/* Clean, Flat Header */}
-            <div className="sticky top-0 z-20 bg-[#fff5fa]/95 backdrop-blur-md border-b border-rose-200/50 py-5 px-6 sm:px-10 flex items-center justify-between min-h-[80px]">
+            {/* Clean, Flat Header with ABSOLUTE CENTERING */}
+            <div className="sticky top-0 z-20 bg-white/95 backdrop-blur-md border-b border-[#ffe9f2] py-4 flex items-center justify-center min-h-[76px]">
+              {/* Back Button absolutely positioned so it never pushes the title off-center */}
               <button
                 onClick={() => setIsArchiveOpen(false)}
                 aria-label="Go back"
-                className="w-10 h-10 sm:w-11 sm:h-11 rounded-full bg-white border border-rose-200 flex items-center justify-center text-rose-400 hover:text-rose-600 hover:bg-rose-50 shadow-sm transition-all cursor-pointer shrink-0"
+                className="absolute left-5 w-10 h-10 rounded-full bg-white border border-[#ffe9f2] flex items-center justify-center text-[#ff758f] hover:text-[#d6336c] hover:bg-[#fff5fa] shadow-[0_2px_10px_rgba(224,85,134,0.04)] transition-all cursor-pointer"
               >
-                <ArrowLeft className="w-5 h-5 stroke-[1.5]" />
+                <ArrowLeft className="w-4 h-4 stroke-[1.5]" />
               </button>
               
               {/* Centered Title */}
               <div className="flex flex-col items-center text-center">
-                <h2 className="font-serif text-2xl sm:text-[1.75rem] font-medium text-[rgb(74,32,58)] leading-tight">
+                <h2 className="font-serif text-[1.4rem] sm:text-2xl font-semibold text-[#4a2036] tracking-wide leading-tight mb-1">
                   Reason Archive
                 </h2>
-                <div className="flex items-center gap-1.5 mt-1.5">
-                  <span className="w-1.5 h-1.5 rounded-full bg-[#ff758f]" />
-                  <span className="text-[10px] uppercase tracking-[0.2em] text-[#ff758f] font-bold">
+                <div className="flex items-center gap-1.5">
+                  <span className="w-1 h-1 rounded-full bg-[#ff758f]" />
+                  <span className="text-[8px] sm:text-[9px] uppercase tracking-[0.25em] text-[#ff758f] font-bold">
                     {unlockedCount} / 100 UNLOCKED
                   </span>
                 </div>
               </div>
-
-              {/* Balanced Right Spacer */}
-              <div className="w-10 sm:w-11 hidden sm:block shrink-0" />
             </div>
 
-            {/* The 100 Notes Grid */}
+            {/* The 100 Notes Grid - Modernized */}
             <div className="p-4 sm:p-8 max-w-7xl mx-auto pb-24 mt-2">
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 sm:gap-6">
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-5 sm:gap-6">
                 {dailyReasons.map((reason) => {
                   const unlocked = isUnlocked(reason.unlockDate);
 
@@ -291,40 +294,45 @@ export default function DailyReasons() {
                       key={reason.id}
                       whileHover={unlocked ? { y: -4, scale: 1.02 } : {}}
                       onClick={() => unlocked && setOpenNote(reason)}
-                      className={`relative p-5 rounded-2xl flex flex-col items-center justify-center text-center h-48 transition-all duration-300 ${
+                      className={`relative p-5 rounded-3xl flex flex-col items-center justify-between text-center h-[220px] transition-all duration-400 group overflow-hidden ${
                         unlocked
-                          ? "bg-white border border-rose-100 shadow-sm cursor-pointer hover:border-rose-300 hover:shadow-md"
-                          : "bg-white/40 backdrop-blur-md border border-white shadow-[0_8px_30px_rgba(224,85,134,0.04)] cursor-not-allowed"
+                          ? "bg-white shadow-[0_10px_40px_rgba(224,85,134,0.08)] cursor-pointer hover:shadow-[0_15px_50px_rgba(224,85,134,0.12)] border border-[#fff5fa]"
+                          : "bg-white/40 backdrop-blur-md border border-white/60 shadow-[0_8px_32px_rgba(224,85,134,0.05)] cursor-not-allowed"
                       }`}
                     >
                       {unlocked ? (
                         <>
-                          <div className="w-11 h-11 rounded-full bg-rose-50 flex items-center justify-center text-rose-400 mb-3 border border-rose-100/50 shadow-inner">
-                            <Heart className="w-4 h-4 fill-rose-300/50 stroke-[1.5]" />
+                          <div className="absolute top-0 inset-x-0 h-1 bg-gradient-to-r from-transparent via-[#ff758f]/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                          <div className="flex flex-col items-center mt-2">
+                            <div className="w-10 h-10 rounded-full bg-[#fff5fa] flex items-center justify-center mb-4 text-[#ff758f] group-hover:scale-110 transition-transform duration-500">
+                              <Heart className="w-4 h-4 fill-[#ff758f]/20 stroke-[1.5]" />
+                            </div>
+                            <span className="text-[10px] font-sans tracking-[0.25em] text-[#ff758f]/80 uppercase font-bold mb-3">
+                              Day {reason.dayNumber}
+                            </span>
+                            <h3 className="font-serif text-lg font-medium text-[rgb(74,32,58)] leading-snug px-2 line-clamp-3">
+                              {reason.title}
+                            </h3>
                           </div>
-                          <span className="text-[10px] font-bold tracking-[0.2em] text-rose-400 uppercase mb-2">
-                            DAY {reason.dayNumber}
-                          </span>
-                          <h3 className="font-serif text-base sm:text-lg font-medium text-[rgb(74,32,58)] leading-snug px-2 line-clamp-2">
-                            {reason.title}
-                          </h3>
                         </>
                       ) : (
                         <>
-                          {/* Beautiful Frosted Lock Icon */}
-                          <div className="w-12 h-12 rounded-full bg-rose-50/60 flex items-center justify-center text-rose-300 mb-3 border border-rose-100/50 shadow-inner">
-                            <Lock className="w-4 h-4 stroke-[1.5]" />
+                          <div className="flex flex-col items-center mt-2">
+                            {/* Sleek Frosted Glass Icon Container */}
+                            <div className="w-10 h-10 rounded-full bg-white/50 shadow-sm border border-white flex items-center justify-center mb-4">
+                              <Lock className="w-4 h-4 text-[#e66496]/60 stroke-[1.5]" />
+                            </div>
+                            <span className="text-[10px] font-sans tracking-[0.25em] text-[#4a2036]/40 uppercase font-semibold">
+                              Day {reason.dayNumber}
+                            </span>
                           </div>
-                          <span className="text-[10px] font-bold tracking-[0.25em] text-rose-300 uppercase mb-4">
-                            DAY {reason.dayNumber}
-                          </span>
                           
-                          {/* Premium Frosted Countdown Label */}
-                          <div className="flex flex-col items-center justify-center py-2 px-4 rounded-2xl bg-white/80 border border-rose-50 shadow-sm w-full max-w-[140px]">
-                            <span className="text-[8px] uppercase tracking-widest text-rose-300 font-bold mb-0.5">
+                          {/* Premium Integrated Timer Card */}
+                          <div className="w-full bg-white/60 rounded-2xl p-2.5 shadow-[inset_0_1px_4px_rgba(224,85,134,0.03)] border border-white/80 mt-auto">
+                            <span className="block text-[7px] uppercase tracking-[0.2em] text-[#e66496]/70 font-bold mb-1">
                               Unlocks In
                             </span>
-                            <span className="font-mono text-[11px] font-semibold text-rose-400 tracking-tight">
+                            <span className="block font-sans text-[11px] font-bold text-[#b55a7a] tracking-wide">
                               {mounted ? getCardCountdown(reason.unlockDate, now) : "..."}
                             </span>
                           </div>
