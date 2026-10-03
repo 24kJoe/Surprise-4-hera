@@ -34,11 +34,11 @@ export const CONFIG: SiteConfig = {
   toLine: "To Annona,",
   heroTitle: "Happy Birthday ya habibti",
   letterText:
-`I just wanted to say how much you actually mean to me. Like, there are honestly no words that could ever describe how I feel towards you. Ana bmot feeki bgd. Enti msh bas habibti, enti sa7bty, my best friend, w ro7y feeki aslan.
+` I just wanted to say how much you actually mean to me. Like, there are honestly no words that could ever describe how I feel towards you. Ana bmot feeki bgd. Enti msh bas habibti, enti sa7bty, my best friend, w ro7y feeki aslan.
 
 Bad3i en Rabna ya5leke leya. Ana msh mota5ayel asasan 7ayaty mn 8eirik. My whole life is based around one person, and that person is you. Ana 3ayzek ma3aya 3alatool. W zay ma olt 2abl keda, wallahi el 3azeem, hafdal a7awel 3ashanek, w ana msh mstaghni 3ank, ayan kan eh elli ye7sal.
 
-I know we argue more than we used to, but I just want you to know that I love you exactly the way you are. I don't want you to change. I don't want anyone to be a bad influence on you. I know I'm overprotective sometimes, but that's just the way I am. I only want to keep you safe and happy. And I want you to know that I never did anything with the intention of bothering you or hurting you, wallahi el 3azeem. And I'm sorry if I ever bothered you before. I'm genuinely trying to become a better person for you, not just now, but for our future too.
+I'm genuinely trying to become a better person for you, not just for today, but for our whole future together. I love everything about you exactly the way you are.
 
 To be absolutely honest, I've never felt the kind of love I'm feeling right now for any human being except you. Enti 7ayaty. I genuinely didn't know I could love someone this much. The effect you have on me is actually crazy — not in a bad way, but in the best way possible. I've never felt this kind of affection, comfort, and love before.
 
@@ -46,7 +46,7 @@ You're an amazing person, and you always will be. I love everything about you, e
 
 I will always love you. You have a place in my heart that no one else will ever be capable of reaching. You're the light that makes my life brighter just by being in it. And you know I'm genuinely so glad that you chose me. I'm glad that somehow, out of everyone in this world, I found someone as amazing as you.
 
-I love you more than I could ever put into words, and no matter how many times I say it, I don't think I'll ever be able to fully explain how much you mean to me.
+Im lucky to have you and if i search for a word greater than lucky i don't think it will be enough to explain what you are to me.
 
 W Rabena ya5leke leya yarab.  `,
   signOff: "— always yours",

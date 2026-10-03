@@ -2,18 +2,17 @@
 
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Heart, Lock, Sparkles, BookOpen, Clock, ArrowLeft, Calendar, X } from "lucide-react";
+import { Heart, Lock, Clock, ArrowLeft, X } from "lucide-react";
 
 interface DailyReason {
   id: string;
   dayNumber: number;
-  unlockDate: string; // Format: "YYYY-MM-DDThh:mm:ss"
+  unlockDate: string; 
   title: string;
   content: string;
 }
 
-// All 100 reasons strictly starting from October 15, 2026. 
-// Simply replace the title and content for each day.
+// All 100 reasons starting October 15, 2026.
 const dailyReasons: DailyReason[] = [
   { id: "1", dayNumber: 1, unlockDate: "2026-10-15T00:00:00", title: "Your Smile", content: "I love you because your smile is the brightest thing in my universe." },
   { id: "2", dayNumber: 2, unlockDate: "2026-10-16T00:00:00", title: "Your Heart", content: "I love you for how deeply you care about the people around you." },
@@ -134,21 +133,38 @@ function getNextUnlockCountdown(reasons: DailyReason[], now: number) {
   return { days, hours, minutes, seconds };
 }
 
-function getCardCountdown(targetDate: string, now: number) {
-  const diff = new Date(targetDate).getTime() - now;
-  if (diff <= 0) return "Ready to Open";
+// Optimized specific timer for the main page
+function CountdownTimer({ reasons }: { reasons: DailyReason[] }) {
+  const [now, setNow] = useState<number>(0);
 
-  const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-  const hours = Math.floor((diff / (1000 * 60 * 60)) % 24);
-  const minutes = Math.floor((diff / (1000 * 60)) % 60);
+  useEffect(() => {
+    setNow(Date.now());
+    const interval = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(interval);
+  }, []);
 
-  if (days > 0) {
-    return `${days}d ${hours}h left`;
-  }
-  if (hours > 0) {
-    return `${hours}h ${minutes}m left`;
-  }
-  return `${String(minutes).padStart(2, "0")}m left`;
+  if (now === 0) return null;
+
+  const nextUnlock = getNextUnlockCountdown(reasons, now);
+
+  if (!nextUnlock) return null;
+
+  return (
+    <div className="mb-10 flex flex-col items-center gap-3">
+      <span className="text-[10px] uppercase tracking-[0.2em] font-bold text-[#ff758f]/80">
+        Next reason unlocks in
+      </span>
+      <div className="flex items-center gap-2 bg-white/70 backdrop-blur-md px-6 py-3 rounded-2xl border border-[#ffe9f2] shadow-sm">
+        <Clock className="w-4 h-4 text-[#ff758f]/60" />
+        <span className="font-mono text-sm sm:text-base font-bold text-[#d6336c] tracking-wide">
+          {nextUnlock.days > 0 && `${nextUnlock.days}d `}
+          {String(nextUnlock.hours).padStart(2, "0")}h{" "}
+          {String(nextUnlock.minutes).padStart(2, "0")}m{" "}
+          {String(nextUnlock.seconds).padStart(2, "0")}s
+        </span>
+      </div>
+    </div>
+  );
 }
 
 export default function DailyReasons() {
@@ -160,7 +176,8 @@ export default function DailyReasons() {
   useEffect(() => {
     setMounted(true);
     setNow(Date.now());
-    const interval = setInterval(() => setNow(Date.now()), 1000);
+    // Only update the grid every 60 seconds to stop lag
+    const interval = setInterval(() => setNow(Date.now()), 60000);
     return () => clearInterval(interval);
   }, []);
 
@@ -174,40 +191,16 @@ export default function DailyReasons() {
   }, [isArchiveOpen, openNote]);
 
   const isUnlocked = (dateStr: string) => mounted && new Date(dateStr).getTime() <= now;
-  const nextUnlock = mounted ? getNextUnlockCountdown(dailyReasons, now) : null;
   const unlockedCount = dailyReasons.filter((r) => isUnlocked(r.unlockDate)).length;
 
   return (
     <>
-      <section id="daily-reasons" className="relative w-full py-16 px-4 overflow-hidden">
-        {/* Background Ambient Sparkles for the Main Page */}
-        <div className="absolute inset-0 pointer-events-none -z-10 overflow-hidden">
-          {[...Array(6)].map((_, i) => (
-            <motion.div
-              key={i}
-              className="absolute text-rose-300/30"
-              style={{
-                top: `${15 * i + 5}%`,
-                left: `${(i * 25) % 90}%`,
-              }}
-              animate={{ y: [0, -15, 0], scale: [1, 1.1, 1] }}
-              transition={{ duration: 4 + i, repeat: Infinity, ease: "easeInOut" }}
-            >
-              <Heart className="w-5 h-5 fill-rose-200/40" />
-            </motion.div>
-          ))}
-        </div>
-
-        <div className="max-w-xl mx-auto mt-4">
-          {/* THE UPGRADED MAIN ENTRY CARD (Frosted Glassmorphism) */}
-          <div className="relative p-8 sm:p-12 rounded-[2.5rem] bg-white/50 backdrop-blur-xl border border-white/80 shadow-[0_20px_50px_-12px_rgba(224,85,134,0.12)] flex flex-col items-center text-center overflow-hidden">
-            
-            <div className="absolute top-6 inset-x-0 flex justify-center gap-2 text-[0.5rem] text-[#e66496] opacity-60 pointer-events-none">
-              <span>♥</span><span>♥</span><span>♥</span>
-            </div>
-
-            <div className="w-16 h-16 mt-2 mb-6 rounded-full bg-white/60 shadow-[0_4px_15px_rgba(224,85,134,0.05)] border border-white flex items-center justify-center text-[#ff758f]">
-              <BookOpen className="w-7 h-7 stroke-[1.5]" />
+      <section id="daily-reasons" className="relative w-full py-24 px-4 overflow-hidden bg-transparent">
+        <div className="max-w-3xl mx-auto">
+          {/* Main Page Entry Card */}
+          <div className="relative p-10 sm:p-16 rounded-[3rem] bg-[#fffdfa] border border-[#fce3ec] shadow-[0_24px_50px_-12px_rgba(224,85,134,0.08)] flex flex-col items-center text-center">
+            <div className="w-12 h-12 mb-6 rounded-full bg-[#fdf2f7] flex items-center justify-center text-[#e66496] shadow-inner">
+              <Heart strokeWidth={1.5} className="w-5 h-5 fill-[#fce3ec]" />
             </div>
 
             <h2 className="text-3xl sm:text-[2.5rem] font-serif text-[rgb(74,32,58)] tracking-tight font-medium mb-4 leading-tight">
@@ -218,25 +211,8 @@ export default function DailyReasons() {
               100 reasons why I fell in love with you, sealed away and unlocking one by one.
             </p>
 
-            {/* Next Unlock Countdown (Glassy Pill) */}
-            {nextUnlock && (
-              <div className="mb-10 flex flex-col items-center gap-3">
-                <span className="text-[10px] uppercase tracking-[0.2em] font-bold text-[#ff758f]/80">
-                  Next reason unlocks in
-                </span>
-                <div className="flex items-center gap-2 bg-white/70 backdrop-blur-md px-6 py-3 rounded-2xl border border-white shadow-sm">
-                  <Clock className="w-4 h-4 text-[#ff758f]/60" />
-                  <span className="font-mono text-sm sm:text-base font-bold text-[#d6336c] tracking-wide">
-                    {nextUnlock.days > 0 && `${nextUnlock.days}d `}
-                    {String(nextUnlock.hours).padStart(2, "0")}h{" "}
-                    {String(nextUnlock.minutes).padStart(2, "0")}m{" "}
-                    {String(nextUnlock.seconds).padStart(2, "0")}s
-                  </span>
-                </div>
-              </div>
-            )}
+            {mounted && <CountdownTimer reasons={dailyReasons} />}
 
-            {/* Button to Open the Archive */}
             <button
               onClick={() => setIsArchiveOpen(true)}
               className="w-full sm:w-auto relative rounded-full bg-gradient-to-b from-[#ff758f] to-[#e65c77] px-10 py-4 font-bold tracking-[0.15em] uppercase text-xs text-white shadow-[0_8px_20px_rgba(224,85,134,0.25)] transition-all duration-300 hover:shadow-[0_12px_25px_rgba(224,85,134,0.35)] hover:-translate-y-0.5 active:scale-[0.98]"
@@ -248,97 +224,85 @@ export default function DailyReasons() {
       </section>
 
       {/* ========================================= */}
-      {/* 1. THE FULLSCREEN ARCHIVE VAULT MODAL       */}
+      {/* 1. THE ARCHIVE VAULT (Soft UI / Glass)      */}
       {/* ========================================= */}
       <AnimatePresence>
         {isArchiveOpen && (
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
+            initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 20 }}
-            className="fixed inset-0 z-[80] bg-[#FAFAFA] overflow-y-auto"
+            exit={{ opacity: 0, y: 30 }}
+            transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
+            className="fixed inset-0 z-[100] bg-[#fcf9fa] overflow-y-auto"
           >
-            {/* Clean, Flat Header with ABSOLUTE CENTERING */}
-            <div className="sticky top-0 z-20 bg-white/95 backdrop-blur-md border-b border-[#ffe9f2] py-4 flex items-center justify-center min-h-[76px]">
-              {/* Back Button absolutely positioned so it never pushes the title off-center */}
+            {/* Soft UI Header - FIXED MOBILE ALIGNMENT */}
+            <div className="sticky top-0 z-20 bg-[#fcf9fa]/90 backdrop-blur-xl py-4 sm:py-6 px-4 flex items-center justify-center min-h-[70px] sm:min-h-[90px]">
               <button
                 onClick={() => setIsArchiveOpen(false)}
                 aria-label="Go back"
-                className="absolute left-5 w-10 h-10 rounded-full bg-white border border-[#ffe9f2] flex items-center justify-center text-[#ff758f] hover:text-[#d6336c] hover:bg-[#fff5fa] shadow-[0_2px_10px_rgba(224,85,134,0.04)] transition-all cursor-pointer"
+                className="absolute left-4 sm:left-6 w-9 h-9 sm:w-11 sm:h-11 rounded-full border border-[#ffe9f2] bg-white shadow-sm flex items-center justify-center text-[#ff758f] hover:scale-105 transition-all cursor-pointer"
               >
-                <ArrowLeft className="w-4 h-4 stroke-[1.5]" />
+                <ArrowLeft className="w-4 sm:w-5 h-4 sm:h-5" strokeWidth={1.5} />
               </button>
               
-              {/* Centered Title */}
-              <div className="flex flex-col items-center text-center">
-                <h2 className="font-serif text-[1.4rem] sm:text-2xl font-semibold text-[#4a2036] tracking-wide leading-tight mb-1">
-                  New Day, New Reason
-                </h2>
-                <div className="flex items-center gap-1.5">
-                  <span className="w-1 h-1 rounded-full bg-[#ff758f]" />
-                  <span className="text-[8px] sm:text-[9px] uppercase tracking-[0.25em] text-[#ff758f] font-bold">
+              <div className="flex flex-col items-center px-10 sm:px-0">
+                <h2 className="font-serif text-xl sm:text-3xl text-[rgb(74,32,58)] leading-tight text-center">New Day, New Reason</h2>
+                <div className="flex items-center gap-1.5 mt-1 sm:mt-2">
+                  <div className="w-1.5 h-1.5 rounded-full bg-[#ff758f]" />
+                  <span className="text-[0.6rem] sm:text-[0.65rem] uppercase tracking-[0.2em] text-[#ff758f] font-bold">
                     {unlockedCount} / 100 UNLOCKED
                   </span>
                 </div>
               </div>
             </div>
 
-            {/* The 100 Notes Grid - Modernized */}
-            <div className="p-4 sm:p-8 max-w-7xl mx-auto pb-24 mt-2">
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-5 sm:gap-6">
+            {/* Soft Neumorphic Card Grid */}
+            <div className="px-4 sm:px-10 max-w-[1400px] mx-auto py-10 pb-24">
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
                 {dailyReasons.map((reason) => {
                   const unlocked = isUnlocked(reason.unlockDate);
 
-                  return (
+                  return unlocked ? (
                     <motion.div
                       key={reason.id}
-                      whileHover={unlocked ? { y: -4, scale: 1.02 } : {}}
-                      onClick={() => unlocked && setOpenNote(reason)}
-                      className={`relative p-5 rounded-3xl flex flex-col items-center justify-between text-center h-[220px] transition-all duration-400 group overflow-hidden ${
-                        unlocked
-                          ? "bg-white shadow-[0_10px_40px_rgba(224,85,134,0.08)] cursor-pointer hover:shadow-[0_15px_50px_rgba(224,85,134,0.12)] border border-[#fff5fa]"
-                          : "bg-white/40 backdrop-blur-md border border-white/60 shadow-[0_8px_32px_rgba(224,85,134,0.05)] cursor-not-allowed"
-                      }`}
+                      whileHover={{ y: -5 }}
+                      onClick={() => setOpenNote(reason)}
+                      className="relative group bg-white rounded-[2rem] shadow-[0_8px_30px_rgba(224,85,134,0.05)] hover:shadow-[0_15px_40px_rgba(224,85,134,0.12)] transition-all duration-300 aspect-[3/4] flex flex-col items-center p-6 cursor-pointer text-center overflow-hidden"
                     >
-                      {unlocked ? (
-                        <>
-                          <div className="absolute top-0 inset-x-0 h-1 bg-gradient-to-r from-transparent via-[#ff758f]/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-                          <div className="flex flex-col items-center mt-2">
-                            <div className="w-10 h-10 rounded-full bg-[#fff5fa] flex items-center justify-center mb-4 text-[#ff758f] group-hover:scale-110 transition-transform duration-500">
-                              <Heart className="w-4 h-4 fill-[#ff758f]/20 stroke-[1.5]" />
-                            </div>
-                            <span className="text-[10px] font-sans tracking-[0.25em] text-[#ff758f]/80 uppercase font-bold mb-3">
-                              Day {reason.dayNumber}
-                            </span>
-                            <h3 className="font-serif text-lg font-medium text-[rgb(74,32,58)] leading-snug px-2 line-clamp-3">
-                              {reason.title}
-                            </h3>
-                          </div>
-                        </>
-                      ) : (
-                        <>
-                          <div className="flex flex-col items-center mt-2">
-                            {/* Sleek Frosted Glass Icon Container */}
-                            <div className="w-10 h-10 rounded-full bg-white/50 shadow-sm border border-white flex items-center justify-center mb-4">
-                              <Lock className="w-4 h-4 text-[#e66496]/60 stroke-[1.5]" />
-                            </div>
-                            <span className="text-[10px] font-sans tracking-[0.25em] text-[#4a2036]/40 uppercase font-semibold">
-                              Day {reason.dayNumber}
-                            </span>
-                          </div>
-                          
-                          {/* Premium Integrated Timer Card */}
-                          <div className="w-full bg-white/60 rounded-2xl p-2.5 shadow-[inset_0_1px_4px_rgba(224,85,134,0.03)] border border-white/80 mt-auto">
-                            <span className="block text-[7px] uppercase tracking-[0.2em] text-[#e66496]/70 font-bold mb-1">
-                              Unlocks In
-                            </span>
-                            <span className="block font-sans text-[11px] font-bold text-[#b55a7a] tracking-wide">
-                              {mounted ? getCardCountdown(reason.unlockDate, now) : "..."}
-                            </span>
-                          </div>
-                        </>
-                      )}
+                      <div className="w-12 h-12 rounded-full bg-[#fff5fa] flex items-center justify-center mb-6 mt-4 group-hover:scale-110 transition-transform">
+                        <Heart className="w-5 h-5 text-[#ff758f] fill-[#ffe9f2]" strokeWidth={1.5} />
+                      </div>
+                      <span className="text-[0.65rem] font-bold tracking-[0.25em] text-[rgb(74,32,58)]/30 uppercase mb-3">Day {reason.dayNumber}</span>
+                      <h3 className="font-serif text-lg text-[rgb(74,32,58)] leading-snug px-2 line-clamp-3">
+                        {reason.title}
+                      </h3>
                     </motion.div>
+                  ) : (
+                    <div
+                      key={reason.id}
+                      className="relative bg-white rounded-[2rem] shadow-[0_8px_30px_rgba(224,85,134,0.05)] aspect-[3/4] flex flex-col items-center p-6 text-center"
+                    >
+                      <div className="w-12 h-12 rounded-full border border-[#ffe9f2] flex items-center justify-center mb-6 mt-4">
+                        <Lock className="w-4 h-4 text-[#ff758f]/50" strokeWidth={1.5} />
+                      </div>
+                      <span className="text-[0.65rem] font-bold tracking-[0.25em] text-[rgb(74,32,58)]/40 uppercase mb-auto">Day {reason.dayNumber}</span>
+                      
+                      <div className="w-full mt-auto bg-[#fffdfa] rounded-2xl py-3.5 flex flex-col items-center justify-center border border-[#ffe9f2]/40">
+                        <span className="text-[9px] uppercase tracking-widest text-[#ff758f]/80 font-bold mb-1">Unlocks In</span>
+                        {(() => {
+                           const unlockTime = new Date(reason.unlockDate).getTime();
+                           const diff = unlockTime - now;
+                           if (diff <= 0) return null;
+                           const d = Math.floor(diff / (1000 * 60 * 60 * 24));
+                           const h = Math.floor((diff / (1000 * 60 * 60)) % 24);
+                           return (
+                             <span className="font-sans text-[11px] font-bold text-[#d6336c] tracking-wide">
+                               {d > 0 && `${d}d `}{h}h left
+                             </span>
+                           );
+                        })()}
+                      </div>
+                    </div>
                   );
                 })}
               </div>
@@ -348,7 +312,7 @@ export default function DailyReasons() {
       </AnimatePresence>
 
       {/* ========================================= */}
-      {/* 2. AUTHENTIC VINTAGE LETTER MODAL           */}
+      {/* 2. THE SINGLE OPENED NOTE MODAL             */}
       {/* ========================================= */}
       <AnimatePresence>
         {openNote && (
@@ -356,69 +320,51 @@ export default function DailyReasons() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[90] flex items-center justify-center p-4 sm:p-6 bg-[rgb(50,20,38)]/60 backdrop-blur-md"
+            className="fixed inset-0 z-[200] flex items-center justify-center p-4 sm:p-6 bg-[#fdf2f7]/80 backdrop-blur-xl"
             onClick={() => setOpenNote(null)}
           >
             <motion.div
-              initial={{ opacity: 0, scale: 0.96, rotate: -2, y: 15 }}
-              animate={{ opacity: 1, scale: 1, rotate: 0, y: 0 }}
-              exit={{ opacity: 0, scale: 0.96, rotate: 2, y: 15 }}
+              initial={{ opacity: 0, scale: 0.95, y: 10 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 10 }}
               transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
               onClick={(e) => e.stopPropagation()}
-              className="relative w-full max-w-lg bg-[#FCFAF5] rounded-xl border border-[#e8dfd8] shadow-[0_30px_60px_-15px_rgba(74,32,58,0.25)] p-8 sm:p-12 overflow-hidden flex flex-col"
+              className="relative w-full max-w-md bg-[#fffdfa] rounded-[2rem] border border-[#fce3ec] shadow-[0_20px_60px_-15px_rgba(224,85,134,0.15)] p-10 sm:p-14 overflow-hidden flex flex-col items-center"
             >
-              {/* Subtle Paper Texture Overlay */}
-              <div 
-                className="absolute inset-0 opacity-[0.03] mix-blend-multiply pointer-events-none" 
-                style={{ backgroundImage: "url('data:image/svg+xml,%3Csvg viewBox=%220 0 200 200%22 xmlns=%22http://www.w3.org/2000/svg%22%3E%3Cfilter id=%22noiseFilter%22%3E%3CfeTurbulence type=%22fractalNoise%22 baseFrequency=%220.8%22 numOctaves=%223%22 stitchTiles=%22stitch%22/%3E%3C/filter%3E%3Crect width=%22100%25%22 height=%22100%25%22 filter=%22url(%23noiseFilter)%22/%3E%3C/svg%3E')" }} 
-              />
+              {/* Paper Texture Overlay */}
+              <div className="absolute inset-0 opacity-[0.03] pointer-events-none" style={{ backgroundImage: 'url("https://www.transparenttextures.com/patterns/cream-paper.png")' }}></div>
 
-              {/* Minimalist Close 'X' */}
               <button
                 onClick={() => setOpenNote(null)}
-                aria-label="Close letter"
-                className="absolute top-4 right-4 p-2 text-[#4a2036]/30 hover:text-[#4a2036]/80 transition-colors z-20 cursor-pointer"
+                aria-label="Close note"
+                className="absolute top-5 right-5 w-10 h-10 rounded-full flex items-center justify-center text-[rgb(74,32,58)]/30 hover:text-[#ff758f] hover:bg-white transition-colors cursor-pointer z-20"
               >
-                <X className="w-5 h-5 stroke-[1.5]" />
+                <X className="w-5 h-5" strokeWidth={1.5} />
               </button>
 
-              {/* Authentic Postmark Header */}
-              <div className="flex items-end justify-between border-b border-[#4a2036]/10 pb-5 mb-8 z-10 mt-2">
-                <div className="flex flex-col text-left">
-                  <span className="text-[9px] uppercase tracking-[0.3em] text-[#4a2036]/40 font-bold mb-1">
-                    Reason No. {String(openNote.dayNumber).padStart(3, '0')}
-                  </span>
-                  <span className="font-serif italic text-[#4a2036]/70 text-sm">
-                    {new Date(openNote.unlockDate).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
-                  </span>
-                </div>
-                
-                {/* Vintage Typewriter Stamp for Status */}
-                <div className="flex items-center gap-1.5 px-2.5 py-1.5 border border-[#4a2036]/10 rounded-sm bg-[#4a2036]/[0.02]">
-                  <Calendar className="w-3 h-3 text-[#4a2036]/40" strokeWidth={1.5} />
-                  <span className="font-mono text-[9px] text-[#4a2036]/60 font-medium tracking-widest uppercase">
-                    Unlocked
-                  </span>
-                </div>
+              <div className="flex flex-col w-full text-left border-b border-[rgb(74,32,58)]/10 pb-6 mb-8 z-10">
+                <span className="text-[0.65rem] font-bold tracking-[0.3em] text-[#ff758f]/80 uppercase mb-2">
+                  Note No. {String(openNote.dayNumber).padStart(3, '0')}
+                </span>
+                <span className="font-serif italic text-sm text-[rgb(74,32,58)]/40">
+                  {new Date(openNote.unlockDate).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
+                </span>
               </div>
 
-              {/* Letter Title & Body (Left-Aligned for authenticity) */}
-              <div className="z-10 flex flex-col gap-5">
+              <div className="z-10 flex flex-col gap-5 w-full">
                 <h2 className="font-serif text-2xl sm:text-[1.65rem] font-medium text-[rgb(74,32,58)] leading-tight w-full text-left">
                   {openNote.title}
                 </h2>
-                
                 <p className="text-base sm:text-lg leading-[1.8] text-[rgb(74,32,58)]/85 font-serif w-full text-left whitespace-pre-wrap">
                   {openNote.content}
                 </p>
               </div>
 
-              {/* Elegant Wax Seal & Sign-off */}
               <div className="z-10 mt-12 flex items-center justify-between pt-6 w-full">
-                <div className="w-12 h-12 rounded-full bg-[#9c2b4e] shadow-[inset_0_-2px_6px_rgba(0,0,0,0.3),0_4px_10px_rgba(156,43,78,0.3)] flex items-center justify-center opacity-95">
+                <div className="w-12 h-12 rounded-full bg-[#4a2036] shadow-[inset_0_-2px_6px_rgba(0,0,0,0.3),0_4px_10px_rgba(74,32,58,0.3)] flex items-center justify-center opacity-95">
                   <Heart className="w-5 h-5 fill-white/20 text-white/40" strokeWidth={1} />
                 </div>
-                <div className="font-serif italic text-xl text-[#4a2036]/60 pr-2">
+                <div className="font-serif italic text-xl text-[rgb(74,32,58)]/60 pr-2">
                   Yours always
                 </div>
               </div>

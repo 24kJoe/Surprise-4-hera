@@ -47,7 +47,7 @@ const futureLetters: FutureLetter[] = [
     displayDate: "Feb 7, 2027",
     occasion: "Ramadan",
     title: "With You 💍",
-    lockedTitle: "First Ramadan Together",
+    lockedTitle: "Ramadan",
     teaser: "Reflecting on our time together.",
     lockedTeaser: "Locked until February 7th.",
     content:
