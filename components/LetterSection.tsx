@@ -4,6 +4,14 @@ import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { CONFIG } from "@/lib/config";
 import { Heart, Sparkles, Feather } from "lucide-react";
+import { Amiri } from "next/font/google";
+
+const amiri = Amiri({
+  subsets: ["arabic", "latin"],
+  weight: ["400", "700"],
+  style: ["normal", "italic"],
+  display: "swap",
+});
 
 export default function LetterSection() {
   const [typed, setTyped] = useState("");
@@ -72,7 +80,7 @@ export default function LetterSection() {
           </div>
 
           {/* Letter Title */}
-          <h1 className="text-3xl sm:text-4xl md:text-5xl font-serif font-medium text-[rgb(74,32,58)] text-center mb-8 sm:mb-10 tracking-tight">
+          <h1 className={`${amiri.className} text-3xl sm:text-4xl md:text-5xl font-serif font-medium text-[rgb(74,32,58)] text-center mb-8 sm:mb-10 tracking-tight`}>
             {CONFIG.heroTitle}
           </h1>
 
@@ -80,7 +88,7 @@ export default function LetterSection() {
           <div className="w-24 h-0.5 bg-gradient-to-r from-transparent via-rose-300/80 to-transparent mx-auto mb-8 sm:mb-10" />
 
           {/* Typed Body Content */}
-          <div className="min-h-[160px] sm:min-h-[200px] text-rose-950/85 font-serif text-base sm:text-lg md:text-xl leading-[2] tracking-wide whitespace-pre-wrap pl-1 sm:pl-2">
+          <div className={`${amiri.className} min-h-[160px] sm:min-h-[200px] text-rose-950/85 font-serif text-base sm:text-lg md:text-xl leading-[2] tracking-wide whitespace-pre-wrap pl-1 sm:pl-2`}>
             {typed}
             <span
               className={`inline-block w-0.5 h-[1.15em] bg-[var(--rose)] ml-1 align-middle transition-opacity duration-300 ${
@@ -91,7 +99,7 @@ export default function LetterSection() {
 
           {/* Sign-off Footer */}
           <div className="mt-14 pt-8 border-t border-rose-100/90 flex flex-col sm:flex-row items-center justify-between gap-4">
-            <span className="font-serif italic text-base sm:text-lg text-[rgb(74,32,58)]">
+            <span className={`${amiri.className} font-serif italic text-base sm:text-lg text-[rgb(74,32,58)]`}>
               {CONFIG.signOff}
             </span>
 

@@ -34,21 +34,15 @@ export const CONFIG: SiteConfig = {
   toLine: "To Annona,",
   heroTitle: "Happy Birthday ya habibti",
   letterText:
-` I just wanted to say how much you actually mean to me. Like, there are honestly no words that could ever describe how I feel towards you. Ana bmot feeki bgd. Enti msh bas habibti, enti sa7bty, my best friend, w ro7y feeki aslan.
+` بحبك ومهما اتكلمت عمري ما هعرف أوصفلك بحبك قد إيه، إنتي بجد أحلى بني آدمة شفتها في حياتي، وعايزك دايماً تبقي متأكدة من ده وعارفة إني بموت فيكي، أول مرة في حياتي أحب حد بالطريقة دي وأكيد آخر مرة، لأن مفيش ولا عمره هيبقى في حد زيك أبداً
 
-Bad3i en Rabna ya5leke leya. Ana msh mota5ayel asasan 7ayaty mn 8eirik. My whole life is based around one person, and that person is you. Ana 3ayzek ma3aya 3alatool. W zay ma olt 2abl keda, wallahi el 3azeem, hafdal a7awel 3ashanek, w ana msh mstaghni 3ank, ayan kan eh elli ye7sal.
+إنتي جميلة وعسل وزي القمر، ومش مجرد حبيبتي، إنتي صاحبتي وروحي وحياتي وكل حاجة ليا، لحد دلوقتي وأنتي نايمة بقعد أفكر فيكي، أفتح صورنا وأتفرج عليها وأنا مش مصدق إنك معايا، إنتي نعمة عمري ما تخيلت إنها تكون في حياتي.
 
-I'm genuinely trying to become a better person for you, not just for today, but for our whole future together. I love everything about you exactly the way you are.
+نفسي نكمل مع بعض العمر كله ومسيبكيش أبداً، ومقدرش حتى أتخيل حد مكانك لأن محدش هيعرف ولا يقدر يكون زيك، لو قعدت أقولك بحبك للصبح مش هخلص، وحتى كل الكلام والتصرفات بحسها مش كفاية عليكي، إنتي فعلاً تستاهلي الدنيا كلها ومش ببالغ.
 
-To be absolutely honest, I've never felt the kind of love I'm feeling right now for any human being except you. Enti 7ayaty. I genuinely didn't know I could love someone this much. The effect you have on me is actually crazy — not in a bad way, but in the best way possible. I've never felt this kind of affection, comfort, and love before.
+يا رب يقدرني وأفضل دايماً أعمل كل اللي يبسطك ويفرحك، لأن ضحكتك دي بالذات هي الحاجة الوحيدة اللي بتخلي يومي كله يهون ويبقى على قلبي زي العسل حتى لو فيه مليون حاجة وحشة ومضايقاني، أوعي في يوم تزعلي، زعلك بيوجعني وميهونش عليا أشوفك زعلانة أبداً، القمر ده مينفعش يزعل وطز في أي حاجة تضايقك.
 
-You're an amazing person, and you always will be. I love everything about you, every single little detail. I love your nose, your smile, your eyes, your hair, and even your tiny little ears. But I'm not gonna lie, I love your nose the most. You're genuinely such a lovely person.
-
-I will always love you. You have a place in my heart that no one else will ever be capable of reaching. You're the light that makes my life brighter just by being in it. And you know I'm genuinely so glad that you chose me. I'm glad that somehow, out of everyone in this world, I found someone as amazing as you.
-
-Im lucky to have you and if i search for a word greater than lucky i don't think it will be enough to explain what you are to me.
-
-W Rabena ya5leke leya yarab.  `,
+هعمل كل اللي أقدر عليه عشان أفضل مفرحك، وهفضل أحاول عشان نبقى مع بعض على طول لأن عمري ما هستغنى عنك ولا هتخيل حياتي من غيرك، إنتي خلاص بقيتي كل دنيتي، ربنا يخليكي ليا وتفضلي في حياتي ومعايا على طول يا حبيبتي`,
   signOff: "— always yours",
   photos: [
     { src: "", caption: "" },
@@ -62,4 +56,4 @@ W Rabena ya5leke leya yarab.  `,
     { date: "Arguments", story: "I know we've had our disagreements and we've had our ups and downs, but I want you to always keep in mind that I never did anything with the intention of bothering you. I just care about you too much. I think about you too much, and sometimes I can't even imagine anything bad happening to you because I love you so much, and the thought of anything happening to you honestly kills me." },
     { date: "Today", story: "Still choosing you every single day, and I'm so grateful you chose me back i want us to be together forever and i hope we will because my life won't be complete without you." },
   ],
-};
+}; 

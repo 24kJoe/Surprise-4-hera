@@ -11,7 +11,7 @@ interface DailyReason {
   content: string;
 }
 
-// All 365 reasons strictly written out starting from October 15, 2026.
+// All 365 reasons strictly written out. Day 1 is set to unlock today!
 const dailyReasons: DailyReason[] = [
   { id: "1", dayNumber: 1, unlockDate: "2026-10-15T00:00:00", content: "انا حقيقي يعني مش عارف اقول انا بحبك قد ايه عشان حقيقي الكلام مش كفايه الي بعمله مش كفايه عشان بالنسبالي انتي تستاهلي كل حاجه حلوه تتعملك انتي هتفضلي احلي حاجه فحياتي" },
   { id: "2", dayNumber: 2, unlockDate: "2026-10-16T00:00:00", content: "انتي حلوه و علطول حلوه و مش عايزك تفكري ابدا ان انتي ف يوم شكلك مش حلو عشان انتي في عيني احلي بنت في الدنيا" },
@@ -66,7 +66,7 @@ const dailyReasons: DailyReason[] = [
   { id: "51", dayNumber: 51, unlockDate: "2026-12-04T00:00:00", content: "No matter what life throws at you, you bounce back with such grace and courage." },
   { id: "52", dayNumber: 52, unlockDate: "2026-12-05T00:00:00", content: "You push me to think deeper, grow faster, and be the best version of myself." },
   { id: "53", dayNumber: 53, unlockDate: "2026-12-06T00:00:00", content: "Getting unexpected sweet texts from you brightens up my entire day." },
-  { id: "54", dayNumber: 54, unlockDate: "2026-12-07T00:00:00", content: "I love when we start laughing so hard we can't even breathe or talk." },
+  { id: "54", dayNumber: 54, unlockDate: "2026-12-07T00:00:00", content: "I love when we start laughing so hard we cant even breathe or talk." },
   { id: "55", dayNumber: 55, unlockDate: "2026-12-08T00:00:00", content: "The world can be harsh, but you remain so soft, pure, and caring." },
   { id: "56", dayNumber: 56, unlockDate: "2026-12-09T00:00:00", content: "You always know exactly what to say to make me feel better when I'm down." },
   { id: "57", dayNumber: 57, unlockDate: "2026-12-10T00:00:00", content: "You always act from a place of genuine love and goodness." },
@@ -471,11 +471,11 @@ export default function DailyReasons() {
             </div>
 
             <h2 className="text-3xl sm:text-4xl font-serif text-[rgb(74,32,58)] tracking-tight font-medium mb-3">
-              New Day, New Reason
+              A New Reason, Every Day
             </h2>
             
             <p className="text-sm sm:text-base text-rose-900/65 italic font-serif mb-8 max-w-sm">
-              365 reasons why I fell in love with you, sealed away and unlocking one by one.
+              {totalCount} reasons why I fell in love with you, sealed away and unlocking one by one.
             </p>
 
             {/* Next Unlock Countdown */}
@@ -499,7 +499,7 @@ export default function DailyReasons() {
               onClick={() => setIsArchiveOpen(true)}
               className="w-full sm:w-auto relative rounded-2xl bg-[#d65385] px-8 py-3.5 font-bold tracking-wider uppercase text-xs text-white shadow-[0_8px_20px_rgba(224,85,134,0.2)] transition-all duration-300 hover:bg-[#c24675] hover:shadow-[0_8px_25px_rgba(224,85,134,0.3)] active:scale-[0.98]"
             >
-              Open The Archive ({unlockedCount}/365)
+              Open Collection ({unlockedCount}/{totalCount})
             </button>
           </div>
         </div>
@@ -528,7 +528,7 @@ export default function DailyReasons() {
               
               <div className="flex flex-col items-center text-center px-10">
                 <h2 className="font-serif text-xl sm:text-[1.75rem] font-medium text-[rgb(74,32,58)] leading-tight whitespace-nowrap">
-                  New Day, New Reason
+                  A New Day, A New Reason
                 </h2>
                 <div className="flex items-center gap-1.5 mt-1 sm:mt-1.5">
                   <span className="w-1.5 h-1.5 rounded-full bg-[#ff758f]" />
@@ -558,29 +558,31 @@ export default function DailyReasons() {
                     >
                       {unlocked ? (
                         <>
-                          <div className="w-11 h-11 rounded-full bg-rose-50 flex items-center justify-center text-rose-400 mb-3 border border-rose-100/50 shadow-inner">
-                            <Heart className="w-4 h-4 fill-rose-300/50 stroke-[1.5]" />
+                          <div className="w-12 h-12 rounded-full border border-[#ffe9f2] flex items-center justify-center mb-3">
+                            <Heart className="w-5 h-5 fill-[#ff758f] text-[#ff758f]" strokeWidth={1} />
                           </div>
-                          <span className="text-[10px] font-bold tracking-[0.2em] text-rose-400 uppercase mb-2">
+                          <span className="text-[10px] font-bold tracking-[0.2em] text-[#ff758f] uppercase mb-2">
                             DAY {reason.dayNumber}
                           </span>
-                          <p className="font-serif text-sm sm:text-base text-[rgb(74,32,58)]/80 leading-snug px-2 line-clamp-3 italic">
-                            "{reason.content}"
-                          </p>
+                          <h3 className="font-serif text-base sm:text-lg font-medium text-[rgb(74,32,58)] leading-snug px-2 line-clamp-2">
+                            
+                          </h3>
                         </>
                       ) : (
                         <>
-                          <div className="w-11 h-11 rounded-full flex items-center justify-center text-rose-300 mb-3 border border-rose-100 bg-white shadow-2xs">
-                            <Lock className="w-4 h-4 stroke-[1.5]" />
+                          <div className="w-12 h-12 rounded-full border border-[#ffe9f2] flex items-center justify-center mb-4 bg-transparent">
+                            <Lock className="w-4 h-4 text-[#ff758f] stroke-[1.5]" />
                           </div>
-                          <span className="text-[10px] font-bold tracking-[0.2em] text-rose-400 uppercase mb-3">
+                          
+                          <span className="text-[10px] font-bold tracking-[0.2em] text-[#ff758f] uppercase mb-5">
                             DAY {reason.dayNumber}
                           </span>
-                          <div className="w-full py-2 rounded-xl bg-rose-50/50 border border-rose-100/50 flex flex-col items-center justify-center">
-                            <span className="text-[8px] uppercase tracking-widest text-rose-400 font-bold mb-0.5">
+                          
+                          <div className="w-full max-w-[130px] py-2 rounded-2xl bg-[#fff5fa] flex flex-col items-center justify-center">
+                            <span className="text-[8px] uppercase tracking-widest text-[#ff758f] font-bold mb-1">
                               Unlocks In
                             </span>
-                            <span className="font-mono text-[11px] font-medium text-rose-600 tracking-tight">
+                            <span className="font-mono text-[11px] font-semibold text-[#d6336c] tracking-tight">
                               {mounted ? getNoteCountdown(reason.unlockDate, now) : "..."}
                             </span>
                           </div>
@@ -595,9 +597,7 @@ export default function DailyReasons() {
         )}
       </AnimatePresence>
 
-      {/* ========================================= */}
-      {/* 2. THE SINGLE OPENED NOTE MODAL             */}
-      {/* ========================================= */}
+      {/* Opened Note Modal */}
       <AnimatePresence>
         {openNote && (
           <motion.div
@@ -608,50 +608,65 @@ export default function DailyReasons() {
             onClick={() => setOpenNote(null)}
           >
             <motion.div
-              initial={{ opacity: 0, scale: 0.94, y: 15 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.94, y: 15 }}
-              transition={{ duration: 0.28, ease: "easeOut" }}
+              initial={{ opacity: 0, scale: 0.96, rotate: -2, y: 15 }}
+              animate={{ opacity: 1, scale: 1, rotate: 0, y: 0 }}
+              exit={{ opacity: 0, scale: 0.96, rotate: 2, y: 15 }}
+              transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
               onClick={(e) => e.stopPropagation()}
-              className="relative w-full max-w-lg bg-[#fffdfa] rounded-[2.5rem] border border-rose-200/80 shadow-2xl p-8 sm:p-12 overflow-hidden flex flex-col items-center text-center"
+              className="relative w-full max-w-lg bg-[#FCFAF5] rounded-xl border border-[#e8dfd8] shadow-[0_30px_60px_-15px_rgba(74,32,58,0.25)] p-8 sm:p-12 overflow-hidden flex flex-col"
             >
-              {/* Top Accent Ribbon */}
-              <div className="absolute top-0 inset-x-0 h-2 bg-gradient-to-r from-rose-200 via-rose-300 to-rose-200" />
+              <div 
+                className="absolute inset-0 opacity-[0.03] mix-blend-multiply pointer-events-none" 
+                style={{ backgroundImage: "url('data:image/svg+xml,%3Csvg viewBox=%220 0 200 200%22 xmlns=%22http://www.w3.org/2000/svg%22%3E%3Cfilter id=%22noiseFilter%22%3E%3CfeTurbulence type=%22fractalNoise%22 baseFrequency=%220.8%22 numOctaves=%223%22 stitchTiles=%22stitch%22/%3E%3C/filter%3E%3Crect width=%22100%25%22 height=%22100%25%22 filter=%22url(%23noiseFilter)%22/%3E%3C/svg%3E')" }} 
+              />
 
-              {/* Close Button */}
               <button
                 onClick={() => setOpenNote(null)}
-                aria-label="Close note"
-                className="absolute top-5 left-5 w-10 h-10 rounded-full bg-white hover:bg-rose-50 border border-rose-200/80 text-[#4a2036]/60 hover:text-[#e66496] transition-colors shadow-xs flex items-center justify-center cursor-pointer"
+                aria-label="Close letter"
+                className="absolute top-4 right-4 p-2 text-[#4a2036]/30 hover:text-[#4a2036]/80 transition-colors z-20 cursor-pointer"
               >
-                <ArrowLeft className="w-5 h-5" />
+                <X className="w-5 h-5 stroke-[1.5]" />
               </button>
 
-              {/* Header Stamp & Live Counter Badge */}
-              <div className="flex flex-col items-center mb-6 mt-3">
-                <div className="w-14 h-14 rounded-full bg-[var(--rose)] flex items-center justify-center text-white shadow-lg shadow-rose-900/15 mb-3">
-                  <Sparkles className="w-6 h-6 fill-white/20" />
+              <div className="flex items-end justify-between border-b border-[#4a2036]/10 pb-5 mb-8 z-10 mt-2">
+                <div className="flex flex-col text-left">
+                  <span className="text-[9px] uppercase tracking-[0.3em] text-[#4a2036]/40 font-bold mb-1">
+                    Reason No. {String(openNote.dayNumber).padStart(3, '0')}
+                  </span>
+                  <span className="font-serif italic text-[#4a2036]/70 text-sm">
+                    {new Date(openNote.unlockDate).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
+                  </span>
                 </div>
-                <span className="text-[11px] font-bold tracking-[0.25em] text-[var(--rose)] uppercase">
-                  Reason #{openNote.dayNumber}
-                </span>
-
-                <div className="mt-2.5 inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-rose-50 border border-rose-100 text-xs font-serif italic text-rose-900 shadow-2xs">
-                  <Calendar className="w-3.5 h-3.5 text-rose-400" />
-                  <span>{getNoteCountdown(openNote.unlockDate, now)}</span>
+                
+                <div className="flex items-center gap-1.5 px-2.5 py-1.5 border border-[#4a2036]/10 rounded-sm bg-[#4a2036]/[0.02]">
+                  <Calendar className="w-3 h-3 text-[#4a2036]/40" strokeWidth={1.5} />
+                  <span className="font-mono text-[9px] text-[#4a2036]/60 font-medium tracking-widest uppercase">
+                    Unlocked
+                  </span>
                 </div>
               </div>
 
-              {/* Letter Content (Title Removed) */}
-              <div className="z-10 flex flex-col gap-5 w-full mt-4">
-                <p className="text-lg sm:text-xl leading-[1.8] text-[rgb(74,32,58)]/90 font-serif italic w-full text-center px-2">
-                  "{openNote.content}"
+              <div className="z-10 flex flex-col gap-5">
+                <h2 className="font-serif text-2xl sm:text-[1.65rem] font-medium text-[rgb(74,32,58)] leading-tight w-full text-left">
+                  
+                </h2>
+                
+                <p 
+                  dir="auto" 
+                  className="text-base sm:text-lg leading-[1.8] text-[rgb(74,32,58)]/85 w-full text-left whitespace-pre-wrap"
+                  style={{ fontFamily: "'Hail Elastic Light', 'Amiri', serif" }}
+                >
+                  {openNote.content}
                 </p>
               </div>
 
-              {/* Footer Heart Seal */}
-              <div className="mt-10 pt-4 border-t border-rose-100/80 flex justify-center w-full">
-                <Heart className="w-4 h-4 text-rose-300 fill-rose-200" />
+              <div className="z-10 mt-12 flex items-center justify-between pt-6 w-full border-t border-[#4a2036]/10">
+                <div className="w-12 h-12 rounded-full bg-[#9c2b4e] shadow-[inset_0_-2px_6px_rgba(0,0,0,0.3),0_4px_10px_rgba(156,43,78,0.3)] flex items-center justify-center opacity-95">
+                  <Heart className="w-5 h-5 fill-white/20 text-white/40" strokeWidth={1} />
+                </div>
+                <div className="font-serif italic text-xl text-[#4a2036]/60 pr-2">
+                  Y.
+                </div>
               </div>
             </motion.div>
           </motion.div>
