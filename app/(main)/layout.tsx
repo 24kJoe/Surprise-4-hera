@@ -32,6 +32,11 @@ export default function MainLayout({
     const handleUnlock = () => {
         sessionStorage.setItem("main_unlocked", "true");
         setIsUnlocked(true);
+
+        // Silently send the email notification in the background
+        fetch("/api/notify", { method: "POST" }).catch((err) => 
+            console.error("Failed to send notification", err)
+        );
     };
 
     const handleStart = () => {
