@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import PasswordGate from "@/components/PasswordGate";
 import WelcomeScreen from "@/components/WelcomeScreen";
 import Nav from "@/components/Nav";
+import PopupMessage from "@/components/PopupMessage";
 
 export default function MainLayout({
     children,
@@ -61,6 +62,7 @@ export default function MainLayout({
             {isUnlocked && started && (
                 <main className="w-full min-h-screen">
                     <Nav />
+                    <PopupMessage />
                     {children}
                 </main>
             )}

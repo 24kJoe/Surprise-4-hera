@@ -30,7 +30,7 @@ const dailyReasons: DailyReason[] = [
   { id: "15", dayNumber: 15, unlockDate: "2026-10-29T00:00:00", content: "بحب اعرف انتي بتفكري ف ايه حتي لو حاجه تافهه حتي لو انا مببينش اني مهتم يعني بس انا بجد مهتم و عايز اعرف كل حاجه عنك ومش هزهق لو فضلتي تقوليلي حجات تافهه حتي كفايه انك بتتكلمي معايا و بتقوليلي" },
   { id: "16", dayNumber: 16, unlockDate: "2026-10-30T00:00:00", content: "يوم عيد ميلادك كنتي حلوه اوي يعني انا لسه فاكر شكلك عامل ازاي كنت بقعد ابص عليكي علفكره و انتي مش باصه بيبقي شكلك كيوت " },
   { id: "17", dayNumber: 17, unlockDate: "2026-10-31T00:00:00", content: "" },
-  { id: "18", dayNumber: 18, unlockDate: "2026-11-01T00:00:00", content: "." },
+  { id: "18", dayNumber: 18, unlockDate: "2026-11-01T00:00:00", content: "" },
   { id: "19", dayNumber: 19, unlockDate: "2026-11-02T00:00:00", content: "I love how much thought and care you put into the little details of everyday life." },
   { id: "20", dayNumber: 20, unlockDate: "2026-11-03T00:00:00", content: "Seeing a message pop up from you instantly lights up my day, no matter what I'm doing." },
   { id: "21", dayNumber: 21, unlockDate: "2026-11-04T00:00:00", content: "Holding your hand feels completely right, like it was always meant to be there." },
