@@ -65,7 +65,7 @@ export default function PopupMessage() {
               className={`text-[1.2rem] sm:text-[1.25rem] leading-[1.8] text-[#4a2036]/90 ${amiri.className}`}
               style={{ fontFamily: '"Hail Elastic Light", "Hail Elastic", "Amiri", "Traditional Arabic", serif' }}
             >
-              اعتقد مش متوقعه و فجأه كده بكتبلك بس انا عايز اقولك اني بموت فيكي وعايزك برضو تكوني عارفه ان مش لازم تشغلي بالك انا هتبسط ولا لا يوم عيد ميلادي يعني عشان والله العظيم انا بفرح اما بشوفك بس يعني هو في حد يشوفك و ميفرحش يعني انتي بالدنيا اساسا انا فرحتي من فرحتك يا حبيبتي انتي كفايه والله العظيم حتي لو من غير هديه هفرح بقا انتي هديتي بحبك و متقعديش تفكري كتيرر
+             Wait for a New one.
             </p>
           </motion.div>
         )}
