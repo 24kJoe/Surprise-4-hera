@@ -3,6 +3,13 @@
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Lock, Mail, Sparkles, Heart, Calendar, X, Clock, Compass } from "lucide-react";
+import { Amiri } from "next/font/google";
+
+const amiri = Amiri({
+  subsets: ["arabic"],
+  weight: ["400", "700"],
+  display: "swap",
+});
 
 interface FutureLetter {
   id: string;
@@ -24,10 +31,10 @@ const futureLetters: FutureLetter[] = [
     occasion: "My Birthday",
     title: "Surprise",
     lockedTitle: "My Birthday Letter for you",
-    teaser: "A little note for your special day.",
+    teaser: "A little note for our special day.",
     lockedTeaser: "You won't have a look until my birthday comes.",
     content:
-      "Happy Birthday, my love! I hope today brings you as much happiness as you bring into my life every single day. I'm so grateful for you...",
+      "انا طبعا مش عارف اقولك ايه ولا ايه انا مبسوط عشان انتي معايا مبسوط علي اي حاجه  كنا مع بعض فيها و هفضل مبسوط وجودك بس كفايه وانا اتمنى نفضل مع بعض علطول عيد ميلادي بقا لازم اتمنى  وربنا يكتبلي الخير فيكي يارب و ربنا يخليكي ليا حبيبتي  مش  هلاقي احسن منك حقيقي ومش عايزك تكوني فاكره انك مبتعمليش كفايه  لا انتي اكتر من كفايه و انا مبسوط علطول منك وربنا يخليكي ليا تاني و تالت و رابع  كتير بقا متعديش , بحبك. ",
   },
   {
     id: "2",
@@ -280,9 +287,13 @@ export default function FutureLetters() {
                 {openLetter.title}
               </h2>
 
-              {/* Letter Body Parchment */}
+              {/* Letter Body Parchment (Arabic Style Applied Here) */}
               <div className="max-h-[50vh] overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-rose-200">
-                <p className="text-sm sm:text-base leading-relaxed text-rose-950/80 whitespace-pre-wrap font-serif italic text-left">
+                <p 
+                  dir="auto"
+                  className={`text-sm sm:text-base leading-[2.2] text-rose-950/80 whitespace-pre-wrap italic ${amiri.className}`}
+                  style={{ fontFamily: '"Hail Elastic Light", "Hail Elastic", "Amiri", "Traditional Arabic", serif' }}
+                >
                   {openLetter.content}
                 </p>
               </div>
