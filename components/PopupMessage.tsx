@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Heart } from "lucide-react";
 import { Amiri } from "next/font/google";
@@ -11,8 +11,28 @@ const amiri = Amiri({
   display: "swap",
 });
 
+// Change this version string (e.g., "v2", "v3") whenever you write a new message.
+// This tells the website to show the red dot again!
+const MESSAGE_VERSION = "v1";
+
 export default function PopupMessage() {
   const [isOpen, setIsOpen] = useState(false);
+  const [isUnread, setIsUnread] = useState(false);
+
+  useEffect(() => {
+    // Check local storage to see if this specific message has been read yet
+    const savedVersion = localStorage.getItem("popup_read_version");
+    if (savedVersion !== MESSAGE_VERSION) {
+      setIsUnread(true);
+    }
+  }, []);
+
+  const handleOpenMessage = () => {
+    setIsOpen(true);
+    setIsUnread(false);
+    // Save this version as "read" so the dot doesn't come back on refresh
+    localStorage.setItem("popup_read_version", MESSAGE_VERSION);
+  };
 
   return (
     <div className="fixed top-24 right-4 sm:top-28 sm:right-6 z-[150] flex flex-col items-end">
@@ -25,10 +45,25 @@ export default function PopupMessage() {
             exit={{ opacity: 0, scale: 0.8 }}
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
-            onClick={() => setIsOpen(true)}
-            className="flex h-12 w-12 items-center justify-center rounded-full border border-[#ffe9f2] bg-white/90 p-3 shadow-[0_8px_20px_-5px_rgba(224,85,134,0.25)] backdrop-blur-md text-[#e66496] hover:bg-[#fff0f5] transition-colors cursor-pointer"
+            onClick={handleOpenMessage}
+            className="relative flex h-12 w-12 items-center justify-center rounded-full border border-[#ffe9f2] bg-white/90 p-3 shadow-[0_8px_20px_-5px_rgba(224,85,134,0.25)] backdrop-blur-md text-[#e66496] hover:bg-[#fff0f5] transition-colors cursor-pointer"
           >
             <Heart className="h-5 w-5 fill-current" />
+            
+            {/* New Message Red Dot Indicator */}
+            <AnimatePresence>
+              {isUnread && (
+                <motion.div
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
+                  exit={{ scale: 0 }}
+                  className="absolute -top-0.5 -right-0.5 flex h-3.5 w-3.5"
+                >
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-3.5 w-3.5 bg-red-500 border-2 border-white"></span>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </motion.button>
         )}
       </AnimatePresence>
@@ -65,7 +100,7 @@ export default function PopupMessage() {
               className={`text-[1.2rem] sm:text-[1.25rem] leading-[1.8] text-[#4a2036]/90 ${amiri.className}`}
               style={{ fontFamily: '"Hail Elastic Light", "Hail Elastic", "Amiri", "Traditional Arabic", serif' }}
             >
-             Wait for a New one.
+              Wait for a new one.
             </p>
           </motion.div>
         )}
