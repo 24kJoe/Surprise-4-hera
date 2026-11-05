@@ -18,6 +18,7 @@ const MESSAGE_VERSION = "v1";
 export default function PopupMessage() {
   const [isOpen, setIsOpen] = useState(false);
   const [isUnread, setIsUnread] = useState(false);
+  const [isVisible, setIsVisible] = useState(true);
 
   useEffect(() => {
     // Check local storage to see if this specific message has been read yet
@@ -27,12 +28,29 @@ export default function PopupMessage() {
     }
   }, []);
 
+  useEffect(() => {
+    const hidePopup = () => {
+      setIsVisible(false);
+      setIsOpen(false);
+    };
+    const showPopup = () => setIsVisible(true);
+
+    window.addEventListener("future-letter-open", hidePopup);
+    window.addEventListener("future-letter-close", showPopup);
+    return () => {
+      window.removeEventListener("future-letter-open", hidePopup);
+      window.removeEventListener("future-letter-close", showPopup);
+    };
+  }, []);
+
   const handleOpenMessage = () => {
     setIsOpen(true);
     setIsUnread(false);
     // Save this version as "read" so the dot doesn't come back on refresh
     localStorage.setItem("popup_read_version", MESSAGE_VERSION);
   };
+
+  if (!isVisible) return null;
 
   return (
     <div className="fixed top-24 right-4 sm:top-28 sm:right-6 z-[150] flex flex-col items-end">

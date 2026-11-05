@@ -35,7 +35,7 @@ const dailyReasons: DailyReason[] = [
   { id: "20", dayNumber: 20, unlockDate: "2026-11-03T00:00:00", content: "مش تقوليلي انك كنتي هتبقي زي القمر كده ولا ايه اي تحذير حتي يعني و شكرا علي الهديه حلوه اوي يا حبيبتي ربنا يخليكي ليا " },
   { id: "21", dayNumber: 21, unlockDate: "2026-11-04T00:00:00", content: "I would do anything for you and i mean it , you mean so much to me more than you could ever imagine." },
   { id: "22", dayNumber: 22, unlockDate: "2026-11-05T00:00:00", content: "I love the letter you wrote for me every word in that card means the world to me specially when you're the one who wrote it." },
-  { id: "23", dayNumber: 23, unlockDate: "2026-11-06T00:00:00", content: "We have quite a" },
+  { id: "23", dayNumber: 23, unlockDate: "2026-11-06T00:00:00", content: "We have quite a story to tell to our kids you know, Imagine saying that we knew each other since 2024 from a game and we were complete strangers and that game grew to what we are now, Sounds shocking when you think about it and that doesn't happen often we don't happen often i guess we can say we aare one of a kind."},
   { id: "24", dayNumber: 24, unlockDate: "2026-11-07T00:00:00", content: "I love when your playful, goofy side comes out and we act like absolute kids together." },
   { id: "25", dayNumber: 25, unlockDate: "2026-11-08T00:00:00", content: "I love the deep empathy you show toward others. You feel emotions so purely." },
   { id: "26", dayNumber: 26, unlockDate: "2026-11-09T00:00:00", content: "I love how you view the world with such imagination and creativity." },
