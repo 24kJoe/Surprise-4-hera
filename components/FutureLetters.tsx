@@ -55,7 +55,7 @@ November 4 2026`,
     displayDate: "Feb 7, 2027",
     occasion: "Valentine",
     title: "With You 💍",
-    lockedTitle: "Ramadan",
+    lockedTitle: "Valentine's Day",
     teaser: "Reflecting on our time together.",
     lockedTeaser: "Locked until February 7th.",
     content:
