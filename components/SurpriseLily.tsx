@@ -100,17 +100,23 @@ export default function SurpriseLily() {
             transition={{ duration: reduceMotion ? 0 : 0.3 }}
             className="pointer-events-none fixed inset-0 z-[160] flex items-center justify-center overflow-hidden"
           >
-            <div className="relative w-[calc(100%-2rem)] max-w-lg">
+            <motion.div
+              className="relative w-[calc(100%-2rem)] max-w-lg"
+              initial={{ x: "0%" }}
+              animate={{ x: phase === "bloom" ? "0%" : "-50%" }}
+              transition={transition}
+            >
               <motion.div
                 layoutId="lily-flower"
-                initial={{ scale: 0.4, y: 50, x: "-50%", left: "50%" }}
-                animate={{ scale: phase === "bloom" ? 1 : 0.5, y: phase === "bloom" ? 0 : -90, x: "-50%", left: phase === "bloom" ? "50%" : "0%", rotate: phase === "bloom" ? 0 : -18 }}
+                initial={{ scale: 0.4, y: 50, x: "-50%" }}
+                animate={{ scale: phase === "bloom" ? 1 : 0.5, y: phase === "bloom" ? 0 : -90, x: "-50%", rotate: phase === "bloom" ? 0 : -18 }}
+                style={{ left: "50%", willChange: "transform" }}
                 transition={transition}
                 className="absolute top-1/2 -mt-36 w-[200px] sm:w-[260px] drop-shadow-[0_16px_24px_rgba(157,76,106,0.18)]"
               >
                 <LilyFlower />
               </motion.div>
-            </div>
+            </motion.div>
           </motion.div>
         )}
       </AnimatePresence>

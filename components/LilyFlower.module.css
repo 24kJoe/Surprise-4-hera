@@ -1,0 +1,23 @@
+.stem {
+  animation: appear 0.6s ease-out both;
+}
+
+.petal {
+  transform-box: view-box;
+  transform-origin: 130px 151px;
+  animation: bloom 1.1s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@keyframes appear {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes bloom {
+  from { transform: scale(0.55, 0.15); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .stem, .petal { animation: none; }
+}
