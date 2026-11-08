@@ -1,4 +1,6 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
+import { connection } from "next/server";
 import { Fraunces, Sora } from "next/font/google";
 import "./globals.css";
 
@@ -22,6 +24,11 @@ export const metadata: Metadata = {
   description: "A little letter for you.",
 };
 
+async function RequestContent({ children }: { children: React.ReactNode }) {
+  await connection();
+  return children;
+}
+
 export default function RootLayout({
   children,
 }: {
@@ -30,7 +37,9 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${fraunces.variable} ${sora.variable}`}>
       <body>
-        {children}
+        <Suspense fallback={<div role="status" className="p-8 text-center">Loading…</div>}>
+          <RequestContent>{children}</RequestContent>
+        </Suspense>
       </body>
     </html>
   );

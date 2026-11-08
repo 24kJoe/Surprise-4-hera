@@ -2,7 +2,8 @@
 
 import { v2 as cloudinary } from "cloudinary";
 import { prisma } from "@/lib/prisma";
-import { revalidatePath, unstable_noStore as noStore } from "next/cache";
+import { revalidatePath, updateTag } from "next/cache";
+import { GALLERY_CACHE_TAG } from "@/lib/gallery-cache";
 import { MediaType } from "@prisma/client";
 
 cloudinary.config({
@@ -43,7 +44,7 @@ async function generateUniqueSlug(title: string, currentId?: string): Promise<st
 // --- Collections Actions ---
 
 export async function getCollections() {
-  noStore(); // Prevents Next.js from aggressively caching the old order
+  // Admin reads stay uncached so management always sees the current database.
   try {
     return await prisma.collection.findMany({
       // Updated to respect the new custom album order first
@@ -79,6 +80,7 @@ export async function createCollectionAction(formData: FormData) {
       },
     });
 
+    updateTag(GALLERY_CACHE_TAG);
     revalidatePath("/", "layout"); // Clears the entire site's cache
     return { success: true, data: newCollection };
   } catch (error: any) {
@@ -107,6 +109,7 @@ export async function updateCollectionAction(formData: FormData) {
       },
     });
 
+    updateTag(GALLERY_CACHE_TAG);
     revalidatePath("/", "layout");
     return { success: true, data: updated };
   } catch (error: any) {
@@ -132,6 +135,7 @@ export async function deleteCollectionAction(collectionId: string) {
       where: { id: collectionId },
     });
 
+    updateTag(GALLERY_CACHE_TAG);
     revalidatePath("/", "layout");
     return { success: true };
   } catch (error: any) {
@@ -152,6 +156,7 @@ export async function reorderCollectionsAction(items: { id: string; order: numbe
       )
     );
 
+    updateTag(GALLERY_CACHE_TAG);
     revalidatePath("/", "layout");
     return { success: true };
   } catch (error: any) {
@@ -275,6 +280,7 @@ export async function saveDirectMediaAction(data: {
       },
     });
 
+    updateTag(GALLERY_CACHE_TAG);
     revalidatePath("/", "layout");
     return { success: true, data: savedMedia };
   } catch (error: any) {
@@ -286,7 +292,7 @@ export async function saveDirectMediaAction(data: {
 // --- Media Actions ---
 
 export async function getMediaItems() {
-  noStore(); // Prevents Next.js from aggressively caching the old order
+  // Admin reads stay uncached so management always sees the current database.
   try {
     return await prisma.mediaItem.findMany({
       orderBy: [{ order: "asc" }, { createdAt: "desc" }],
@@ -309,6 +315,7 @@ export async function reorderMediaAction(items: { id: string; order: number }[])
       )
     );
 
+    updateTag(GALLERY_CACHE_TAG);
     revalidatePath("/", "layout");
     return { success: true };
   } catch (error: any) {
@@ -382,6 +389,7 @@ export async function uploadMediaAction(formData: FormData) {
       createdMedia.push(savedMedia);
     }
 
+    updateTag(GALLERY_CACHE_TAG);
     revalidatePath("/", "layout");
     return { success: true, data: createdMedia };
   } catch (error: any) {
@@ -417,6 +425,7 @@ export async function updateMediaAction(formData: FormData) {
       data: dataToUpdate,
     });
 
+    updateTag(GALLERY_CACHE_TAG);
     revalidatePath("/", "layout");
 
     return { success: true, data: updatedMedia };
@@ -445,6 +454,7 @@ export async function deleteMediaAction(mediaId: string) {
       where: { id: mediaId },
     });
 
+    updateTag(GALLERY_CACHE_TAG);
     revalidatePath("/", "layout");
     return { success: true };
   } catch (error: any) {
@@ -460,6 +470,7 @@ export async function bulkAssignMediaAction(mediaIds: string[], collectionId: st
       data: { collectionId },
     });
 
+    updateTag(GALLERY_CACHE_TAG);
     revalidatePath("/", "layout");
     return { success: true };
   } catch (error: any) {

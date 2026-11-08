@@ -1,41 +1,8 @@
-"use client";
+import HomeContent from "@/components/HomeContent";
 
-import FloatingHearts from "@/components/FloatingHearts";
-import NameToast from "@/components/NameToast";
-import LetterSection from "@/components/LetterSection";
-import MemoriesSection from "@/components/MemoriesSection";
-import CounterSection from "@/components/CounterSection";
-import Gallery from "@/components/Gallery";
-import VoiceNote from "@/components/VoiceNote";
-import DailyReasons from "@/components/DailyReasons";
-import FutureLetters from "@/components/FutureLetters";
+// The parent layout intentionally waits for the password and welcome screens.
+export const instant = false;
 
 export default function Page() {
-  return (
-    <>
-      <FloatingHearts />
-      <NameToast />
-      <LetterSection />
-      <div className="stitch-divider" />
-      <MemoriesSection />
-      <div className="stitch-divider" />
-      <Gallery />
-      <div className="stitch-divider" />
-      <section id="voicenotes">
-        <VoiceNote />
-      </section>
-      <div className="stitch-divider" />
-      
-      {/* Daily Reasons added right here */}
-      <DailyReasons />
-      <div className="stitch-divider" />
-
-      <section id="future-letters">
-        <FutureLetters />
-      </section>
-      <div className="stitch-divider" />
-      <CounterSection />
-      <footer>made with a whole heart, just for you.</footer>
-    </>
-  );
+  return <HomeContent />;
 }

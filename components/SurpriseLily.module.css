@@ -1,0 +1,38 @@
+.letterScroll {
+  scrollbar-width: thin;
+  scrollbar-color: #e9a6be #fff4f8;
+  scrollbar-gutter: stable both-edges;
+  overscroll-behavior: contain;
+}
+
+.letterScroll::-webkit-scrollbar {
+  width: 3px;
+}
+
+.letterScroll::-webkit-scrollbar-track {
+  background: #fff4f8;
+  border-radius: 999px;
+  margin-block: 40px;
+}
+
+.letterScroll::-webkit-scrollbar-thumb {
+  background: #e9a6be;
+  border: 1px solid #fff4f8;
+  border-radius: 999px;
+}
+
+.letterScroll::-webkit-scrollbar-thumb:hover {
+  background: #d97da0;
+}
+
+.letterScroll::-webkit-scrollbar-button {
+  display: none;
+}
+
+/* Let Chromium/Safari use the precise width instead of their native thin preset. */
+@supports selector(::-webkit-scrollbar) {
+  .letterScroll {
+    scrollbar-width: auto;
+    scrollbar-color: auto;
+  }
+}
