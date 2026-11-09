@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
-import { getAllCollections } from "@/lib/get";
+import { getAlbumSummaries } from "@/lib/get";
 import { reorderCollectionsAction } from "@/lib/actions"; // Adjust path if needed
 import AlbumCard, { CollectionItem } from "@/components/AlbumCard";
 
@@ -38,7 +38,7 @@ export default function Gallery() {
   useEffect(() => {
     async function loadAlbums() {
       try {
-        const data = await getAllCollections();
+        const data = await getAlbumSummaries();
         
         const filteredCollections = (data as any[]).filter(
           (collection) => collection.slug !== "our-memories"

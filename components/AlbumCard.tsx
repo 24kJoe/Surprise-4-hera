@@ -28,10 +28,9 @@ export default function AlbumCard({ collection, tilt = 0, index = 0 }: AlbumCard
 
   const mediaList = collection?.media || collection?.items || [];
   const mediaCount =
-    mediaList.length ||
-    collection?._count?.media ||
-    collection?._count?.items ||
-    0;
+    collection?._count?.media ??
+    collection?._count?.items ??
+    mediaList.length;
 
   const firstItem = mediaList[0];
   const mediaUrl =
@@ -72,6 +71,7 @@ export default function AlbumCard({ collection, tilt = 0, index = 0 }: AlbumCard
               <video
                 src={mediaUrl}
                 poster={thumbnailUrl || undefined}
+                preload={thumbnailUrl ? "none" : "metadata"}
                 className="w-full h-full object-cover rounded-lg"
                 muted
                 playsInline
@@ -82,6 +82,7 @@ export default function AlbumCard({ collection, tilt = 0, index = 0 }: AlbumCard
                 alt={altText}
                 className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105 rounded-lg"
                 loading="lazy"
+                decoding="async"
               />
             )
           ) : (

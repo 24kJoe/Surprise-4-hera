@@ -46,3 +46,23 @@ export async function getAllCollections() {
     return [];
   }
 }
+
+// The home page only needs one cover and a count, not every album item.
+export async function getAlbumSummaries() {
+  try {
+    return await prisma.collection.findMany({
+      where: { OR: [{ slug: null }, { slug: { not: "our-memories" } }] },
+      orderBy: [{ order: "asc" }, { createdAt: "desc" }],
+      include: {
+        media: {
+          take: 1,
+          orderBy: [{ order: "asc" }, { createdAt: "desc" }],
+        },
+        _count: { select: { media: true } },
+      },
+    });
+  } catch (error) {
+    console.error("Error fetching album summaries:", error);
+    return [];
+  }
+}

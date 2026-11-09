@@ -1,16 +1,13 @@
 "use client";
 
-import dynamic from "next/dynamic";
-import DeferredSection from "./DeferredSection";
 import FloatingHearts from "@/components/FloatingHearts";
 import NameToast from "@/components/NameToast";
 import LetterSection from "@/components/LetterSection";
 import MemoriesSection from "@/components/MemoriesSection";
 import CounterSection from "@/components/CounterSection";
-const Gallery = dynamic(() => import("@/components/Gallery"));
-const VoiceNote = dynamic(() => import("@/components/VoiceNote"));
+import Gallery from "@/components/Gallery";
 import DailyReasons from "@/components/DailyReasons";
-const FutureLetters = dynamic(() => import("@/components/FutureLetters"));
+import FutureLetters from "@/components/FutureLetters";
 import SurpriseLily from "@/components/SurpriseLily";
 
 
@@ -29,19 +26,14 @@ export default function HomeContent() {
       <MemoriesSection />
       <div className="stitch-divider" />
 
-      <DeferredSection id="gallery"><Gallery /></DeferredSection>
-      <div className="stitch-divider" />
-
-      <section id="voicenotes">
-        <DeferredSection><VoiceNote /></DeferredSection>
-      </section>
+      <Gallery />
       <div className="stitch-divider" />
 
       <DailyReasons />
       <div className="stitch-divider" />
 
       <section id="future-letters">
-        <DeferredSection><FutureLetters /></DeferredSection>
+        <FutureLetters />
       </section>
       <div className="stitch-divider" />
 

@@ -9,8 +9,8 @@ import { Amiri } from "next/font/google";
 
 const amiri = Amiri({
   subsets: ["arabic", "latin"],
-  weight: ["400", "700"],
-  style: ["normal", "italic"],
+  weight: ["400"],
+  style: ["normal"],
   display: "swap",
 });
 

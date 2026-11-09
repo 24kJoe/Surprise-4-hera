@@ -92,6 +92,7 @@ export default function PolaroidCard({
               alt={photo.caption || photo.altText || "Gallery photo"}
               className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105 rounded-2xl"
               loading="lazy"
+              decoding="async"
             />
           )
         ) : (

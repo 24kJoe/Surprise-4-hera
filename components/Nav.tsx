@@ -24,7 +24,6 @@ export default function Nav({ className }: NavProps) {
     { href: "/#letter", id: "#letter", label: "Letter" },
     { href: "/#memories", id: "#memories", label: "Memories" },
     { href: "/#gallery", id: "#gallery", label: "Gallery" },
-    { href: "/#voicenotes", id: "#voicenotes", label: "Voicenotes" },
     { href: "/#daily-reasons", id: "#daily-reasons", label: "Daily Reasons" },
     { href: "/#future-letters", id: "#future-letters", label: "Secret Letters" },
     { href: "/#counter", id: "#counter", label: "Counter" },
