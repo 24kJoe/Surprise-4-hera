@@ -86,20 +86,20 @@ export default function FutureLetters() {
 
   // Lock background scroll when letter is open
   useEffect(() => {
-    if (openLetter) {
-      document.body.style.overflow = "hidden";
-    } else {
-      document.body.style.overflow = "";
-    }
+    if (!openLetter) return;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
     return () => {
-      document.body.style.overflow = "";
+      document.body.style.overflow = previousOverflow;
     };
   }, [openLetter]);
 
   useEffect(() => {
-    window.dispatchEvent(
-      new Event(openLetter ? "future-letter-open" : "future-letter-close"),
-    );
+    if (!openLetter) return;
+    window.dispatchEvent(new Event("future-letter-open"));
+    return () => {
+      window.dispatchEvent(new Event("future-letter-close"));
+    };
   }, [openLetter]);
 
   const isUnlocked = (letter: FutureLetter) =>

@@ -31,7 +31,7 @@ export function useActiveSection(sectionIds: string[], offset = 120) {
       for (const id of ids) {
         const cleanId = id.replace("#", "");
         const element = document.getElementById(cleanId);
-        if (element && element.offsetTop <= scrollPosition) {
+        if (element && element.getBoundingClientRect().top + window.scrollY <= scrollPosition) {
           current = cleanId;
         }
       }

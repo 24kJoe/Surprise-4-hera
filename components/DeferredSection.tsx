@@ -23,7 +23,9 @@ export default function DeferredSection({ children, id }: { children: ReactNode;
     return () => observer.disconnect();
   }, []);
 
-  return <div ref={container} id={ready ? undefined : id} style={{ minHeight: ready ? undefined : 320 }}>
+  // Keep the reserved space while the dynamic import resolves; otherwise its
+  // empty loading state collapses the page under an active scroll gesture.
+  return <div ref={container} id={ready ? undefined : id} style={{ minHeight: 320 }}>
     {ready ? children : <div role="status" className="p-8 text-center text-rose-400">Loading…</div>}
   </div>;
 }
