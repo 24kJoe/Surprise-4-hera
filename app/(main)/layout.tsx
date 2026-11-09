@@ -5,6 +5,7 @@ import PasswordGate from "@/components/welcome/PasswordGate";
 import WelcomeScreen from "@/components/welcome/WelcomeScreen";
 import Nav from "@/components/layout/Nav";
 import PopupMessage from "@/components/letters/PopupMessage";
+import NameToast from "@/components/shared/NameToast";
 
 export default function MainLayout({
     children,
@@ -13,6 +14,7 @@ export default function MainLayout({
 }) {
     const [isUnlocked, setIsUnlocked] = useState(false);
     const [started, setStarted] = useState(false);
+    const [showEntryToast, setShowEntryToast] = useState(false);
     const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
@@ -37,6 +39,7 @@ export default function MainLayout({
 
     const handleStart = () => {
         sessionStorage.setItem("main_started", "true");
+        setShowEntryToast(true);
         setStarted(true);
     };
 
@@ -62,6 +65,7 @@ export default function MainLayout({
             {isUnlocked && started && (
                 <main className="w-full min-h-screen">
                     <Nav />
+                    {showEntryToast && <NameToast />}
                     <PopupMessage />
                     {children}
                 </main>

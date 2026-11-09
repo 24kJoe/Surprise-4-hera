@@ -103,10 +103,6 @@ export default function LetterSection() {
               {CONFIG.signOff}
             </span>
 
-            <div className="flex items-center gap-1.5 text-xs text-rose-400 font-serif italic">
-              
-              <span>Written with all my heart</span>
-            </div>
           </div>
         </motion.div>
       </div>

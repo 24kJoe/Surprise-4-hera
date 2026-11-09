@@ -111,20 +111,20 @@ export default function FutureLetters() {
 
         <div className="max-w-5xl mx-auto">
           {/* Section Header */}
-          <div className="text-center mb-14">
-            <span className="inline-flex items-center gap-1.5 text-[11px] tracking-[0.25em] font-semibold text-[var(--rose)] uppercase bg-rose-100/70 px-4 py-1.5 rounded-full border border-rose-200/60 mb-3 shadow-xs">
-              <Lock className="w-3.5 h-3.5" /> Time-Locked Keepsakes
+          <div className="text-center mb-12">
+            <span className="inline-flex items-center gap-3 text-[10px] tracking-[0.25em] font-semibold text-[#a74b70] uppercase mb-5">
+              <span className="h-px w-8 bg-rose-200" /> Sealed with love <span className="h-px w-8 bg-rose-200" />
             </span>
             <h2 className="text-3xl sm:text-5xl font-serif text-[rgb(74,32,58)] tracking-tight font-medium">
-              Letters for Later
+              Letters for <span className="italic text-[#b94f79]">Later</span>
             </h2>
-            <p className="mt-3 text-sm sm:text-base text-rose-900/65 max-w-lg mx-auto italic font-serif">
+            <p className="mt-4 text-base sm:text-lg leading-relaxed text-[#906579] max-w-md mx-auto font-serif">
               Sealed thoughts, personal vows, and milestones waiting for their day to arrive.
             </p>
           </div>
 
           {/* Envelopes Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {futureLetters.map((letter) => {
               const unlocked = isUnlocked(letter);
               const countdown = !unlocked ? getLiveCountdown(letter.unlockDate, now) : null;
@@ -134,33 +134,42 @@ export default function FutureLetters() {
                   key={letter.id}
                   whileHover={{ y: -5 }}
                   transition={{ duration: 0.25, ease: "easeOut" }}
+                  role={unlocked ? "button" : undefined}
+                  tabIndex={unlocked ? 0 : undefined}
+                  aria-label={unlocked ? `Read ${letter.title}` : undefined}
+                  onKeyDown={(event) => {
+                    if (unlocked && (event.key === "Enter" || event.key === " ")) {
+                      event.preventDefault();
+                      setOpenLetter(letter);
+                    }
+                  }}
                   onClick={() => {
                     if (unlocked) {
                       setOpenLetter(letter);
                     }
                   }}
-                  className={`group relative rounded-3xl p-6 sm:p-7 flex flex-col justify-between transition-all duration-300 border ${
+                  className={`group relative rounded-[2rem] p-7 sm:p-8 flex flex-col justify-between transition-all duration-300 border focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#b53e6d] ${
                     unlocked
-                      ? "bg-gradient-to-b from-white via-white/95 to-rose-50/40 border-rose-200/90 shadow-xl shadow-rose-900/5 cursor-pointer hover:border-[var(--rose)] hover:shadow-2xl hover:shadow-rose-900/10"
-                      : "bg-white/60 backdrop-blur-md border-rose-100/80 shadow-sm cursor-not-allowed select-none"
+                      ? "bg-[linear-gradient(145deg,#ffffff,#fffafb_65%,#ffeaf2)] border-rose-200/90 shadow-[0_18px_45px_-20px_rgba(174,62,104,0.3)] cursor-pointer hover:border-[#d887a6] hover:shadow-xl hover:shadow-rose-900/10"
+                      : "bg-[linear-gradient(145deg,#fffdfd,#fff5f8)] border-rose-200/60 shadow-[0_10px_30px_-20px_rgba(174,62,104,0.2)] select-none"
                   }`}
                 >
                   {/* Envelope Top Flap Border Line */}
-                  <div className="absolute top-0 inset-x-0 h-1.5 bg-gradient-to-r from-rose-200 via-rose-300 to-rose-200 rounded-t-3xl opacity-70" />
+                  <div aria-hidden="true" className="absolute inset-2 rounded-[1.5rem] border border-rose-100/80 pointer-events-none" />
 
                   <div>
                     {/* Header Row: Occasion & Wax Seal */}
-                    <div className="flex items-start justify-between gap-3 mb-4">
-                      <span className="inline-block text-[10px] font-bold tracking-widest text-[var(--rose)] uppercase bg-rose-50 px-3 py-1 rounded-full border border-rose-100">
+                    <div className="flex items-center justify-between gap-3 mb-8">
+                      <span className="inline-block text-[9px] font-semibold tracking-[0.18em] text-[#956076] uppercase">
                         {letter.occasion}
                       </span>
 
                       {/* Wax Seal Badge */}
                       <div
-                        className={`w-11 h-11 rounded-full flex items-center justify-center shadow-md border transition-all duration-300 ${
+                        className={`w-12 h-12 shrink-0 rounded-full ring-4 ring-rose-100/50 flex items-center justify-center shadow-sm border transition-all duration-300 ${
                           unlocked
-                            ? "bg-[var(--rose)] border-rose-300 text-white shadow-rose-500/30 group-hover:scale-110"
-                            : "bg-rose-100/70 border-rose-200 text-rose-400"
+                            ? "bg-[#cc4f80] border-rose-300 text-white shadow-rose-500/20 group-hover:scale-110"
+                            : "bg-[#f9e4ed] border-rose-200 text-[#a76580]"
                         }`}
                         title={unlocked ? "Click to open letter" : "Letter is locked"}
                       >
@@ -174,7 +183,7 @@ export default function FutureLetters() {
 
                     {/* Letter Title */}
                     <h3
-                      className={`font-serif text-xl sm:text-2xl font-semibold mb-2 leading-snug transition-colors ${
+                      className={`font-serif text-2xl font-medium mb-3 leading-snug transition-colors ${
                         unlocked
                           ? "text-[rgb(74,32,58)] group-hover:text-[var(--rose)]"
                           : "text-[rgb(74,32,58)]/75"
@@ -185,9 +194,7 @@ export default function FutureLetters() {
 
                     {/* Teaser Preview */}
                     <p
-                      className={`text-xs sm:text-sm leading-relaxed mb-6 font-serif italic ${
-                        unlocked ? "text-rose-900/75" : "text-rose-800/50"
-                      }`}
+                      className="text-base leading-relaxed mb-8 font-serif italic text-[#906579]"
                     >
                       {unlocked ? `"${letter.teaser}"` : letter.lockedTeaser}
                     </p>
@@ -195,15 +202,15 @@ export default function FutureLetters() {
 
                   {/* Footer Section */}
                   <div className="pt-4 border-t border-rose-100/90 flex flex-col gap-3">
-                    <div className="flex items-center justify-between text-xs text-rose-500/80 font-medium">
+                    <div className="flex items-center justify-between gap-2 text-[11px] text-[#956076] font-medium">
                       <span className="inline-flex items-center gap-1.5">
                         <Calendar className="w-3.5 h-3.5" />
                         {letter.displayDate}
                       </span>
 
                       {unlocked && (
-                        <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-[var(--rose)] bg-rose-50 px-2.5 py-0.5 rounded-full border border-rose-200">
-                           Read Now
+                        <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-[#b53e6d]">
+                           Read letter ↗
                         </span>
                       )}
                     </div>
@@ -219,12 +226,12 @@ export default function FutureLetters() {
                         ].map((slot, idx) => (
                           <div
                             key={idx}
-                            className="bg-rose-50/70 border border-rose-100 rounded-xl py-1.5 px-1 flex flex-col items-center justify-center"
+                            className="py-2 px-1 flex flex-col items-center justify-center"
                           >
-                            <span className="font-mono text-xs font-bold text-[rgb(74,32,58)]">
+                            <span className="font-serif tabular-nums text-2xl text-[#74334f]">
                               {String(slot.val).padStart(2, "0")}
                             </span>
-                            <span className="text-[9px] uppercase tracking-wider text-rose-400 font-sans">
+                            <span className="text-[8px] uppercase tracking-[0.15em] text-[#956076] font-sans">
                               {slot.label}
                             </span>
                           </div>
@@ -255,7 +262,7 @@ export default function FutureLetters() {
               exit={{ opacity: 0, scale: 0.94, y: 15 }}
               transition={{ duration: 0.28, ease: "easeOut" }}
               onClick={(e) => e.stopPropagation()}
-              className="relative w-full max-w-[420px] bg-[#fffdfa] rounded-[2rem] border border-rose-200/80 shadow-2xl px-6 pb-7 pt-10 sm:px-8 sm:pb-8 sm:pt-12 overflow-hidden flex flex-col max-h-[82vh] mt-11 sm:mt-17 mb-8 sm:mb-12"
+              className="relative w-full max-w-[540px] bg-[linear-gradient(145deg,#fffefd,#fff7fa)] rounded-[2rem] border border-rose-200/80 shadow-2xl px-7 pb-7 pt-10 sm:px-12 sm:pb-9 sm:pt-12 overflow-hidden flex flex-col max-h-[82vh] mt-11 sm:mt-17 mb-8 sm:mb-12"
             >
               {/* Decorative Envelope Stationery Corner Stamp */}
               <div className="absolute top-0 right-0 w-28 h-28 bg-gradient-to-bl from-rose-100/50 via-transparent to-transparent pointer-events-none rounded-tr-[2rem]" />

@@ -1,7 +1,6 @@
 "use client";
 
 import BackgroundPetals from "@/components/backgrounds/BackgroundPetals";
-import NameToast from "@/components/shared/NameToast";
 import LetterSection from "@/components/letters/LetterSection";
 import MemoriesSection from "@/components/gallery/MemoriesSection";
 import CounterSection from "@/components/sections/CounterSection";
@@ -17,7 +16,6 @@ export default function HomeContent() {
   return (
     <>
       <BackgroundPetals />
-      <NameToast />
       <SurpriseLily />
 
       <LetterSection />

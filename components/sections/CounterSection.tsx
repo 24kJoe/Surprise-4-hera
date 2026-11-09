@@ -93,39 +93,39 @@ export default function CounterSection() {
     <section id="counter" className="relative py-16 px-4">
       <div className="mx-auto max-w-4xl text-center">
         {/* Header */}
-        <div className="mb-10">
-          <div className="inline-flex items-center gap-1.5 text-xs uppercase tracking-[0.22em] text-[var(--gold-soft)] font-medium mb-2 bg-rose-50/60 px-3.5 py-1 rounded-full border border-rose-100/70 shadow-xs">
-            
+        <div className="mb-9 sm:mb-10">
+          <div className="text-[9px] sm:text-[10px] uppercase tracking-[0.3em] text-[#ad7690] font-medium mb-4">
             <span>Since The Day It Began</span>
           </div>
-          <h2 className="font-serif text-3xl sm:text-4xl text-[rgb(74,32,58)] font-normal tracking-tight">
-            We&apos;ve been us for...
+          <h2 className="font-serif text-4xl sm:text-5xl leading-[1.2] text-[#4a203a] font-normal tracking-tight">
+            We&apos;ve been <span className="italic text-[#b34f79]">us</span> for<span className="text-[#c78aa5]">…</span>
           </h2>
         </div>
 
         {/* Counter Tiles */}
-        <div className="flex flex-wrap items-center justify-center gap-3 sm:gap-5">
+        <div className="grid grid-cols-4 gap-2 sm:flex sm:items-center sm:justify-center sm:gap-4">
           {items.map((item, idx) => (
-            <div key={item.label} className="flex items-center gap-3 sm:gap-5">
+            <div key={item.label} className="min-w-0 flex items-center sm:gap-4">
               <motion.div
                 whileHover={{ y: -3 }}
                 transition={{ duration: 0.2 }}
-                className="relative min-w-[90px] sm:min-w-[115px] rounded-2xl border border-[var(--line)] bg-white/80 p-4 sm:p-5 shadow-sm backdrop-blur-md flex flex-col items-center justify-center group hover:border-[var(--rose)]/40 hover:shadow-md transition-all"
+                className="relative w-full min-w-0 sm:w-auto sm:min-w-[120px] rounded-2xl border border-rose-200/60 bg-gradient-to-br from-white to-[#fff2f7] px-1 py-4 sm:px-5 sm:py-6 shadow-[0_5px_18px_-10px_rgba(174,62,104,0.2)] flex flex-col items-center justify-center group hover:border-[#dba5bc] hover:shadow-[0_8px_24px_-10px_rgba(174,62,104,0.25)] transition-colors"
               >
                 {/* Number Display */}
-                <div className="text-3xl sm:text-4xl font-serif text-[var(--gold-soft)] tabular-nums leading-none drop-shadow-xs">
+                <div className="text-[clamp(1.125rem,5vw,1.75rem)] sm:text-4xl font-serif text-[#b34f79] tabular-nums leading-none">
                   <AnimatedNumber value={item.value} pad={item.pad} />
                 </div>
 
                 {/* Subtitle Label */}
-                <span className="mt-2.5 text-[10px] sm:text-[11px] font-sans font-semibold uppercase tracking-[0.18em] text-[#4a2036]/60 group-hover:text-[var(--rose)] transition-colors">
+                <span aria-hidden="true" className="mt-3 h-px w-6 bg-rose-200/80" />
+                <span className="mt-2 text-[10px] sm:text-sm font-serif italic text-[#a17489]">
                   {item.label}
                 </span>
               </motion.div>
 
               {/* Pulsing Heart Separator */}
               {idx < items.length - 1 && (
-                <div className="hidden sm:flex items-center justify-center text-[var(--rose)]/45">
+                <div className="hidden sm:flex items-center justify-center text-[#c56d91]/60">
                   <motion.div
                     animate={{ scale: [1, 1.2, 1], opacity: [0.4, 0.8, 0.4] }}
                     transition={{ repeat: Infinity, duration: 1.2, ease: "easeInOut" }}
@@ -143,16 +143,25 @@ export default function CounterSection() {
           initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3 }}
-          className="mt-8 inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/60 border border-[var(--line)] shadow-2xs backdrop-blur-xs text-xs font-serif text-[#4a2036]/80"
+          className="mt-8 inline-flex max-w-full items-center gap-3 rounded-2xl border border-rose-200/60 bg-gradient-to-br from-white to-[#fff2f7] px-4 py-3 sm:px-5 shadow-[0_5px_18px_-10px_rgba(174,62,104,0.2)] text-left"
         >
-          <CalendarHeart className="w-3.5 h-3.5 text-[var(--rose)]" />
-          <span>
-            That&apos;s roughly <strong className="font-semibold text-[var(--rose)] font-sans">{monthData.months}</strong> {monthData.months === 1 ? "month" : "months"}
+          <span aria-hidden="true" className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-rose-100 bg-rose-50">
+            <CalendarHeart className="h-4 w-4 text-[#bd6389]" strokeWidth={1.5} />
+          </span>
+          <span className="font-serif text-base leading-snug text-[#80516a]">
+            <strong className="font-medium text-[#b34f79] text-xl tabular-nums">{monthData.months}</strong> {monthData.months === 1 ? "month" : "months"}
             {monthData.extraDays > 0 && (
-              <> and <strong className="font-semibold text-[var(--rose)] font-sans">{monthData.extraDays}</strong> {monthData.extraDays === 1 ? "day" : "days"}</>
-            )} of loving each other
+              <> <span className="text-[#b68c9f]">&amp;</span> <strong className="font-medium text-[#b34f79] text-xl tabular-nums">{monthData.extraDays}</strong> {monthData.extraDays === 1 ? "day" : "days"}</>
+            )}
+            <span className="mt-0.5 block text-xs italic text-[#a17489]">of loving each other</span>
           </span>
         </motion.div>
+        <div aria-hidden="true" className="mt-7 flex items-center justify-center gap-4">
+          <span className="h-px w-16 bg-gradient-to-r from-transparent to-rose-200" />
+          <Heart className="h-4 w-4 fill-[#c56d91] text-[#c56d91]" strokeWidth={1.2} />
+          <span className="h-px w-16 bg-gradient-to-l from-transparent to-rose-200" />
+        </div>
+        <p className="mt-3 font-serif italic text-sm text-[#a16d84]">And I&apos;d choose you every second.</p>
       </div>
     </section>
   );

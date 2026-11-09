@@ -28,6 +28,12 @@ export default function Gallery() {
   const [collections, setCollections] = useState<CollectionItem[]>([]);
   const [tilts, setTilts] = useState<number[]>([]);
   const [loading, setLoading] = useState(true);
+  const [mobilePage, setMobilePage] = useState(0);
+  const mobilePageCount = Math.ceil(collections.length / 2);
+  const currentMobilePage = Math.min(mobilePage, Math.max(0, mobilePageCount - 1));
+  const [desktopPage, setDesktopPage] = useState(0);
+  const desktopPageCount = Math.ceil(collections.length / 3);
+  const currentDesktopPage = Math.min(desktopPage, Math.max(0, desktopPageCount - 1));
   
   // Drag and drop state
   const [reorderMode, setReorderMode] = useState(false);
@@ -91,27 +97,30 @@ export default function Gallery() {
   };
 
   return (
-    <section id="gallery">
+    <section id="gallery" className="scroll-mt-24">
       <div className="section-inner">
-        <div className="section-head text-center mb-8">
-          <span className="eyebrow block text-xs font-semibold tracking-[0.28em] text-[var(--gold-soft)] uppercase mb-2">
+        <div className="text-center mb-10">
+          <span className="inline-flex items-center gap-3 text-[10px] font-semibold tracking-[0.25em] text-[#a74b70] uppercase mb-5">
+            <span aria-hidden="true" className="h-px w-8 bg-rose-200" />
             Our Little Gallery
+            <span aria-hidden="true" className="h-px w-8 bg-rose-200" />
           </span>
-          <h2 className="text-3xl sm:text-4xl font-serif text-[var(--cream)] mb-3">
-            Captured Moments
+          <h2 className="text-4xl sm:text-5xl tracking-tight font-serif text-[var(--cream)] mb-4">
+            Captured <span className="italic text-[#b94f79]">Moments</span>
           </h2>
-          <p className="text-[var(--cream)]/70 max-w-lg mx-auto text-sm sm:text-base">
-            Select a collection to explore the photo and video memories stored inside.
+          <p className="text-[#906579] max-w-sm mx-auto font-serif text-base sm:text-lg leading-relaxed">
+            Our favorite days, little adventures, and all the moments in between.
           </p>
         </div>
 
         {/* Reorder Toolbar */}
         {!loading && collections.length > 0 && (
-          <div className="flex justify-center sm:justify-end mb-8">
+          <div className="flex flex-wrap items-center justify-between gap-4 mb-7 pb-4 border-b border-rose-200/60">
+            <span className="font-serif italic text-sm text-[#956076]">{collections.length} little chapters of us</span>
             {!reorderMode ? (
               <button
                 onClick={() => setReorderMode(true)}
-                className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold bg-[var(--bg)] text-[var(--cream)]/75 border border-[var(--line)] hover:border-[var(--cream)]/30 hover:text-[var(--cream)] transition-all cursor-pointer shadow-sm"
+                className="inline-flex items-center gap-2 px-3 py-2 rounded-full text-[11px] font-medium bg-white/60 text-[#956076] border border-rose-200/70 hover:bg-rose-50 hover:text-[#74334f] transition-colors cursor-pointer"
               >
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4">
                   <circle cx="9" cy="5" r="1" /><circle cx="9" cy="12" r="1" /><circle cx="9" cy="19" r="1" />
@@ -161,7 +170,7 @@ export default function Gallery() {
         ) : (
           <motion.div
             layout
-            className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8"
+            className="grid grid-cols-2 sm:grid-cols-3 gap-x-3 gap-y-5 sm:gap-x-7 sm:gap-y-10"
           >
             {collections.map((collection, i) => (
               <div
@@ -171,7 +180,7 @@ export default function Gallery() {
                 onDragEnter={() => reorderMode && handleDragEnter(i)}
                 onDragEnd={() => reorderMode && handleDragEnd()}
                 onDragOver={(e) => e.preventDefault()}
-                className={`${
+                className={`${!reorderMode && Math.floor(i / 2) !== currentMobilePage ? "hidden" : "block"} ${!reorderMode && Math.floor(i / 3) !== currentDesktopPage ? "sm:hidden" : "sm:block"} ${
                   reorderMode
                     ? "cursor-grab active:cursor-grabbing hover:ring-2 ring-[var(--rose)]/50 rounded-xl z-10 opacity-90 scale-100 hover:scale-105 transition-transform"
                     : ""
@@ -186,12 +195,50 @@ export default function Gallery() {
                   <AlbumCard
                     collection={collection}
                     tilt={tilts[i] || 0}
-                    index={i}
+                    index={reorderMode ? i : i % 3}
                   />
                 </div>
               </div>
             ))}
           </motion.div>
+        )}
+        {!loading && !reorderMode && mobilePageCount > 1 && (
+          <nav aria-label="Album pages" className="mt-7 flex items-center justify-between gap-3 sm:hidden">
+            <button
+              onClick={() => setMobilePage(currentMobilePage - 1)}
+              disabled={currentMobilePage === 0}
+              className="min-h-11 rounded-full border border-rose-200 bg-white/70 px-4 text-xs text-[#956076] disabled:opacity-35"
+            >
+              ← Previous
+            </button>
+            <span aria-live="polite" className="text-xs text-[#956076]">{currentMobilePage + 1} / {mobilePageCount}</span>
+            <button
+              onClick={() => setMobilePage(currentMobilePage + 1)}
+              disabled={currentMobilePage === mobilePageCount - 1}
+              className="min-h-11 rounded-full border border-rose-200 bg-white/70 px-4 text-xs text-[#956076] disabled:opacity-35"
+            >
+              Next →
+            </button>
+          </nav>
+        )}
+        {!loading && !reorderMode && desktopPageCount > 1 && (
+          <nav aria-label="Album pages" className="mt-8 hidden sm:flex items-center justify-center gap-6">
+            <button
+              onClick={() => setDesktopPage(currentDesktopPage - 1)}
+              disabled={currentDesktopPage === 0}
+              className="min-h-11 rounded-full border border-rose-200 bg-white/70 px-5 text-sm text-[#956076] hover:bg-rose-50 disabled:opacity-35 disabled:cursor-not-allowed"
+            >
+              ← Previous
+            </button>
+            <span aria-live="polite" className="text-sm text-[#956076]">{currentDesktopPage + 1} / {desktopPageCount}</span>
+            <button
+              onClick={() => setDesktopPage(currentDesktopPage + 1)}
+              disabled={currentDesktopPage === desktopPageCount - 1}
+              className="min-h-11 rounded-full border border-rose-200 bg-white/70 px-5 text-sm text-[#956076] hover:bg-rose-50 disabled:opacity-35 disabled:cursor-not-allowed"
+            >
+              Next →
+            </button>
+          </nav>
         )}
       </div>
     </section>

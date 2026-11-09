@@ -51,21 +51,20 @@ export default function AlbumCard({ collection, tilt = 0, index = 0 }: AlbumCard
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4, delay: index * 0.05 }}
-      whileHover={{ y: -6, rotate: 0, scale: 1.03 }}
-      style={{ rotate: `${tilt}deg` }}
+      whileHover={{ y: -6, rotate: 0 }}
+      style={{ rotate: `${tilt * 0.4}deg` }}
       className="relative group cursor-pointer select-none"
     >
       {/* Background stacked paper layers (subtle rounded-xl) */}
-      <div className="absolute inset-0 bg-white/70 border border-pink-200/60 rounded-xl rotate-2 translate-x-1.5 translate-y-1.5 shadow-xs group-hover:rotate-3 transition-transform duration-300 pointer-events-none" />
-      <div className="absolute inset-0 bg-white/80 border border-pink-200/70 rounded-xl -rotate-2 -translate-x-1 -translate-y-1 shadow-xs group-hover:-rotate-3 transition-transform duration-300 pointer-events-none" />
+      <div aria-hidden="true" className="absolute inset-0 bg-[#fff3f7] border border-rose-200/60 rounded-[1.5rem] rotate-[1.5deg] translate-y-1.5 shadow-sm group-hover:rotate-2 transition-transform duration-300 pointer-events-none" />
 
       {/* Main Front Card (balanced rounded-xl) */}
       <Link
         href={destination}
-        className="relative block bg-[#fffdfa] p-3 pb-5 rounded-xl border border-pink-200/80 shadow-md hover:shadow-xl hover:border-rose-300 transition-all duration-300"
+        className="relative block h-full bg-[linear-gradient(145deg,#ffffff,#fff9fb)] p-3 sm:p-4 rounded-[1.5rem] border border-rose-200/60 shadow-[0_12px_32px_-18px_rgba(126,53,84,0.3)] hover:shadow-[0_20px_40px_-18px_rgba(126,53,84,0.3)] hover:border-[#dca3ba] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#b53e6d] transition-all duration-300"
       >
         {/* Media Frame (gentle rounded-lg) */}
-        <div className="relative aspect-[4/5] w-full overflow-hidden rounded-lg bg-gradient-to-br from-rose-100 to-rose-200/60 flex items-center justify-center border border-rose-100/80">
+        <div className="relative aspect-square sm:aspect-[4/5] w-full overflow-hidden rounded-xl bg-gradient-to-br from-rose-100 to-rose-200/60 flex items-center justify-center border border-rose-100/80">
           {mediaUrl ? (
             isVideo ? (
               <video
@@ -103,7 +102,7 @@ export default function AlbumCard({ collection, tilt = 0, index = 0 }: AlbumCard
 
           {/* Media Count Badge */}
           {mediaCount > 0 && (
-            <div className="absolute top-2.5 right-2.5 px-2 py-0.5 rounded-full bg-black/60 text-white text-[10px] font-medium backdrop-blur-md border border-white/20 flex items-center gap-1 shadow-xs">
+            <div className="absolute top-3 right-3 px-2.5 py-1 rounded-full bg-[#4a2036]/65 text-white text-[10px] font-medium backdrop-blur-md border border-white/25 flex items-center gap-1.5 shadow-xs">
               <svg
                 className="w-3 h-3 text-white/90"
                 fill="none"
@@ -119,13 +118,16 @@ export default function AlbumCard({ collection, tilt = 0, index = 0 }: AlbumCard
         </div>
 
         {/* Text Details */}
-        <div className="mt-3 text-center px-1">
-          <h3 className="font-serif font-semibold text-base sm:text-lg text-[rgb(74,32,58)] truncate">
+        <div className="flex items-center justify-between gap-2 px-1 pt-3 sm:pt-5 pb-2">
+          <div className="min-w-0">
+          <h3 className="font-serif font-medium text-base sm:text-2xl leading-tight text-[rgb(74,32,58)] break-words">
             {collection.title || "Untitled Album"}
           </h3>
-          <p className="font-serif italic text-xs text-[var(--rose)] mt-0.5 group-hover:underline">
-            Click to view
+          <p className="hidden sm:block font-serif italic text-sm text-[#956076] mt-1.5">
+            A little piece of us
           </p>
+          </div>
+          <span aria-hidden="true" className="hidden sm:flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-rose-200/70 bg-rose-50/70 text-[#b95c82] group-hover:bg-[#cc4f80] group-hover:text-white transition-colors">↗</span>
         </div>
       </Link>
     </motion.div>

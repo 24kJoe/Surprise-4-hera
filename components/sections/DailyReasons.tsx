@@ -458,33 +458,34 @@ export default function DailyReasons() {
           ))}
         </div>
 
-        <div className="max-w-xl mx-auto">
+        <div className="max-w-[640px] mx-auto">
           {/* The New Compact Entry Card */}
-          <div className="relative p-8 sm:p-10 rounded-[2.5rem] bg-white/70 backdrop-blur-md border border-rose-200/60 shadow-[0_20px_50px_-12px_rgba(224,85,134,0.15)] flex flex-col items-center text-center overflow-hidden">
+          <div className="relative px-7 py-12 sm:px-14 sm:py-14 rounded-[2.5rem] bg-[linear-gradient(145deg,#ffffff,#fffafb_65%,#fff0f5)] border border-rose-200/60 shadow-[0_24px_70px_-25px_rgba(174,62,104,0.25)] flex flex-col items-center text-center overflow-hidden">
+            <div aria-hidden="true" className="absolute inset-3 rounded-[1.9rem] border border-rose-100/80 pointer-events-none" />
             
             <div className="absolute top-6 inset-x-0 flex justify-center gap-2 text-[0.5rem] text-[#e66496] opacity-80 pointer-events-none">
-              <span>♥</span><span>♥</span><span>♥</span>
+              <span className="uppercase tracking-[0.3em] text-[9px] font-semibold">A little love, every day</span>
             </div>
 
-            <div className="w-14 h-14 mt-2 mb-5 rounded-full bg-rose-50 flex items-center justify-center text-[var(--rose)] shadow-inner border border-rose-100/50">
+            <div className="w-16 h-16 mt-3 mb-6 rounded-full bg-rose-50 flex items-center justify-center text-[#c54c7b] shadow-sm border border-rose-200/60">
               <BookOpen className="w-6 h-6" />
             </div>
 
-            <h2 className="text-3xl sm:text-4xl font-serif text-[rgb(74,32,58)] tracking-tight font-medium mb-3">
-              A New Reason, Every Day
+            <h2 className="text-4xl sm:text-5xl leading-[1.15] font-serif text-[rgb(74,32,58)] tracking-tight font-medium mb-5">
+              A New Reason,<br /><span className="italic text-[#b94f79]">Every Day</span>
             </h2>
             
-            <p className="text-sm sm:text-base text-rose-900/65 italic font-serif mb-8 max-w-sm">
+            <p className="text-base sm:text-lg leading-relaxed text-[#906579] font-serif mb-7 max-w-sm">
               {totalCount} reasons why I fell in love with you, sealed away and unlocking one by one.
             </p>
 
             {/* Next Unlock Countdown */}
             {nextUnlock && (
-              <div className="mb-8 flex flex-col items-center gap-2">
-                <span className="text-[10px] uppercase tracking-widest font-bold text-rose-400">Next reason unlocks in:</span>
-                <div className="inline-flex items-center gap-2 bg-white px-5 py-2.5 rounded-2xl border border-rose-100 shadow-sm">
+              <div className="mb-7 py-4 w-full max-w-[280px] border-y border-rose-100 flex flex-col items-center gap-2">
+                <span className="text-[9px] uppercase tracking-[0.2em] font-semibold text-[#956076]">Your next little love note in</span>
+                <div className="inline-flex items-center gap-3 px-5 py-1">
                   <Clock className="w-4 h-4 text-rose-300" />
-                  <span className="font-mono text-sm font-bold text-[var(--rose)]">
+                  <span className="font-serif tabular-nums text-xl tracking-wider text-[#74334f]">
                     {nextUnlock.days > 0 && `${nextUnlock.days}d `}
                     {String(nextUnlock.hours).padStart(2, "0")}h{" "}
                     {String(nextUnlock.minutes).padStart(2, "0")}m{" "}
@@ -497,10 +498,14 @@ export default function DailyReasons() {
             {/* Button to Open the Archive */}
             <button
               onClick={() => setIsArchiveOpen(true)}
-              className="w-full sm:w-auto relative rounded-2xl bg-[#d65385] px-8 py-3.5 font-bold tracking-wider uppercase text-xs text-white shadow-[0_8px_20px_rgba(224,85,134,0.2)] transition-all duration-300 hover:bg-[#c24675] hover:shadow-[0_8px_25px_rgba(224,85,134,0.3)] active:scale-[0.98]"
+              className="w-full sm:w-auto relative rounded-full bg-[#cc4f80] px-10 py-4 font-semibold text-sm text-white shadow-[0_8px_24px_-6px_rgba(194,70,117,0.4)] transition-colors hover:bg-[#b53e6d] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#b53e6d]"
             >
-              Open Collection ({unlockedCount}/{totalCount})
+              Open collection <span aria-hidden="true" className="ml-3">↗</span>
             </button>
+            <p className="mt-4 text-[11px] tracking-wide text-[#956076]">{unlockedCount} of {totalCount} little reasons unlocked</p>
+            <div className="mt-2 h-1 w-44 rounded-full overflow-hidden bg-rose-100" aria-hidden="true">
+              <div className="h-full rounded-full bg-[#d887a6]" style={{ width: `${unlockedCount / totalCount * 100}%` }} />
+            </div>
           </div>
         </div>
       </section>
@@ -624,8 +629,10 @@ export default function DailyReasons() {
               exit={{ opacity: 0, scale: 0.96, rotate: 2, y: 15 }}
               transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
               onClick={(e) => e.stopPropagation()}
-              className="relative w-full max-w-lg bg-[#FCFAF5] rounded-xl border border-[#e8dfd8] shadow-[0_30px_60px_-15px_rgba(74,32,58,0.25)] p-8 sm:p-12 overflow-hidden flex flex-col"
+              className="relative isolate w-full max-w-[560px] bg-[linear-gradient(145deg,#fffefd,#fff8fa_65%,#ffedf4)] rounded-[2rem] border border-rose-200/80 shadow-[0_30px_90px_-20px_rgba(74,32,58,0.4)] px-7 py-9 sm:px-12 sm:py-11 max-h-[85dvh] overflow-y-auto flex flex-col"
             >
+              <div aria-hidden="true" className="absolute inset-3 -z-10 rounded-[1.4rem] border border-[#ebc5d3]/60 pointer-events-none" />
+              <div aria-hidden="true" className="absolute top-0 left-0 -z-10 h-40 w-40 rounded-full bg-rose-100/50 blur-3xl pointer-events-none" />
               <div 
                 className="absolute inset-0 opacity-[0.03] mix-blend-multiply pointer-events-none" 
                 style={{ backgroundImage: "url('data:image/svg+xml,%3Csvg viewBox=%220 0 200 200%22 xmlns=%22http://www.w3.org/2000/svg%22%3E%3Cfilter id=%22noiseFilter%22%3E%3CfeTurbulence type=%22fractalNoise%22 baseFrequency=%220.8%22 numOctaves=%223%22 stitchTiles=%22stitch%22/%3E%3C/filter%3E%3Crect width=%22100%25%22 height=%22100%25%22 filter=%22url(%23noiseFilter)%22/%3E%3C/svg%3E')" }} 
@@ -634,22 +641,25 @@ export default function DailyReasons() {
               <button
                 onClick={() => setOpenNote(null)}
                 aria-label="Close letter"
-                className="absolute top-4 right-4 p-2 text-[#4a2036]/30 hover:text-[#4a2036]/80 transition-colors z-20 cursor-pointer"
+                className="absolute top-5 right-5 p-2 rounded-full bg-white/70 text-[#a76b83] hover:bg-rose-100 hover:text-[#74334f] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#b53e6d] transition-colors z-20 cursor-pointer"
               >
                 <X className="w-5 h-5 stroke-[1.5]" />
               </button>
 
-              <div className="flex items-end justify-between border-b border-[#4a2036]/10 pb-5 mb-8 z-10 mt-2">
-                <div className="flex flex-col text-left">
-                  <span className="text-[9px] uppercase tracking-[0.3em] text-[#4a2036]/40 font-bold mb-1">
-                    Reason No. {String(openNote.dayNumber).padStart(3, '0')}
-                  </span>
-                  <span className="font-serif italic text-[#4a2036]/70 text-sm">
+              <div className="flex flex-col items-center text-center mt-3 mb-7 shrink-0">
+                <div aria-hidden="true" className="mb-5 flex items-center gap-4 text-[#c46a8e]">
+                  <span className="h-px w-12 bg-rose-200" />
+                  <Heart className="h-5 w-5 fill-rose-100" strokeWidth={1.2} />
+                  <span className="h-px w-12 bg-rose-200" />
+                </div>
+                <div className="flex flex-col items-center">
+                  <h2 className="font-serif text-3xl sm:text-4xl tracking-tight text-[#74334f] mb-3">One more reason <span className="italic">I love you.</span></h2>
+                  <span className="font-serif italic text-[#956076] text-sm">
                     {new Date(openNote.unlockDate).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
                   </span>
                 </div>
                 
-                <div className="flex items-center gap-1.5 px-2.5 py-1.5 border border-[#4a2036]/10 rounded-sm bg-[#4a2036]/[0.02]">
+                <div className="mt-4 flex items-center gap-1.5 px-3 py-1 border border-rose-200/60 rounded-full bg-white/60">
                   <Calendar className="w-3 h-3 text-[#4a2036]/40" strokeWidth={1.5} />
                   <span className="font-mono text-[9px] text-[#4a2036]/60 font-medium tracking-widest uppercase">
                     Unlocked
@@ -657,26 +667,26 @@ export default function DailyReasons() {
                 </div>
               </div>
 
-              <div className="z-10 flex flex-col gap-5">
-                <h2 className="font-serif text-2xl sm:text-[1.65rem] font-medium text-[rgb(74,32,58)] leading-tight w-full text-left">
-                  
-                </h2>
-                
+              <div className="relative z-10 rounded-2xl border border-rose-100/80 bg-white/60 px-5 py-7 sm:px-7 sm:py-8 shadow-[0_4px_20px_rgba(174,62,104,0.03)]">
+                <span aria-hidden="true" className="absolute -top-5 left-5 font-serif text-6xl leading-none text-[#d99ab2]">“</span>
                 <p 
                   dir="auto" 
-                  className="text-base sm:text-lg leading-[1.8] text-[rgb(74,32,58)]/85 w-full text-left whitespace-pre-wrap"
+                  className="text-lg sm:text-xl leading-[2] text-[#64344e] w-full text-start whitespace-pre-wrap break-words"
                   style={{ fontFamily: "'Hail Elastic Light', 'Amiri', serif" }}
                 >
                   {openNote.content}
                 </p>
               </div>
 
-              <div className="z-10 mt-12 flex items-center justify-between pt-6 w-full border-t border-[#4a2036]/10">
-                <div className="w-12 h-12 rounded-full bg-[#9c2b4e] shadow-[inset_0_-2px_6px_rgba(0,0,0,0.3),0_4px_10px_rgba(156,43,78,0.3)] flex items-center justify-center opacity-95">
-                  <Heart className="w-5 h-5 fill-white/20 text-white/40" strokeWidth={1} />
+              <div className="relative z-10 mt-7 flex flex-col items-center gap-3 pb-2 w-full shrink-0 text-center">
+                <div aria-hidden="true" className="flex items-center justify-center gap-4 w-full">
+                  <span className="h-px w-16 bg-gradient-to-r from-transparent to-[#dfafc2]" />
+                  <Heart className="w-4 h-4 fill-[#c56d91] text-[#c56d91]" strokeWidth={1.2} />
+                  <span className="h-px w-16 bg-gradient-to-l from-transparent to-[#dfafc2]" />
                 </div>
-                <div className="font-serif italic text-xl text-[#4a2036]/60 pr-2">
-                  Y.
+                <div className="flex flex-col items-center gap-2">
+                  <span className="font-serif italic text-base leading-relaxed text-[#956076]">Always you. Every day.</span>
+                  <span className="font-serif italic text-2xl leading-none text-[#9c4669]">Y.</span>
                 </div>
               </div>
             </motion.div>

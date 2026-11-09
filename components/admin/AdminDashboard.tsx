@@ -1,0 +1,1140 @@
+"use client";
+
+import React, { useState, useEffect, useTransition, useRef, useCallback, useMemo } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import Link from "next/link";
+import {
+  updateMediaAction, deleteMediaAction, getMediaItems, getCollections,
+  createCollectionAction, updateCollectionAction, deleteCollectionAction, getCloudinarySignatureAction,
+  saveDirectMediaAction, checkDuplicateMediaAction, reorderMediaAction, bulkAssignMediaAction,
+} from "@/lib/gallery/actions";
+
+export type MediaType = "IMAGE" | "VIDEO";
+
+interface CollectionItem { id: string; title: string; description?: string | null; media?: any[]; createdAt: Date; }
+interface MediaItem { id: string; type: MediaType; url: string; publicId?: string | null; caption?: string | null; altText?: string | null; thumbnailUrl?: string | null; collectionId?: string | null; collection?: CollectionItem | null; createdAt: Date; size?: number | null; order?: number; }
+
+/* ---------------------------------------------------------------------- */
+/*  Icons (Minified to prevent code cutoffs)                              */
+/* ---------------------------------------------------------------------- */
+const iS = { strokeLinecap: "round" as const, strokeLinejoin: "round" as const, strokeWidth: 1.75 };
+function IconArrowLeft(p: React.SVGProps<SVGSVGElement>) { return (<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" {...p}><path {...iS} d="M10.5 19.5 3 12m0 0 7.5-7.5M3 12h18" /></svg>); }
+function IconChevronDown(p: React.SVGProps<SVGSVGElement>) { return (<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" {...p}><path {...iS} d="m6 9 6 6 6-6" /></svg>); }
+function IconArrowRight(p: React.SVGProps<SVGSVGElement>) { return (<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" {...p}><path {...iS} d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" /></svg>); }
+function IconImage(p: React.SVGProps<SVGSVGElement>) { return (<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" {...p}><rect x="3" y="4" width="18" height="16" rx="2.5" {...iS} /><circle cx="8.5" cy="9.5" r="1.5" {...iS} /><path {...iS} d="m5 17 4.5-4.5a2 2 0 0 1 2.8 0L15 15.2M14.5 13.7l1.3-1.3a2 2 0 0 1 2.8 0L21 15" /></svg>); }
+function IconVideo(p: React.SVGProps<SVGSVGElement>) { return (<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" {...p}><rect x="2.5" y="6" width="13" height="12" rx="2.5" {...iS} /><path {...iS} d="M15.5 10.2 20 7.6a1 1 0 0 1 1.5.87v7.06a1 1 0 0 1-1.5.87l-4.5-2.6" /></svg>); }
+function IconEdit(p: React.SVGProps<SVGSVGElement>) { return (<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" {...p}><path {...iS} d="M16.5 4.5 19.5 7.5 8 19H5v-3L16.5 4.5Z" /></svg>); }
+function IconTrash(p: React.SVGProps<SVGSVGElement>) { return (<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" {...p}><path {...iS} d="M4 7h16M9 7V5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2m-9 0 1 12.5A2 2 0 0 0 8 21.5h8a2 2 0 0 0 2-2L19 7" /></svg>); }
+function IconX(p: React.SVGProps<SVGSVGElement>) { return (<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" {...p}><path {...iS} d="M6 6l12 12M18 6 6 18" /></svg>); }
+function IconPlus(p: React.SVGProps<SVGSVGElement>) { return (<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" {...p}><path {...iS} d="M12 5v14M5 12h14" /></svg>); }
+function IconUpload(p: React.SVGProps<SVGSVGElement>) { return (<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" {...p}><path {...iS} d="M12 15V4m0 0 4 4m-4-4L8 8M4 16v2.5A1.5 1.5 0 0 0 5.5 20h13a1.5 1.5 0 0 0 1.5-1.5V16" /></svg>); }
+function IconCheck(p: React.SVGProps<SVGSVGElement>) { return (<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" {...p}><path {...iS} d="m4 12.5 5 5L20 7" /></svg>); }
+function IconAlert(p: React.SVGProps<SVGSVGElement>) { return (<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" {...p}><path {...iS} d="M12 9v4.5M12 16.5h.01M10.4 4.3 2.9 17.5A1.5 1.5 0 0 0 4.2 19.8h15.6a1.5 1.5 0 0 0 1.3-2.3L13.6 4.3a1.5 1.5 0 0 0-2.6 0Z" /></svg>); }
+function IconCopy(p: React.SVGProps<SVGSVGElement>) { return (<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" {...p}><rect width="13" height="13" x="9" y="9" rx="2" ry="2" {...iS} /><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" {...iS} /></svg>); }
+function IconFolder(p: React.SVGProps<SVGSVGElement>) { return (<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" {...p}><path {...iS} d="M3.5 6.5A1.5 1.5 0 0 1 5 5h4l2 2.2h8a1.5 1.5 0 0 1 1.5 1.5v9a1.5 1.5 0 0 1-1.5 1.5H5A1.5 1.5 0 0 1 3.5 17.7v-11Z" /></svg>); }
+function IconSearch(p: React.SVGProps<SVGSVGElement>) { return (<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" {...p}><circle cx="11" cy="11" r="8" {...iS} /><path {...iS} d="m21 21-4.35-4.35" /></svg>); }
+function IconEye(p: React.SVGProps<SVGSVGElement>) { return (<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" {...p}><path {...iS} d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z" /><circle cx="12" cy="12" r="3" {...iS} /></svg>); }
+function IconCheckSquare(p: React.SVGProps<SVGSVGElement>) { return (<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" {...p}><polyline points="9 11 12 14 22 4" {...iS} /><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" {...iS} /></svg>); }
+function IconSliders(p: React.SVGProps<SVGSVGElement>) { return (<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" {...p}><line x1="4" y1="21" x2="4" y2="14" {...iS} /><line x1="4" y1="10" x2="4" y2="3" {...iS} /><line x1="12" y1="21" x2="12" y2="12" {...iS} /><line x1="12" y1="8" x2="12" y2="3" {...iS} /><line x1="20" y1="21" x2="20" y2="16" {...iS} /><line x1="20" y1="12" x2="20" y2="3" {...iS} /><line x1="1" y1="14" x2="7" y2="14" {...iS} /><line x1="9" y1="8" x2="15" y2="8" {...iS} /><line x1="17" y1="16" x2="23" y2="16" {...iS} /></svg>); }
+function IconSpinner(p: React.SVGProps<SVGSVGElement>) { return (<svg viewBox="0 0 24 24" fill="none" className={`animate-spin ${p.className || ""}`}><circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="2" strokeOpacity="0.25" /><path d="M21 12a9 9 0 0 0-9-9" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /></svg>); }
+function IconGrip(p: React.SVGProps<SVGSVGElement>) { return (<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...p}><circle cx="9" cy="5" r="1" /><circle cx="9" cy="12" r="1" /><circle cx="9" cy="19" r="1" /><circle cx="15" cy="5" r="1" /><circle cx="15" cy="12" r="1" /><circle cx="15" cy="19" r="1" /></svg>); }
+function IconZoomIn(p: React.SVGProps<SVGSVGElement>) { return (<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" {...p}><circle cx="11" cy="11" r="8" {...iS} /><path {...iS} d="m21 21-4.35-4.35M11 8v6M8 11h6" /></svg>); }
+function IconZoomOut(p: React.SVGProps<SVGSVGElement>) { return (<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" {...p}><circle cx="11" cy="11" r="8" {...iS} /><path {...iS} d="m21 21-4.35-4.35M8 11h6" /></svg>); }
+
+
+/* ---------------------------------------------------------------------- */
+/*  Native Hardware Image Compression Engine                              */
+/* ---------------------------------------------------------------------- */
+
+type QualityPreset = "ultra" | "high" | "compact";
+interface PresetConfig { label: string; maxDimension: number; quality: number; description: string; }
+
+const QUALITY_PRESETS: Record<QualityPreset, PresetConfig> = {
+  ultra: { label: "Ultra / 4K", maxDimension: 3840, quality: 0.94, description: "Keep the original file" },
+  high: { label: "High / 2K", maxDimension: 2560, quality: 0.88, description: "Recommended: clear photos with smaller uploads" },
+  compact: { label: "Compact / 1080p", maxDimension: 1920, quality: 0.78, description: "Smaller photos for slower connections" },
+};
+
+async function compressAndroidSafe(file: File, preset: QualityPreset): Promise<File> {
+  if (!file.type.startsWith("image/") || preset === "ultra") return file;
+  const config = QUALITY_PRESETS[preset];
+  try {
+    let bitmap = await createImageBitmap(file);
+    let { width, height } = bitmap;
+    const needsResize = width > config.maxDimension || height > config.maxDimension;
+    if (width > height && width > config.maxDimension) { height = Math.round((height * config.maxDimension) / width); width = config.maxDimension; } 
+    else if (height > config.maxDimension) { width = Math.round((width * config.maxDimension) / height); height = config.maxDimension; }
+    if (!needsResize) { bitmap.close(); return file; }
+    const canvas = document.createElement("canvas"); canvas.width = width; canvas.height = height;
+    const ctx = canvas.getContext("2d", { alpha: false });
+    if (!ctx) { bitmap.close(); return file; }
+    ctx.imageSmoothingEnabled = true; ctx.imageSmoothingQuality = "high"; ctx.drawImage(bitmap, 0, 0, width, height); bitmap.close();
+    return new Promise((resolve) => {
+      canvas.toBlob((blob) => {
+          canvas.width = 0; canvas.height = 0;
+          if (!blob || blob.size >= file.size) return resolve(file);
+          resolve(new File([blob], file.name.replace(/\.[^/.]+$/, ".jpg"), { type: "image/jpeg", lastModified: Date.now() }));
+        }, "image/jpeg", config.quality);
+    });
+  } catch { return file; }
+}
+
+/* ---------------------------------------------------------------------- */
+/*  Direct Cloudinary Upload (Instantly Abortable)                        */
+/* ---------------------------------------------------------------------- */
+
+function directUploadToCloudinary(
+  file: File, signData: { timestamp: number; signature: string; apiKey: string; cloudName: string; folder: string }, onProgress: (percent: number) => void, onAttachXhr?: (xhr: XMLHttpRequest) => void
+): Promise<{ secure_url: string; public_id: string; width?: number; height?: number; bytes?: number; duration?: number; format?: string; }> {
+  return new Promise((resolve, reject) => {
+    const isVideo = file.type.startsWith("video/");
+    const endpoint = `https://api.cloudinary.com/v1_1/${signData.cloudName}/${isVideo ? "video" : "image"}/upload`;
+    const formData = new FormData();
+    formData.append("file", file); formData.append("api_key", signData.apiKey); formData.append("timestamp", String(signData.timestamp)); formData.append("signature", signData.signature); formData.append("folder", signData.folder);
+    const xhr = new XMLHttpRequest();
+    if (onAttachXhr) onAttachXhr(xhr);
+    xhr.open("POST", endpoint); xhr.timeout = 300000;
+    xhr.upload.onprogress = (event) => { if (event.lengthComputable) { onProgress(Math.round((event.loaded / event.total) * 100)); } };
+    xhr.onload = () => {
+      if (xhr.status >= 200 && xhr.status < 300) { try { resolve(JSON.parse(xhr.responseText)); } catch { reject(new Error("Invalid response")); } } 
+      else { reject(new Error(`Cloudinary error ${xhr.status}`)); }
+    };
+    xhr.onabort = () => reject(new Error("Upload cancelled by user")); xhr.ontimeout = () => reject(new Error("Connection timed out")); xhr.onerror = () => reject(new Error("Network error"));
+    xhr.send(formData);
+  });
+}
+
+/* ---------------------------------------------------------------------- */
+/*  UI Primitives                                                         */
+/* ---------------------------------------------------------------------- */
+
+const inputCls = "w-full px-3.5 py-2.5 rounded-xl bg-[var(--bg)] border border-[var(--line)] focus:outline-none focus:border-[var(--rose)] focus:ring-2 focus:ring-[var(--rose)]/20 text-sm text-[var(--cream)] placeholder:text-[var(--cream)]/35 transition-all";
+const labelCls = "block text-[11px] font-semibold tracking-wider text-[var(--gold-soft)] uppercase mb-1.5";
+
+function Field({ label, children }: { label: string; children: React.ReactNode }) {
+  return <div><label className={labelCls}>{label}</label>{children}</div>;
+}
+
+function CustomSelect({ value, onChange, options, disabled }: { value: string; onChange: (val: string) => void; options: { id: string; label: string }[]; disabled?: boolean; }) {
+  const [isOpen, setIsOpen] = useState(false);
+  const selectedOption = options.find((o) => o.id === value) || options[0];
+
+  return (
+    <div className="relative">
+      <button type="button" disabled={disabled} onClick={() => setIsOpen(!isOpen)} className={`${inputCls} flex items-center justify-between cursor-pointer w-full text-left disabled:opacity-50`}>
+        <span className="truncate">{selectedOption?.label}</span>
+        <IconChevronDown className={`w-4 h-4 transition-transform text-[var(--cream)]/50 ${isOpen ? "rotate-180" : ""}`} />
+      </button>
+
+      <AnimatePresence>
+        {isOpen && (
+          <>
+            <div className="fixed inset-0 z-[60]" onClick={() => setIsOpen(false)} />
+            <motion.div initial={{ opacity: 0, y: -4, scale: 0.98 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: -4, scale: 0.98 }} transition={{ duration: 0.15 }} className="absolute z-[70] w-full mt-1.5 bg-[var(--paper)] border border-[var(--rose)]/30 rounded-xl shadow-xl overflow-hidden max-h-56 overflow-y-auto scrollbar-none flex flex-col">
+              {options.map((opt) => {
+                const isSelected = value === opt.id;
+                return (
+                  <div key={opt.id} onClick={() => { onChange(opt.id); setIsOpen(false); }} className={`px-3.5 py-2.5 text-sm cursor-pointer transition-colors flex items-center gap-2 ${isSelected ? "bg-[var(--rose)]/15 text-[var(--rose)] font-semibold" : "text-[var(--cream)] hover:bg-[var(--bg)]"}`}>
+                    {isSelected && <span className="w-1.5 h-1.5 rounded-full bg-[var(--rose)] shrink-0" />}
+                    <span className={`truncate ${isSelected ? "" : "ml-3.5"}`}>{opt.label}</span>
+                  </div>
+                );
+              })}
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
+
+function Banner({ tone, children }: { tone: "error" | "success"; children: React.ReactNode }) {
+  const styles = tone === "error" ? "bg-rose-50 text-rose-800 border-rose-200" : "bg-emerald-500/10 text-emerald-300 border-emerald-500/25";
+  return (
+    <motion.div initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} className={`flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl text-xs font-medium border ${styles}`}>
+      {tone === "error" ? <IconAlert className="w-4 h-4 shrink-0" /> : <IconCheck className="w-4 h-4 shrink-0" />}
+      <span>{children}</span>
+    </motion.div>
+  );
+}
+
+function PrimaryButton({ children, loading, className = "", ...rest }: React.ButtonHTMLAttributes<HTMLButtonElement> & { loading?: boolean }) {
+  return (
+    <button {...rest} className={`inline-flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl bg-[var(--rose)] hover:bg-[var(--rose-dim)] disabled:opacity-45 disabled:cursor-not-allowed text-white font-medium text-xs shadow-md shadow-black/20 hover:shadow-lg transition-all active:scale-[0.98] cursor-pointer ${className}`}>
+      {loading && <IconSpinner className="w-3.5 h-3.5" />}{children}
+    </button>
+  );
+}
+
+function GhostButton({ children, className = "", ...rest }: React.ButtonHTMLAttributes<HTMLButtonElement>) {
+  return (
+    <button {...rest} className={`inline-flex items-center justify-center gap-1.5 py-2 px-3.5 rounded-xl text-xs font-medium border border-[var(--line)] bg-[var(--bg)]/40 hover:bg-[var(--bg)] text-[var(--cream)]/75 hover:text-[var(--cream)] hover:border-[var(--cream)]/30 transition-all cursor-pointer disabled:opacity-45 ${className}`}>
+      {children}
+    </button>
+  );
+}
+
+function DangerButton({ children, className = "", ...rest }: React.ButtonHTMLAttributes<HTMLButtonElement>) {
+  return (
+    <button {...rest} className={`inline-flex items-center justify-center gap-1.5 py-2 px-3.5 rounded-xl text-xs font-medium border border-rose-500/30 bg-rose-500/10 text-rose-300 hover:bg-rose-500/20 transition-all cursor-pointer disabled:opacity-45 ${className}`}>
+      {children}
+    </button>
+  );
+}
+
+function Modal({ onClose, title, maxWidth = "max-w-md", children }: { onClose: () => void; title: string; maxWidth?: string; children: React.ReactNode; }) {
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [onClose]);
+
+  return (
+    <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
+      <motion.div initial={{ opacity: 0, scale: 0.96, y: 8 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.96, y: 8 }} transition={{ duration: 0.16 }} className={`bg-[var(--paper)] rounded-3xl p-6 w-full ${maxWidth} shadow-2xl border border-[var(--line)] text-[var(--cream)] relative`}>
+        <div className="flex items-center justify-between pb-3.5 mb-4 border-b border-[var(--line)]">
+          <h3 className="text-base font-serif font-semibold text-[var(--cream)] flex items-center gap-2"><span className="w-1.5 h-1.5 rounded-full bg-[var(--rose)]" />{title}</h3>
+          <button onClick={onClose} aria-label="Close" className="p-1 rounded-lg text-[var(--cream)]/50 hover:text-[var(--cream)] hover:bg-[var(--bg)] transition-colors cursor-pointer"><IconX className="w-4 h-4" /></button>
+        </div>
+        {children}
+      </motion.div>
+    </div>
+  );
+}
+
+/* ---------------------------------------------------------------------- */
+/*  Batch Thumbnail Loader                                                */
+/* ---------------------------------------------------------------------- */
+
+function BatchFileThumbnail({ file }: { file: File }) {
+  const [thumbUrl, setThumbUrl] = useState<string | null>(null);
+  const isVideo = file.type.startsWith("video/");
+  const isImage = file.type.startsWith("image/");
+
+  useEffect(() => {
+    if (!isImage && !isVideo) return;
+    const url = URL.createObjectURL(file);
+    setThumbUrl(url);
+    return () => URL.revokeObjectURL(url);
+  }, [file, isImage, isVideo]);
+
+  if (!thumbUrl) return <div className="w-14 h-14 rounded-xl bg-[var(--plum)] flex items-center justify-center text-[var(--rose)] shrink-0">{isVideo ? <IconVideo className="w-5 h-5" /> : <IconImage className="w-5 h-5" />}</div>;
+
+  return (
+    <div className="w-14 h-14 rounded-xl overflow-hidden bg-black/40 border border-[var(--line)] shrink-0 relative flex items-center justify-center">
+      {isVideo ? (
+        <><video src={thumbUrl} className="w-full h-full object-cover" muted /><div className="absolute inset-0 bg-black/30 flex items-center justify-center text-white"><IconVideo className="w-4 h-4" /></div></>
+      ) : (
+        <img src={thumbUrl} alt={file.name} className="w-full h-full object-cover" onError={(e) => { (e.target as HTMLElement).style.display = "none"; }} />
+      )}
+    </div>
+  );
+}
+
+/* ---------------------------------------------------------------------- */
+/*  Single-File Lightbox Preview Component                                */
+/* ---------------------------------------------------------------------- */
+
+function SingleFilePreviewModal({
+  file, index, total, onClose, onDelete, onNext, onPrev,
+}: {
+  file: File; index: number; total: number; onClose: () => void; onDelete: () => void; onNext: () => void; onPrev: () => void;
+}) {
+  const [fileUrl, setFileUrl] = useState<string | null>(null);
+  const isVideo = file.type.startsWith("video/");
+  const constraintsRef = useRef<HTMLDivElement>(null);
+  const [scale, setScale] = useState(1);
+
+  useEffect(() => {
+    const url = URL.createObjectURL(file);
+    setFileUrl(url);
+    setScale(1);
+    return () => URL.revokeObjectURL(url);
+  }, [file]);
+
+  return (
+    <Modal title={`Preview (${index + 1} of ${total})`} maxWidth="max-w-2xl" onClose={onClose}>
+      <div className="space-y-4">
+        <div ref={constraintsRef} className="w-full h-[60vh] rounded-2xl overflow-hidden bg-black/70 flex items-center justify-center border border-[var(--line)] relative group">
+          {fileUrl && (
+            isVideo ? ( <video src={fileUrl} controls autoPlay className="max-h-[58vh] w-full object-contain" /> ) : ( 
+              <>
+                <motion.img 
+                  drag={scale > 1}
+                  dragConstraints={constraintsRef}
+                  dragElastic={0.1}
+                  src={fileUrl} 
+                  alt={file.name} 
+                  className={`max-h-[58vh] w-full object-contain ${scale > 1 ? 'cursor-grab active:cursor-grabbing' : 'cursor-zoom-in'}`}
+                  animate={{ scale }}
+                  transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                  onClick={() => setScale(s => s === 1 ? 2.5 : 1)}
+                />
+                <div className="absolute top-4 right-4 flex flex-col gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <button type="button" onClick={() => setScale(s => Math.min(s + 0.5, 4))} className="p-2 bg-black/50 hover:bg-black/70 text-white rounded-lg backdrop-blur-md border border-white/10 transition-colors cursor-pointer"><IconZoomIn className="w-4 h-4" /></button>
+                  <button type="button" onClick={() => setScale(s => Math.max(s - 0.5, 1))} className="p-2 bg-black/50 hover:bg-black/70 text-white rounded-lg backdrop-blur-md border border-white/10 transition-colors cursor-pointer"><IconZoomOut className="w-4 h-4" /></button>
+                </div>
+              </>
+            )
+          )}
+        </div>
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-[var(--cream)]/70 px-1 border-t border-[var(--line)] pt-3">
+          <div className="truncate max-w-[240px]"><p className="font-semibold text-[var(--cream)] truncate">{file.name}</p><p className="text-[11px] text-[var(--cream)]/45">{(file.size / (1024 * 1024)).toFixed(2)} MB</p></div>
+          <div className="flex items-center gap-2">
+            <GhostButton onClick={onPrev} disabled={total <= 1}>Previous</GhostButton>
+            <GhostButton onClick={onNext} disabled={total <= 1}>Next</GhostButton>
+            <DangerButton onClick={onDelete}><IconTrash className="w-3.5 h-3.5" /> Remove</DangerButton>
+          </div>
+        </div>
+      </div>
+    </Modal>
+  );
+}
+
+/* ---------------------------------------------------------------------- */
+/*  Album management dashboard                                            */
+/* ---------------------------------------------------------------------- */
+
+export default function AdminDashboard() {
+  const [mediaItems, setMediaItems] = useState<MediaItem[]>([]);
+  const [collections, setCollections] = useState<CollectionItem[]>([]);
+  const [loaded, setLoaded] = useState(false);
+
+  const [currentView, setCurrentView] = useState<"studio" | "gallery">("studio");
+  const [activeStudioTab, setActiveStudioTab] = useState<"upload" | "collection">("upload");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [inspectingMedia, setInspectingMedia] = useState<MediaItem | null>(null);
+  
+  // Image Lightbox Zoom State
+  const previewConstraintsRef = useRef<HTMLDivElement>(null);
+  const [previewScale, setPreviewScale] = useState(1);
+
+  // Upload State
+  const [files, setFiles] = useState<File[]>([]);
+  const [singleCoverUrl, setSingleCoverUrl] = useState<string | null>(null);
+  const [caption, setCaption] = useState("");
+  const [altText, setAltText] = useState("");
+  const [selectedCollectionId, setSelectedCollectionId] = useState("none");
+  const [qualityPreset, setQualityPreset] = useState<QualityPreset>("high");
+  const [isDragging, setIsDragging] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // AFK Mode State
+  const wakeLockRef = useRef<any>(null);
+
+  const [duplicateNames, setDuplicateNames] = useState<Set<string>>(new Set());
+  const [showBatchModal, setShowBatchModal] = useState(false);
+  const [inspectingFileIndex, setInspectingFileIndex] = useState<number | null>(null);
+
+  const [uploadProgress, setUploadProgress] = useState<{ current: number; total: number; statusText: string; currentFileName: string } | null>(null);
+  const [isBatchUploading, setIsBatchUploading] = useState(false);
+  const abortUploadRef = useRef(false);
+  const activeXhrsRef = useRef(new Set<XMLHttpRequest>());
+
+  const [selectMode, setSelectMode] = useState(false);
+  const [selectedMediaIds, setSelectedMediaIds] = useState<Set<string>>(new Set());
+  const [isBulkDeleting, setIsBulkDeleting] = useState(false);
+  const [showBulkDeleteModal, setShowBulkDeleteModal] = useState(false);
+  const [showBulkAssignModal, setShowBulkAssignModal] = useState(false);
+  const [isBulkAssigning, setIsBulkAssigning] = useState(false);
+  const [bulkCollectionId, setBulkCollectionId] = useState("none");
+
+  const [newColTitle, setNewColTitle] = useState("");
+  const [newColDesc, setNewColDesc] = useState("");
+  const [colError, setColError] = useState("");
+  const [colSuccess, setColSuccess] = useState("");
+
+  const [editingCollection, setEditingCollection] = useState<CollectionItem | null>(null);
+  const [editingMedia, setEditingMedia] = useState<MediaItem | null>(null);
+  const [confirmDeleteCollection, setConfirmDeleteCollection] = useState<CollectionItem | null>(null);
+  const [confirmDeleteMedia, setConfirmDeleteMedia] = useState<MediaItem | null>(null);
+
+  // Video Cover Capture States
+  const [generatedThumb, setGeneratedThumb] = useState<string | null>(null);
+  const videoScrubRef = useRef<HTMLVideoElement>(null);
+
+  const [errorMsg, setErrorMsg] = useState("");
+  const [successMsg, setSuccessMsg] = useState("");
+  const [activeFilter, setActiveFilter] = useState<string>("all");
+
+  const [isPendingCol, startTransitionCol] = useTransition();
+  const [isPendingEdit, startTransitionEdit] = useTransition();
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [deletingColId, setDeletingColId] = useState<string | null>(null);
+  
+  const [isReordering, setIsReordering] = useState(false);
+  const [reorderMode, setReorderMode] = useState(false);
+  const [localOrderedMedia, setLocalOrderedMedia] = useState<MediaItem[]>([]);
+  const dragItemRef = useRef<number | null>(null);
+  const dragOverItemRef = useRef<number | null>(null);
+
+  const requestWakeLock = async () => {
+    try { if ("wakeLock" in navigator) { wakeLockRef.current = await (navigator as any).wakeLock.request("screen"); } } catch (err) { console.warn(err); }
+  };
+  const releaseWakeLock = () => {
+    if (wakeLockRef.current) { try { wakeLockRef.current.release(); } catch (err) {} wakeLockRef.current = null; }
+  };
+
+  const stopAllUploads = useCallback(() => {
+    abortUploadRef.current = true;
+    activeXhrsRef.current.forEach((xhr) => xhr.abort()); activeXhrsRef.current.clear();
+    releaseWakeLock();
+  }, []);
+
+  const loadData = async () => {
+    const [mediaData, collectionsData] = await Promise.all([ getMediaItems(), getCollections() ]);
+    setMediaItems(mediaData as MediaItem[]); setCollections(collectionsData as CollectionItem[]); setLoaded(true);
+  };
+
+  useEffect(() => { loadData(); return () => { releaseWakeLock(); }; }, []);
+  useEffect(() => { return () => { if (singleCoverUrl) { URL.revokeObjectURL(singleCoverUrl); } }; }, [singleCoverUrl]);
+  useEffect(() => { setPreviewScale(1); }, [inspectingMedia]);
+
+  const collectionOptions = useMemo(() => {
+    return [ { id: "none", label: "General (Unassigned)" }, ...collections.map((col) => ({ id: col.id, label: col.title })) ];
+  }, [collections]);
+
+  const detectDuplicates = useCallback(async (fileList: File[]) => {
+    if (!fileList || fileList.length === 0) { setDuplicateNames(new Set()); return; }
+    const dupes = new Set<string>(); const seenKeys = new Set<string>();
+    fileList.forEach((file) => {
+      const sizeKey = `size-${file.size}`; const nameKey = `name-${file.name.toLowerCase()}`;
+      if (seenKeys.has(sizeKey) || seenKeys.has(nameKey)) { dupes.add(file.name); } else { seenKeys.add(sizeKey); seenKeys.add(nameKey); }
+    });
+    try {
+      const payload = fileList.map((f) => ({ name: f.name, size: f.size }));
+      const checkRes = await checkDuplicateMediaAction(payload);
+      if (checkRes.success && checkRes.duplicates) { checkRes.duplicates.forEach((name) => dupes.add(name)); }
+    } catch (err) { console.error(err); }
+    setDuplicateNames(new Set(dupes));
+  }, []);
+
+  const clearSelectedFiles = () => {
+    if (singleCoverUrl) { URL.revokeObjectURL(singleCoverUrl); setSingleCoverUrl(null); }
+    setFiles([]); setDuplicateNames(new Set()); setShowBatchModal(false); setInspectingFileIndex(null);
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  };
+
+  const removeFileFromBatch = (indexToRemove: number) => {
+    const updated = files.filter((_, idx) => idx !== indexToRemove);
+    setFiles(updated); detectDuplicates(updated);
+    if (inspectingFileIndex !== null) {
+      if (updated.length === 0) { setInspectingFileIndex(null); } else if (inspectingFileIndex >= updated.length) { setInspectingFileIndex(updated.length - 1); }
+    }
+    if (indexToRemove === 0) {
+      if (singleCoverUrl) URL.revokeObjectURL(singleCoverUrl);
+      const nextImage = updated.find((f) => f.type.startsWith("image/"));
+      if (nextImage) { setSingleCoverUrl(URL.createObjectURL(nextImage)); } else { setSingleCoverUrl(null); }
+    }
+    if (updated.length === 0) { setShowBatchModal(false); setInspectingFileIndex(null); if (fileInputRef.current) fileInputRef.current.value = ""; }
+  };
+
+  const removeAllDuplicates = () => {
+    const uniqueFiles: File[] = []; const seen = new Set<string>();
+    files.forEach((file) => {
+      const key = `${file.name}-${file.size}`; const isDbDupe = duplicateNames.has(file.name);
+      if (!seen.has(key) && !isDbDupe) { seen.add(key); uniqueFiles.push(file); }
+    });
+    setFiles(uniqueFiles); setDuplicateNames(new Set());
+    if (uniqueFiles.length === 0) { clearSelectedFiles(); }
+  };
+
+  const applyFiles = (selectedFiles: File[]) => {
+    if (!selectedFiles || selectedFiles.length === 0) return;
+    if (!singleCoverUrl) {
+      const firstImage = selectedFiles.find((f) => f.type.startsWith("image/"));
+      if (firstImage) { setSingleCoverUrl(URL.createObjectURL(firstImage)); }
+    }
+    setFiles((prev) => { const combined = [...prev, ...selectedFiles]; detectDuplicates(combined); return combined; });
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => { applyFiles(Array.from(e.target.files || [])); if (fileInputRef.current) fileInputRef.current.value = ""; };
+  const handleDrop = useCallback((e: React.DragEvent<HTMLDivElement>) => { e.preventDefault(); setIsDragging(false); applyFiles(Array.from(e.dataTransfer.files || [])); }, [applyFiles]);
+
+  const handleCreateCollection = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newColTitle.trim()) { setColError("Please provide a title for the collection"); return; }
+    setColError(""); setColSuccess("");
+    const formData = new FormData(); formData.append("title", newColTitle); formData.append("description", newColDesc);
+    startTransitionCol(async () => {
+      const res = await createCollectionAction(formData);
+      if (res.success && res.data) { setCollections((items) => [res.data as CollectionItem, ...items]); setSelectedCollectionId(res.data.id); setSuccessMsg("Album created. Add your photos below."); setNewColTitle(""); setNewColDesc(""); setActiveStudioTab("upload"); }
+      else { setColError(res.error || "Could not create collection"); }
+    });
+  };
+
+  const handleUpdateCollection = async (e: React.FormEvent) => {
+    e.preventDefault(); if (!editingCollection) return;
+    const formData = new FormData(); formData.append("id", editingCollection.id); formData.append("title", editingCollection.title); formData.append("description", editingCollection.description || "");
+    startTransitionEdit(async () => {
+      const res = await updateCollectionAction(formData);
+      if (res.success) { setEditingCollection(null); loadData(); } else { alert(res.error || "Could not save changes"); }
+    });
+  };
+
+  const handleDeleteCollection = async (col: CollectionItem) => {
+    const isProtected = col.title.toLowerCase() === "our-memories" || (col as any).slug === "our-memories";
+    if (isProtected) { alert("The 'our-memories' collection is protected and cannot be deleted."); return; }
+    setDeletingColId(col.id);
+    const res = await deleteCollectionAction(col.id);
+    setDeletingColId(null); setConfirmDeleteCollection(null);
+    if (res.success) { if (activeFilter === col.id) setActiveFilter("all"); loadData(); } else { alert(res.error || "Could not delete collection"); }
+  };
+
+  const handleUpload = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (files.length === 0) { setErrorMsg("Select at least one photo or video"); return; }
+    setShowBatchModal(false); setInspectingFileIndex(null); setErrorMsg(""); setSuccessMsg(""); setIsBatchUploading(true); abortUploadRef.current = false;
+    await requestWakeLock();
+    const batch = [...files]; const total = batch.length;
+    const failed = new Map<number, string>(); let completed = 0; let nextIndex = 0;
+    setUploadProgress({ current: 0, total, statusText: "Preparing photos…", currentFileName: "" });
+    try {
+      const signResult = await getCloudinarySignatureAction();
+      if (!signResult.success || !signResult.signature) throw new Error(signResult.error || "Could not start upload");
+      const worker = async () => {
+        while (nextIndex < total && !abortUploadRef.current) {
+          const index = nextIndex++; const file = batch[index]; let request: XMLHttpRequest | undefined;
+          try {
+            const isVideo = file.type.startsWith("video/");
+            const ready = isVideo ? file : await compressAndroidSafe(file, qualityPreset);
+            if (abortUploadRef.current) { failed.set(index, "Cancelled"); continue; }
+            const uploaded = await directUploadToCloudinary(ready, signResult as any, (percent) => {
+              setUploadProgress({ current: completed, total, statusText: "Uploading " + file.name + " · " + percent + "%", currentFileName: file.name });
+            }, (xhr) => { request = xhr; activeXhrsRef.current.add(xhr); });
+            const saved = await saveDirectMediaAction({ url: uploaded.secure_url, publicId: uploaded.public_id, type: isVideo ? "VIDEO" : "IMAGE", width: uploaded.width, height: uploaded.height, size: uploaded.bytes || ready.size, duration: uploaded.duration, mimeType: ready.type, caption, altText, collectionId: selectedCollectionId === "none" ? null : selectedCollectionId });
+            if (!saved.success) throw new Error(saved.error || "Could not save photo");
+            completed++;
+            setUploadProgress({ current: completed, total, statusText: completed + " of " + total + " saved", currentFileName: file.name });
+          } catch (error) { failed.set(index, error instanceof Error ? error.message : "Upload failed"); }
+          finally { if (request) activeXhrsRef.current.delete(request); }
+        }
+      };
+      await Promise.all(Array.from({ length: Math.min(3, total) }, worker));
+      for (let i = nextIndex; i < total; i++) failed.set(i, "Not uploaded");
+    } catch (error) { batch.forEach((_, i) => failed.set(i, error instanceof Error ? error.message : "Upload failed")); }
+    finally { activeXhrsRef.current.clear(); releaseWakeLock(); setIsBatchUploading(false); setUploadProgress(null); }
+    if (completed > 0) setSuccessMsg(completed + " files added. Ready for more!");
+    if (failed.size) {
+      setFiles(batch.filter((_, i) => failed.has(i)));
+      setErrorMsg(failed.size + " files still need uploading. Press Upload to retry.\n" + [...failed].map(([i, reason]) => batch[i].name + ": " + reason).join("\n"));
+    } else { clearSelectedFiles(); setCaption(""); setAltText(""); }
+    await loadData();
+  };
+
+  const handleUpdateMedia = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingMedia) return;
+
+    startTransitionEdit(async () => {
+      let finalThumb = editingMedia.thumbnailUrl;
+
+      // Use the newly generated video thumbnail from scrubbing
+      if (generatedThumb) {
+        finalThumb = generatedThumb;
+      }
+
+      const formData = new FormData();
+      formData.append("id", editingMedia.id);
+      formData.append("caption", editingMedia.caption || "");
+      formData.append("altText", editingMedia.altText || "");
+      formData.append("collectionId", editingMedia.collectionId || "none");
+      
+      if (finalThumb) {
+        formData.append("thumbnailUrl", finalThumb);
+      }
+
+      const res = await updateMediaAction(formData);
+      if (res.success) {
+        setEditingMedia(null);
+        setGeneratedThumb(null);
+        loadData();
+      } else {
+        alert(res.error || "Could not save changes");
+      }
+    });
+  };
+
+  const handleDeleteMedia = async (item: MediaItem) => {
+    setDeletingId(item.id); const res = await deleteMediaAction(item.id); setDeletingId(null); setConfirmDeleteMedia(null);
+    if (inspectingMedia?.id === item.id) { setInspectingMedia(null); }
+    if (res.success) { setMediaItems((prev) => prev.filter((m) => m.id !== item.id)); setSelectedMediaIds((prev) => { const next = new Set(prev); next.delete(item.id); return next; }); } else { alert(res.error || "Could not delete item"); }
+  };
+
+  const filteredMedia = useMemo(() => {
+    let result = mediaItems;
+    if (activeFilter === "none") { result = result.filter((item) => !item.collectionId); } else if (activeFilter !== "all") { result = result.filter((item) => item.collectionId === activeFilter); }
+    if (searchQuery.trim()) { const query = searchQuery.toLowerCase(); result = result.filter((item) => item.caption?.toLowerCase().includes(query) || item.altText?.toLowerCase().includes(query) || item.collection?.title.toLowerCase().includes(query) ); }
+    return result;
+  }, [mediaItems, activeFilter, searchQuery]);
+
+  // --- Visual Drag & Drop Handlers ---
+  const startReorderMode = () => { setLocalOrderedMedia([...filteredMedia]); setReorderMode(true); };
+  const handleDragStart = (index: number) => { dragItemRef.current = index; };
+  const handleDragEnter = (index: number) => {
+    dragOverItemRef.current = index; if (dragItemRef.current === null || dragOverItemRef.current === null) return; if (dragItemRef.current === dragOverItemRef.current) return;
+    const items = [...localOrderedMedia]; const draggedItemContent = items.splice(dragItemRef.current, 1)[0]; items.splice(dragOverItemRef.current, 0, draggedItemContent);
+    dragItemRef.current = dragOverItemRef.current; setLocalOrderedMedia(items);
+  };
+  const handleDragEnd = () => { dragItemRef.current = null; dragOverItemRef.current = null; };
+  
+  // 🚀 OPTIMISTIC UI UPDATE for Reordering
+  const saveNewOrder = async () => {
+    setIsReordering(true); 
+    const payload = localOrderedMedia.map((item, idx) => ({ id: item.id, order: idx })); 
+    const res = await reorderMediaAction(payload); 
+    setIsReordering(false);
+    
+    if (res.success) { 
+      setReorderMode(false); 
+      
+      // Instantly update the UI so the new order sticks permanently without waiting for the server
+      setMediaItems((prev) => {
+        const updated = [...prev];
+        payload.forEach((update) => {
+          const idx = updated.findIndex((m) => m.id === update.id);
+          if (idx !== -1) updated[idx] = { ...updated[idx], order: update.order };
+        });
+        
+        // Match the backend sorting logic perfectly (Order ASC, then Date DESC)
+        return updated.sort((a, b) => {
+          const orderA = a.order !== null && a.order !== undefined ? a.order : 999999;
+          const orderB = b.order !== null && b.order !== undefined ? b.order : 999999;
+          if (orderA !== orderB) return orderA - orderB;
+          return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+        });
+      });
+
+      loadData(); // Background refresh
+    } else { 
+      alert(res.error || "Failed to save order"); 
+    }
+  };
+
+  const toggleSelectMedia = (id: string) => { setSelectedMediaIds((prev) => { const next = new Set(prev); if (next.has(id)) next.delete(id); else next.add(id); return next; }); };
+  const selectAllFiltered = () => { const allIds = new Set(filteredMedia.map((m) => m.id)); setSelectedMediaIds(allIds); };
+  const clearBulkSelection = () => { setSelectedMediaIds(new Set()); };
+
+  const handleBulkDelete = async () => {
+    const ids = Array.from(selectedMediaIds); if (ids.length === 0) return; setIsBulkDeleting(true); const chunkSize = 4; const failedIds: string[] = [];
+    for (let i = 0; i < ids.length; i += chunkSize) {
+      const chunk = ids.slice(i, i + chunkSize); await Promise.all( chunk.map(async (id) => { try { const res = await deleteMediaAction(id); if (!res.success) failedIds.push(id); } catch { failedIds.push(id); } }) );
+    }
+    setIsBulkDeleting(false); setShowBulkDeleteModal(false);
+    const deletedCount = ids.length - failedIds.length; const successfullyDeleted = new Set(ids.filter((id) => !failedIds.includes(id)));
+    setMediaItems((prev) => prev.filter((m) => !successfullyDeleted.has(m.id))); setSelectedMediaIds(new Set(failedIds));
+    if (failedIds.length > 0) { alert(`Deleted ${deletedCount} items. ${failedIds.length} failed to delete.`); } else { setSelectMode(false); }
+  };
+
+  const handleBulkAssign = async () => {
+    const ids = Array.from(selectedMediaIds); if (ids.length === 0) return; setIsBulkAssigning(true); const colId = bulkCollectionId === "none" ? null : bulkCollectionId; const res = await bulkAssignMediaAction(ids, colId); setIsBulkAssigning(false);
+    if (res.success) { setShowBulkAssignModal(false); setSelectMode(false); clearBulkSelection(); await loadData(); } else { alert(res.error || "Could not assign items"); }
+  };
+
+  const displayMedia = reorderMode ? localOrderedMedia : filteredMedia;
+
+  return (
+    <div className="min-h-screen bg-[var(--bg)] text-[var(--cream)] p-4 sm:p-8 font-sans selection:bg-[var(--gold)] selection:text-white">
+      <div className="max-w-6xl mx-auto space-y-8">
+        {/* Top Header */}
+        <header className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 pb-6 border-b border-[var(--line)]">
+          <div className="flex items-center gap-4">
+            <Link href="/#letter" className="p-2.5 rounded-2xl bg-[var(--paper)]/80 hover:bg-[var(--paper)] border border-[var(--line)] text-[var(--cream)] hover:text-[var(--rose)] transition-colors shadow-sm flex items-center justify-center group shrink-0" title="Return to site">
+              <IconArrowLeft className="w-5 h-5 group-hover:-translate-x-0.5 transition-transform" />
+            </Link>
+            <div>
+              <span className="text-[11px] font-semibold uppercase tracking-wider text-[var(--gold-soft)] block">Dashboard</span>
+              <h1 className="font-serif text-3xl sm:text-4xl font-bold text-[var(--cream)] mt-0.5 leading-tight">Your memory studio</h1><p className="mt-2 text-sm text-[#956076]">Add a few photos. Make a new album. Keep your favorite days together.</p>
+            </div>
+          </div>
+          <div className="p-1.5 rounded-2xl bg-[var(--paper)] border border-[var(--line)] flex items-center gap-1 shadow-sm w-full sm:w-auto">
+            <button onClick={() => setCurrentView("studio")} className={`flex-1 sm:flex-none px-4 py-2 rounded-xl text-xs font-semibold tracking-wide transition-all cursor-pointer flex items-center justify-center gap-2 ${currentView === "studio" ? "bg-[var(--rose)] text-white shadow-sm" : "text-[var(--cream)]/65 hover:text-[var(--cream)] hover:bg-[var(--bg)]/50"}`}><IconUpload className="w-4 h-4" /><span>Add photos</span></button>
+            <button onClick={() => setCurrentView("gallery")} className={`flex-1 sm:flex-none px-4 py-2 rounded-xl text-xs font-semibold tracking-wide transition-all cursor-pointer flex items-center justify-center gap-2 ${currentView === "gallery" ? "bg-[var(--rose)] text-white shadow-sm" : "text-[var(--cream)]/65 hover:text-[var(--cream)] hover:bg-[var(--bg)]/50"}`}><IconImage className="w-4 h-4" /><span>Manage photos ({mediaItems.length})</span></button>
+          </div>
+        </header>
+
+        {/* View 1: Studio */}
+        {currentView === "studio" && (
+          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2 }} className="space-y-8">
+            <section className="bg-white/90 rounded-[2rem] p-5 sm:p-8 border border-rose-200/60 shadow-[0_16px_50px_-25px_rgba(150,60,100,0.2)]">
+              <div className="flex items-center justify-between border-b border-[var(--line)] pb-4 mb-6">
+                <div className="flex items-center gap-2">
+                  <button onClick={() => setActiveStudioTab("upload")} className={`px-4 py-2 rounded-xl text-xs font-semibold tracking-wide transition-all cursor-pointer flex items-center gap-2 ${activeStudioTab === "upload" ? "bg-[var(--rose)] text-white shadow-sm" : "text-[var(--cream)]/60 hover:text-[var(--cream)] hover:bg-[var(--bg)]"}`}><IconUpload className="w-3.5 h-3.5" /> Upload Media</button>
+                  <button disabled={isBatchUploading} onClick={() => setActiveStudioTab("collection")} className={`px-4 py-2 rounded-xl text-xs font-semibold tracking-wide transition-all cursor-pointer flex items-center gap-2 ${activeStudioTab === "collection" ? "bg-[var(--rose)] text-white shadow-sm" : "text-[var(--cream)]/60 hover:text-[var(--cream)] hover:bg-[var(--bg)]"}`}><IconPlus className="w-3.5 h-3.5" /> New album</button>
+                </div>
+                <span className="text-[11px] text-[var(--cream)]/40 hidden sm:inline-block">{activeStudioTab === "upload" ? "Add images or video clips" : "Create organized albums"}</span>
+              </div>
+
+              <AnimatePresence mode="wait">
+                {activeStudioTab === "upload" ? (
+                  <motion.form key="tab-upload" initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }} transition={{ duration: 0.15 }} onSubmit={handleUpload} className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }} onDragLeave={() => setIsDragging(false)} onDrop={handleDrop} className={`flex flex-col items-center justify-center border-2 border-dashed rounded-2xl p-4 transition-all relative overflow-hidden min-h-[260px] ${isDragging ? "border-[var(--rose)] bg-[var(--rose)]/10" : "border-[var(--line)] bg-[var(--bg)]/40 hover:border-[var(--rose)]/40"}`}>
+                      <input id="media-upload-input" ref={fileInputRef} type="file" accept="image/*,video/*" multiple onChange={handleFileChange} disabled={isBatchUploading} className="hidden" />
+                      {files.length > 0 ? (
+                        <div className="w-full flex flex-col items-center justify-center p-4">
+                          <div onClick={() => setShowBatchModal(true)} title="Click to view & manage selected files" className="relative w-36 h-28 mb-3 flex items-center justify-center select-none cursor-pointer group">
+                            <div className="absolute inset-0 rounded-2xl bg-white/60 border border-rose-200/60 shadow-xs rotate-6 translate-x-3 translate-y-1 group-hover:rotate-8 transition-transform" />
+                            <div className="absolute inset-0 rounded-2xl bg-white/80 border border-rose-200/80 shadow-xs -rotate-4 -translate-x-2 group-hover:-rotate-6 transition-transform" />
+                            <div className="relative w-full h-full rounded-2xl bg-[#fffdfa] border border-rose-300 shadow-md group-hover:shadow-xl group-hover:border-[var(--rose)] transition-all flex flex-col items-center justify-center p-3 text-center overflow-hidden">
+                              {singleCoverUrl ? <img src={singleCoverUrl} alt="" className="absolute inset-0 w-full h-full object-cover opacity-35 group-hover:scale-105 transition-transform pointer-events-none" onError={(e) => { (e.target as HTMLElement).style.display = "none"; }} /> : null}
+                              <div className="relative z-10 flex flex-col items-center"><div className="w-8 h-8 rounded-full bg-rose-500/10 text-[var(--rose)] flex items-center justify-center mb-1 group-hover:scale-110 transition-transform"><IconEye className="w-4 h-4" /></div><span className="font-serif text-lg font-bold text-[rgb(74,32,58)] leading-tight">{files.length}</span><span className="text-[10px] uppercase tracking-wider font-semibold text-rose-900/60">Batch Selected</span></div>
+                            </div>
+                          </div>
+                          <div className="flex flex-col items-center gap-1.5">
+                            <div className="flex items-center gap-2"><p className="text-xs font-medium text-rose-950/80 text-center font-serif italic">{(files.reduce((acc, f) => acc + f.size, 0) / (1024 * 1024)).toFixed(1)} MB selected</p><span className="text-rose-300 text-xs">•</span><button type="button" onClick={() => setShowBatchModal(true)} className="text-xs font-semibold text-[var(--rose)] hover:underline flex items-center gap-1 cursor-pointer"><IconEye className="w-3.5 h-3.5" /><span>View files</span></button></div>
+                            {duplicateNames.size > 0 && (
+                              <div className="w-full max-w-xs flex items-center justify-between gap-2 px-3 py-1.5 rounded-xl bg-amber-500/20 border border-amber-500/40 text-amber-200 text-xs font-medium shadow-sm"><div className="flex items-center gap-1.5 truncate"><IconCopy className="w-3.5 h-3.5 text-amber-400 shrink-0" /><span className="truncate">{duplicateNames.size} duplicate(s)</span></div><button type="button" onClick={removeAllDuplicates} className="underline font-bold text-amber-300 hover:text-white shrink-0 cursor-pointer text-[11px]">Remove</button></div>
+                            )}
+                          </div>
+                          <div className="flex items-center gap-3 mt-4">
+                            <label htmlFor="media-upload-input" className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-rose-100/70 border border-rose-200/80 text-xs font-semibold text-[var(--rose)] hover:bg-white shadow-2xs transition-all cursor-pointer ${isBatchUploading ? "pointer-events-none opacity-40" : ""}`}><IconPlus className="w-3.5 h-3.5" /><span>Add more files</span></label>
+                            <button type="button" onClick={clearSelectedFiles} disabled={isBatchUploading} className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-medium text-rose-900/60 hover:text-rose-500 hover:bg-rose-50 transition-all cursor-pointer disabled:opacity-40"><IconX className="w-3.5 h-3.5" /><span>Clear selection</span></button>
+                          </div>
+                        </div>
+                      ) : (
+                        <label htmlFor="media-upload-input" className="flex flex-col items-center cursor-pointer w-full h-full justify-center text-center p-6">
+                          <div className="w-12 h-12 rounded-2xl bg-[var(--plum)] flex items-center justify-center text-[var(--rose)] mb-3 group-hover:scale-105 transition-transform"><IconUpload className="w-5 h-5" /></div>
+                          <span className="text-xs font-semibold text-[var(--cream)]">Drop files here, or browse from device</span>
+                          <span className="text-[11px] text-[var(--cream)]/45 mt-1.5">Supports high-res PNG, JPG, WEBP, and MP4 videos</span>
+                        </label>
+                      )}
+                    </div>
+
+                    <div className="flex flex-col justify-between space-y-4">
+                      <div className="space-y-3.5">
+                        <Field label="Choose an album">
+                          <select aria-label="Upload album" value={selectedCollectionId} onChange={(e) => setSelectedCollectionId(e.target.value)} disabled={isBatchUploading || !loaded} className={inputCls}>{collectionOptions.map((option) => <option key={option.id} value={option.id}>{option.label}</option>)}</select><button type="button" disabled={isBatchUploading} onClick={() => setActiveStudioTab("collection")} className="mt-2 text-xs font-semibold text-[var(--rose)]">+ Create a new album</button>
+                        </Field>
+
+                        <details className="rounded-2xl border border-rose-100 p-4">
+                          <summary className="cursor-pointer text-sm text-[#956076]">Optional: quality & captions</summary>
+                          <div className="mt-4 space-y-4">
+                        <div>
+                          <label className="flex items-center gap-1.5 text-[11px] font-semibold tracking-wider text-[var(--gold-soft)] uppercase mb-1.5"><IconSliders className="w-3 h-3" /><span>Photo quality</span></label>
+                          <div className="grid grid-cols-3 gap-2">
+                            {(["ultra", "high", "compact"] as QualityPreset[]).map((preset) => {
+                              const config = QUALITY_PRESETS[preset]; const isSelected = qualityPreset === preset;
+                              return (
+                                <button key={preset} type="button" onClick={() => setQualityPreset(preset)} disabled={isBatchUploading} className={`px-2.5 py-2 rounded-xl border text-left flex flex-col justify-between transition-all cursor-pointer disabled:opacity-50 ${isSelected ? "border-[var(--rose)] bg-[var(--rose)]/15 text-[var(--cream)] ring-1 ring-[var(--rose)]/40" : "border-[var(--line)] bg-[var(--bg)] text-[var(--cream)]/60 hover:text-[var(--cream)] hover:border-[var(--cream)]/25"}`}>
+                                  <span className="text-xs font-semibold block leading-tight">{config.label}</span><span className="text-[10px] text-[var(--cream)]/40 mt-1 block leading-none">{preset === "ultra" ? "4K / Original" : preset === "high" ? "2K / Fast" : "1080p"}</span>
+                                </button>
+                              );
+                            })}
+                          </div>
+                          <p className="text-[11px] text-[var(--cream)]/40 mt-1 font-serif italic">{QUALITY_PRESETS[qualityPreset].description}</p>
+                        </div>
+
+                        <Field label="Caption or Note">
+                          <input type="text" value={caption} onChange={(e) => setCaption(e.target.value)} disabled={isBatchUploading} placeholder="e.g. Walking under the evening lights..." className={`${inputCls} disabled:opacity-50`} />
+                        </Field>
+
+                        <Field label="Alt Text (Accessibility)">
+                          <input type="text" value={altText} onChange={(e) => setAltText(e.target.value)} disabled={isBatchUploading} placeholder="Brief description for screen readers" className={`${inputCls} disabled:opacity-50`} />
+                        </Field>
+                          </div>
+                        </details>
+                      </div>
+
+                      {isBatchUploading && uploadProgress && (
+                        <div className="bg-[var(--bg)]/80 p-3.5 rounded-2xl border border-[var(--line)] space-y-2">
+                          <div className="flex items-center justify-between text-xs font-medium">
+                            <span className="text-[var(--cream)]/80 flex items-center gap-2 truncate max-w-[80%]"><IconSpinner className="w-3.5 h-3.5 text-[var(--rose)] shrink-0" /><span className="truncate">{uploadProgress.statusText}</span></span>
+                            <span className="text-[var(--rose)] font-semibold shrink-0">{uploadProgress.current} / {uploadProgress.total}</span>
+                          </div>
+                          <div className="w-full h-2 bg-rose-100 rounded-full overflow-hidden"><div className="h-full bg-[var(--rose)] transition-all duration-300 rounded-full" style={{ width: `${(uploadProgress.current / uploadProgress.total) * 100}%` }} /></div>
+                          <div className="flex justify-end"><button type="button" onClick={stopAllUploads} className="text-[10px] text-rose-300/80 hover:text-rose-200 underline cursor-pointer">Stop remaining</button></div>
+                        </div>
+                      )}
+
+                      {errorMsg && (
+                        <div className="flex flex-col gap-1.5 p-3.5 rounded-xl text-xs font-medium border bg-rose-500/10 text-rose-300 border-rose-500/25">
+                          <div className="flex items-center gap-2 font-semibold"><IconAlert className="w-4 h-4 shrink-0 text-rose-400" /><span>Upload Issues Encountered</span></div>
+                          <div className="mt-1 pl-6 space-y-1 max-h-36 overflow-y-auto font-mono text-[11px] text-rose-800 whitespace-pre-line scrollbar-thin">{errorMsg}</div>
+                        </div>
+                      )}
+
+                      {successMsg && <Banner tone="success">{successMsg}</Banner>}
+                      <PrimaryButton type="submit" disabled={isBatchUploading || !loaded || files.length === 0} loading={isBatchUploading} className="w-full mt-2">{isBatchUploading ? `Uploading (${uploadProgress?.current || 0}/${uploadProgress?.total || files.length})…` : `Upload ${files.length > 0 ? `${files.length} Item${files.length > 1 ? "s" : ""}` : "Files"}`}</PrimaryButton>
+                    </div>
+                  </motion.form>
+                ) : (
+                  <motion.form key="tab-collection" initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }} transition={{ duration: 0.15 }} onSubmit={handleCreateCollection} className="max-w-xl space-y-4">
+                    <Field label="Album name"><input type="text" value={newColTitle} onChange={(e) => setNewColTitle(e.target.value)} placeholder="e.g. Our First Anniversary" className={inputCls} /></Field>
+                    <Field label="Description (Optional)"><textarea rows={3} value={newColDesc} onChange={(e) => setNewColDesc(e.target.value)} placeholder="A memorable line or date about this collection..." className={`${inputCls} resize-none`} /></Field>
+                    {colError && <Banner tone="error">{colError}</Banner>}
+                    {colSuccess && <Banner tone="success">{colSuccess}</Banner>}
+                    <div className="pt-2"><PrimaryButton type="submit" disabled={isPendingCol || !newColTitle.trim()} loading={isPendingCol} className="w-full sm:w-auto"><IconPlus className="w-3.5 h-3.5" /> New album</PrimaryButton></div>
+                  </motion.form>
+                )}
+              </AnimatePresence>
+            </section>
+
+            {/* Collections Grid */}
+            {collections.length > 0 && (
+              <section className="space-y-4">
+                <h2 className="font-serif text-lg font-semibold text-[var(--cream)] flex items-center gap-2"><span>Your albums</span><span className="text-xs font-sans text-[var(--cream)]/40 font-normal">({collections.length})</span></h2>
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                  {(() => {
+                    const sortedCollections = [...collections].sort((a, b) => {
+                      const aIsSpecial = a.title.toLowerCase() === "our-memories" || (a as any).slug === "our-memories"; const bIsSpecial = b.title.toLowerCase() === "our-memories" || (b as any).slug === "our-memories";
+                      if (aIsSpecial) return -1; if (bIsSpecial) return 1; return 0;
+                    });
+
+                    return sortedCollections.map((col) => {
+                      const isProtected = col.title.toLowerCase() === "our-memories" || (col as any).slug === "our-memories";
+                      return (
+                        <div key={col.id} className="bg-[var(--paper)]/80 p-4 rounded-2xl border border-[var(--line)] shadow-sm hover:border-[var(--cream)]/20 transition-all flex items-center justify-between group">
+                          <div className="flex items-center gap-3.5 min-w-0">
+                            <div className="w-14 h-16 overflow-hidden rounded-xl bg-rose-50 border border-rose-100 flex items-center justify-center text-[var(--rose)] shrink-0">{col.media?.[0] && (col.media[0].type === "IMAGE" || col.media[0].thumbnailUrl) ? <img src={col.media[0].thumbnailUrl || col.media[0].url} alt="" loading="lazy" className="w-full h-full object-cover" /> : <IconFolder className="w-5 h-5" />}</div>
+                            <div className="min-w-0"><h3 className="font-semibold text-sm text-[var(--cream)] truncate">{col.title}</h3><p className="text-[11px] text-[var(--cream)]/50 mt-0.5 truncate">{col.description || `${col.media?.length || 0} media saved`}</p></div>
+                          </div>
+                          <div className="flex items-center gap-1 opacity-75 group-hover:opacity-100 transition-opacity shrink-0">
+                            <button title="Add photos to this album" onClick={() => { setSelectedCollectionId(col.id); setActiveStudioTab("upload"); window.scrollTo({ top: 0, behavior: "smooth" }); }} className="p-2 rounded-lg text-[var(--rose)] hover:bg-rose-50"><IconUpload className="w-4 h-4" /></button>
+                            <button onClick={() => { setActiveFilter(col.id); setCurrentView("gallery"); }} title="View album photos" className="p-2 rounded-lg text-[var(--rose)] hover:bg-rose-50"><IconEye className="w-4 h-4" /></button>
+                            <button onClick={() => setEditingCollection(col)} className="p-1.5 rounded-lg text-[var(--cream)]/60 hover:text-amber-300 hover:bg-amber-500/10 transition-colors cursor-pointer" title="Edit album"><IconEdit className="w-4 h-4" /></button>
+                            {!isProtected ? ( <button onClick={() => setConfirmDeleteCollection(col)} disabled={deletingColId === col.id} className="p-1.5 rounded-lg text-[var(--cream)]/60 hover:text-rose-300 hover:bg-rose-500/10 transition-colors cursor-pointer" title="Delete album">{deletingColId === col.id ? <IconSpinner className="w-4 h-4" /> : <IconTrash className="w-4 h-4" />}</button> ) : ( <span className="px-2 py-1 text-[10px] uppercase tracking-wider text-[var(--gold-soft)] font-semibold" title="Protected system album">Protected</span> )}
+                          </div>
+                        </div>
+                      );
+                    });
+                  })()}
+                </div>
+              </section>
+            )}
+          </motion.div>
+        )}
+
+        {/* View 2: Gallery */}
+        {currentView === "gallery" && (
+          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2 }} className="space-y-6 pb-20">
+            <div className="sticky top-2 sm:top-4 z-40 bg-white/95 backdrop-blur-xl p-4 sm:p-5 rounded-2xl border border-rose-200/60 shadow-[0_8px_30px_-18px_rgba(150,60,100,0.25)] space-y-4">
+              <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
+                <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+                  <div className="flex items-center gap-2 pr-1 sm:pr-2"><span className="text-sm font-semibold text-[var(--cream)] whitespace-nowrap">Your photos</span><span className="text-xs px-2 py-0.5 rounded-full bg-[var(--plum)] text-[var(--rose)] font-semibold whitespace-nowrap">{filteredMedia.length} of {mediaItems.length}</span></div>
+                  {filteredMedia.length > 0 && !reorderMode && (
+                    <div className="flex items-center gap-2">
+                      <button onClick={() => { setSelectMode(!selectMode); clearBulkSelection(); }} className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer border ${selectMode ? "bg-[var(--rose)] text-white border-[var(--rose)] shadow-sm" : "bg-[var(--bg)] text-[var(--cream)]/75 border-[var(--line)] hover:border-[var(--cream)]/30 hover:text-[var(--cream)]"}`}><IconCheckSquare className="w-3.5 h-3.5" /><span className="whitespace-nowrap">{selectMode ? "Exit Selection" : "Select photos"}</span></button>
+                      {!selectMode && filteredMedia.length > 1 && (<button onClick={startReorderMode} className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-[var(--bg)] text-[var(--cream)]/75 border border-[var(--line)] hover:border-[var(--cream)]/30 hover:text-[var(--cream)] transition-all cursor-pointer"><IconGrip className="w-3.5 h-3.5" /><span className="whitespace-nowrap">Rearrange</span></button>)}
+                    </div>
+                  )}
+                </div>
+                {!reorderMode && (
+                  <div className="relative w-full md:w-64">
+                    <IconSearch className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-[var(--cream)]/40 pointer-events-none" />
+                    <input type="text" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder="Search caption or album..." className="w-full pl-9 pr-8 py-3 rounded-xl bg-[var(--bg)] border border-[var(--line)] text-xs text-[var(--cream)] placeholder:text-[var(--cream)]/35 focus:outline-none focus:border-[var(--rose)]" />
+                    {searchQuery && (<button onClick={() => setSearchQuery("")} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[var(--cream)]/40 hover:text-[var(--cream)]"><IconX className="w-3 h-3" /></button>)}
+                  </div>
+                )}
+              </div>
+
+              {/* Reorder Mode Banner */}
+              <AnimatePresence>
+                {reorderMode && (
+                  <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }} className="overflow-hidden">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-[var(--plum)]/30 border border-[var(--rose)]/30 p-3.5 px-4 rounded-xl">
+                      <div className="flex items-center gap-2 text-[var(--rose)]"><IconGrip className="w-4 h-4 shrink-0" /><span className="text-sm font-medium">Drag and drop the photos to arrange their order</span></div>
+                      <div className="flex gap-2 shrink-0"><GhostButton onClick={() => setReorderMode(false)} disabled={isReordering}>Cancel</GhostButton><PrimaryButton onClick={saveNewOrder} loading={isReordering}>Save Order</PrimaryButton></div>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+
+              {!reorderMode && (
+                <div className="grid grid-cols-1 sm:grid-cols-[1fr_auto] items-center gap-3 border-t border-rose-100 pt-4">
+                  <label className="flex items-center gap-3 text-sm text-[#956076]">
+                    <IconFolder className="w-5 h-5 shrink-0" />
+                    <select aria-label="Filter by album" value={activeFilter} onChange={(e) => setActiveFilter(e.target.value)} className="w-full sm:max-w-sm rounded-xl border border-rose-200 bg-[#fff8fb] px-3 py-3 text-sm text-[#74334f] focus:outline-2 focus:outline-rose-300">
+                      <option value="all">All albums ({mediaItems.length})</option>
+                      <option value="none">Not in an album ({mediaItems.filter((m) => !m.collectionId).length})</option>
+                      {collections.map((col) => <option key={col.id} value={col.id}>{col.title} ({col.media?.length || 0})</option>)}
+                    </select>
+                  </label>
+                  <button onClick={() => { setSelectedCollectionId(activeFilter === "all" ? "none" : activeFilter); setActiveStudioTab("upload"); setCurrentView("studio"); }} className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#c64e7e] px-5 py-3 text-sm font-semibold text-white hover:bg-[#ad3c6a]"><IconPlus className="w-4 h-4" /> Add photos</button>
+                </div>
+              )}
+            </div>
+
+            {!loaded ? (
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-5">{Array.from({ length: 8 }).map((_, i) => (<div key={i} className="aspect-square rounded-2xl bg-[var(--paper)] border border-[var(--line)] animate-pulse" />))}</div>
+            ) : filteredMedia.length === 0 ? (
+              <div className="py-20 text-center rounded-3xl border border-dashed border-[var(--line)] bg-[var(--paper)]/30 p-6">
+                <div className="w-12 h-12 rounded-2xl bg-[var(--plum)] flex items-center justify-center text-[var(--rose)] mx-auto mb-3"><IconImage className="w-5 h-5" /></div>
+                <p className="text-sm font-medium text-[var(--cream)]/70">No matching items found</p>
+                <p className="text-xs text-[var(--cream)]/45 mt-1">Try another search filter or upload fresh memories</p>
+                <button onClick={() => setCurrentView("studio")} className="mt-4 inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-semibold bg-[var(--rose)] text-white hover:bg-[var(--rose-dim)] transition-colors cursor-pointer"><IconUpload className="w-3.5 h-3.5" /> Upload Media Now</button>
+              </div>
+            ) : (
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-5">
+                <AnimatePresence mode="popLayout">
+                  {displayMedia.map((item, index) => {
+                    const isSelected = selectedMediaIds.has(item.id);
+
+                    return (
+                      <motion.div key={item.id} layout draggable={reorderMode} onDragStart={() => reorderMode && handleDragStart(index)} onDragEnter={() => reorderMode && handleDragEnter(index)} onDragEnd={() => reorderMode && handleDragEnd()} onDragOver={(e) => e.preventDefault()} className={"group overflow-hidden rounded-2xl border bg-white shadow-[0_5px_20px_-12px_rgba(120,45,80,0.2)] " + (isSelected ? "border-[#c64e7e] ring-2 ring-rose-200" : "border-rose-100 hover:border-rose-300") + (reorderMode ? " cursor-grab active:cursor-grabbing" : "")}>
+                        <button type="button" disabled={reorderMode} aria-label={selectMode ? (isSelected ? "Deselect photo" : "Select photo") : "Preview " + (item.caption || "photo or video")} aria-pressed={selectMode ? isSelected : undefined} onClick={() => selectMode ? toggleSelectMedia(item.id) : setInspectingMedia(item)} className="relative block w-full aspect-square overflow-hidden bg-rose-50 focus-visible:outline-2 focus-visible:outline-offset-[-3px] focus-visible:outline-[#c64e7e]">
+                          <img src={item.type === "VIDEO" ? (item.thumbnailUrl || item.url.split("?")[0].replace(/\.(mp4|webm|mov)$/i, ".jpg")) : item.url} alt={item.altText || item.caption || "Album photo"} loading="lazy" decoding="async" className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-[1.03]" />
+                          {selectMode && <span className={"absolute top-3 left-3 flex h-7 w-7 items-center justify-center rounded-full border shadow-sm " + (isSelected ? "bg-[#c64e7e] text-white border-[#c64e7e]" : "bg-white/90 border-rose-200 text-transparent")}><IconCheck className="w-4 h-4" /></span>}
+                          {item.type === "VIDEO" && <span className="absolute bottom-3 left-3 flex items-center gap-1.5 rounded-full bg-black/55 px-2.5 py-1 text-[10px] text-white backdrop-blur-sm"><IconVideo className="w-3 h-3" /> Video</span>}
+                        </button>
+                        <div className="p-3 sm:p-4">
+                          <p className="truncate text-sm font-semibold text-[#74334f]">{item.caption || item.collection?.title || "Unsorted memory"}</p>
+                          <p className="mt-1 truncate text-[11px] text-[#956076]">{item.caption ? (item.collection?.title || "Not in an album") : new Date(item.createdAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}</p>
+                          {!selectMode && !reorderMode && <div className="mt-3 flex items-center justify-between gap-2 border-t border-rose-100 pt-2">
+                            <button onClick={() => { setEditingMedia(item); setGeneratedThumb(null); }} className="inline-flex min-h-9 items-center gap-1.5 rounded-lg px-2 text-xs font-medium text-[#956076] hover:bg-rose-50"><IconEdit className="w-3.5 h-3.5" /> Edit</button>
+                            <button aria-label="Delete photo or video" title="Delete" onClick={() => setConfirmDeleteMedia(item)} disabled={deletingId === item.id} className="flex min-h-9 min-w-9 items-center justify-center rounded-lg text-[#b56782] hover:bg-rose-50 hover:text-rose-700">{deletingId === item.id ? <IconSpinner className="w-4 h-4" /> : <IconTrash className="w-4 h-4" />}</button>
+                          </div>}
+                          {reorderMode && <div className="mt-3 flex items-center justify-center gap-2 text-xs text-[#956076]"><IconGrip className="w-4 h-4" /> Drag to reorder</div>}
+                        </div>
+                      </motion.div>
+                    );
+                  })}
+                </AnimatePresence>
+              </div>
+            )}
+
+            {/* Bulk Selection Floating Bar */}
+            <AnimatePresence>
+              {selectMode && selectedMediaIds.size > 0 && (
+                <motion.div initial={{ opacity: 0, y: 50 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 50 }} className="fixed bottom-4 sm:bottom-6 left-1/2 -translate-x-1/2 z-50 bg-[var(--paper)] border border-[var(--line)] shadow-2xl p-2.5 sm:p-3 px-4 sm:px-6 rounded-2xl flex items-center justify-between gap-4 w-[90vw] sm:w-auto sm:min-w-[450px] backdrop-blur-xl">
+                  <div className="flex items-center gap-2"><div className="w-6 h-6 sm:w-7 sm:h-7 rounded-full bg-[var(--rose)] text-white flex items-center justify-center text-xs font-bold shadow-inner">{selectedMediaIds.size}</div><span className="text-[var(--cream)] font-medium text-xs sm:text-sm whitespace-nowrap">Selected</span></div>
+                  <div className="flex items-center gap-2">
+                    <button onClick={() => setShowBulkAssignModal(true)} title="Move to Album" className="flex items-center gap-2 py-2 px-2 sm:px-3.5 rounded-xl bg-[var(--bg)] border border-[var(--line)] hover:border-[var(--rose)]/50 text-[var(--cream)] transition-all cursor-pointer"><IconFolder className="w-4 h-4 text-[var(--gold-soft)]" /><span className="hidden sm:block text-xs font-medium">Move</span></button>
+                    <button onClick={() => setShowBulkDeleteModal(true)} title="Delete Selected" className="flex items-center gap-2 py-2 px-2 sm:px-3.5 rounded-xl bg-rose-500/10 border border-rose-500/20 hover:bg-rose-500/20 text-rose-400 transition-all cursor-pointer"><IconTrash className="w-4 h-4" /><span className="hidden sm:block text-xs font-medium">Delete</span></button>
+                    <div className="w-[1px] h-6 bg-[var(--line)] mx-1" />
+                    <button onClick={clearBulkSelection} title="Cancel Selection" className="p-2 rounded-xl text-[var(--cream)]/50 hover:text-[var(--cream)] hover:bg-[var(--bg)] transition-colors cursor-pointer"><IconX className="w-5 h-5" /></button>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </motion.div>
+        )}
+
+        {/* Batch Review Modal */}
+        <AnimatePresence>
+          {showBatchModal && (
+            <Modal title={`Batch Review (${files.length} items)`} maxWidth="max-w-2xl" onClose={() => setShowBatchModal(false)}>
+              <div className="space-y-4">
+                <div className="flex items-center justify-between text-xs text-[var(--cream)]/60 pb-2 border-b border-[var(--line)]">
+                  <div className="flex items-center gap-2">
+                    <span className="font-serif italic text-rose-300/80">Total size: {(files.reduce((acc, f) => acc + f.size, 0) / (1024 * 1024)).toFixed(2)} MB</span>
+                    {duplicateNames.size > 0 && (<button type="button" onClick={removeAllDuplicates} className="text-amber-400 hover:text-amber-300 font-semibold underline ml-2 cursor-pointer">Remove {duplicateNames.size} duplicate(s)</button>)}
+                  </div>
+                  <button type="button" onClick={clearSelectedFiles} className="text-xs font-semibold text-rose-400 hover:text-rose-300 hover:underline cursor-pointer">Clear entire batch</button>
+                </div>
+                <div className="max-h-[60vh] overflow-y-auto space-y-2.5 pr-1 scrollbar-none">
+                  {files.map((file, idx) => {
+                    const isDupe = duplicateNames.has(file.name);
+                    return (
+                      <div key={`${file.name}-${idx}`} className={`flex items-center justify-between p-2.5 sm:p-3 rounded-2xl border transition-all gap-3 group ${isDupe ? "bg-amber-500/10 border-amber-500/40" : "bg-[var(--bg)]/70 border-[var(--line)] hover:border-[var(--rose)]/60 hover:bg-[var(--bg)]"}`}>
+                        <div onClick={() => setInspectingFileIndex(idx)} className="flex items-center gap-3.5 min-w-0 flex-1 cursor-pointer">
+                          <BatchFileThumbnail file={file} />
+                          <div className="min-w-0">
+                            <div className="flex items-center gap-2"><p className="text-xs font-medium text-[var(--cream)] group-hover:text-[var(--rose)] transition-colors truncate">{file.name}</p>{isDupe && (<span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 shrink-0">Duplicate</span>)}</div>
+                            <p className="text-[11px] text-[var(--cream)]/45 mt-1 font-serif italic">{(file.size / (1024 * 1024)).toFixed(2)} MB • {file.type.startsWith("video/") ? "Video clip" : "Photo"}</p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-1 shrink-0">
+                          <button type="button" onClick={() => setInspectingFileIndex(idx)} className="p-2 rounded-xl text-[var(--cream)]/60 hover:text-[var(--cream)] hover:bg-[var(--paper)] transition-all cursor-pointer" title="View full preview"><IconEye className="w-4 h-4" /></button>
+                          <button type="button" onClick={(e) => { e.stopPropagation(); removeFileFromBatch(idx); }} className="p-2 rounded-xl text-rose-400 hover:text-white hover:bg-rose-500/20 border border-transparent hover:border-rose-500/30 transition-all cursor-pointer" title="Remove from batch"><IconTrash className="w-4 h-4" /></button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+                <div className="flex justify-end gap-2 pt-3 border-t border-[var(--line)]"><PrimaryButton onClick={() => setShowBatchModal(false)}>Done Reviewing ({files.length})</PrimaryButton></div>
+              </div>
+            </Modal>
+          )}
+        </AnimatePresence>
+
+        {/* Lightbox Single File Modal */}
+        <AnimatePresence>
+          {inspectingFileIndex !== null && files[inspectingFileIndex] && (
+            <SingleFilePreviewModal file={files[inspectingFileIndex]} index={inspectingFileIndex} total={files.length} onClose={() => setInspectingFileIndex(null)} onDelete={() => removeFileFromBatch(inspectingFileIndex)} onNext={() => { setInspectingFileIndex((prev) => prev !== null && prev < files.length - 1 ? prev + 1 : 0); }} onPrev={() => { setInspectingFileIndex((prev) => prev !== null && prev > 0 ? prev - 1 : files.length - 1); }} />
+          )}
+        </AnimatePresence>
+
+        {/* Fullscreen Ambient AFK Mode Overlay */}
+        <AnimatePresence>
+        </AnimatePresence>
+
+        {/* Bulk Assign Modal */}
+        <AnimatePresence>
+          {showBulkAssignModal && (
+            <Modal title="Move Selected to Album" onClose={() => !isBulkAssigning && setShowBulkAssignModal(false)}>
+              <div className="space-y-4">
+                <p className="text-sm text-[var(--cream)]/75 leading-relaxed mb-4">Assign <strong className="text-[var(--rose)] font-semibold">{selectedMediaIds.size} selected items</strong> to:</p>
+                <Field label="Target Album"><CustomSelect value={bulkCollectionId} onChange={setBulkCollectionId} options={collectionOptions} disabled={isBulkAssigning} /></Field>
+                <div className="flex justify-end gap-2 pt-4">
+                  <GhostButton onClick={() => setShowBulkAssignModal(false)} disabled={isBulkAssigning}>Cancel</GhostButton>
+                  <PrimaryButton onClick={handleBulkAssign} disabled={isBulkAssigning} loading={isBulkAssigning}>Move {selectedMediaIds.size} Items</PrimaryButton>
+                </div>
+              </div>
+            </Modal>
+          )}
+        </AnimatePresence>
+
+        {/* Bulk Delete Modal */}
+        <AnimatePresence>
+          {showBulkDeleteModal && (
+            <Modal title="Delete Selected Media?" onClose={() => !isBulkDeleting && setShowBulkDeleteModal(false)}>
+              <div className="space-y-4">
+                <p className="text-sm text-[var(--cream)]/75 leading-relaxed mb-6">Are you sure you want to permanently delete <strong className="text-rose-400 font-semibold">{selectedMediaIds.size} selected items</strong>? This action cannot be undone.</p>
+                <div className="flex justify-end gap-2 pt-2">
+                  <GhostButton onClick={() => setShowBulkDeleteModal(false)} disabled={isBulkDeleting}>Cancel</GhostButton>
+                  <DangerButton onClick={handleBulkDelete} disabled={isBulkDeleting} className="flex items-center gap-2">{isBulkDeleting ? <IconSpinner className="w-3.5 h-3.5" /> : <IconTrash className="w-3.5 h-3.5" />}<span>{isBulkDeleting ? "Deleting..." : `Delete ${selectedMediaIds.size} Items`}</span></DangerButton>
+                </div>
+              </div>
+            </Modal>
+          )}
+        </AnimatePresence>
+
+        {/* Lightbox Media Modal */}
+        <AnimatePresence>
+          {inspectingMedia && (
+            <Modal title={inspectingMedia.caption || "Media Preview"} maxWidth="max-w-2xl" onClose={() => setInspectingMedia(null)}>
+              <div className="space-y-4">
+                <div ref={previewConstraintsRef} className="w-full h-[60vh] rounded-2xl overflow-hidden bg-black/70 flex items-center justify-center border border-[var(--line)] relative group">
+                  {inspectingMedia.type === "VIDEO" ? ( <video src={inspectingMedia.url} controls autoPlay className="max-h-[60vh] w-full object-contain" /> ) : ( 
+                    <>
+                      <motion.img 
+                        drag={previewScale > 1}
+                        dragConstraints={previewConstraintsRef}
+                        dragElastic={0.1}
+                        src={inspectingMedia.url} 
+                        alt={inspectingMedia.altText || "Preview"} 
+                        className={`max-h-[60vh] w-full object-contain ${previewScale > 1 ? 'cursor-grab active:cursor-grabbing' : 'cursor-zoom-in'}`}
+                        animate={{ scale: previewScale }}
+                        transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                        onClick={() => setPreviewScale(s => s === 1 ? 2.5 : 1)}
+                      />
+                      <div className="absolute top-4 right-4 flex flex-col gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <button type="button" onClick={() => setPreviewScale(s => Math.min(s + 0.5, 4))} className="p-2 bg-black/50 hover:bg-black/70 text-white rounded-lg backdrop-blur-md border border-white/10 transition-colors cursor-pointer"><IconZoomIn className="w-4 h-4" /></button>
+                        <button type="button" onClick={() => setPreviewScale(s => Math.max(s - 0.5, 1))} className="p-2 bg-black/50 hover:bg-black/70 text-white rounded-lg backdrop-blur-md border border-white/10 transition-colors cursor-pointer"><IconZoomOut className="w-4 h-4" /></button>
+                      </div>
+                    </>
+                  )}
+                </div>
+                <div className="flex items-center justify-between text-xs text-[var(--cream)]/70 px-1">
+                  <div>
+                    {inspectingMedia.collection && ( <span className="font-semibold text-[var(--rose)] mr-2">Album: {inspectingMedia.collection.title}</span> )}
+                    <span>{new Date(inspectingMedia.createdAt).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}</span>
+                  </div>
+                  <div className="flex gap-2">
+                    <GhostButton onClick={() => { const itemToEdit = inspectingMedia; setInspectingMedia(null); setEditingMedia(itemToEdit); setGeneratedThumb(null); }}><IconEdit className="w-3 h-3" /> Edit</GhostButton>
+                    <DangerButton onClick={() => { const itemToDelete = inspectingMedia; setConfirmDeleteMedia(itemToDelete); }}><IconTrash className="w-3 h-3" /> Delete</DangerButton>
+                  </div>
+                </div>
+              </div>
+            </Modal>
+          )}
+        </AnimatePresence>
+
+        {/* Edit Collection Modal */}
+        <AnimatePresence>
+          {editingCollection && (
+            <Modal title="Edit Collection" onClose={() => setEditingCollection(null)}>
+              <form onSubmit={handleUpdateCollection} className="space-y-4">
+                <Field label="Collection Title"><input type="text" value={editingCollection.title} onChange={(e) => setEditingCollection({ ...editingCollection, title: e.target.value })} className={inputCls} /></Field>
+                <Field label="Description"><textarea rows={3} value={editingCollection.description || ""} onChange={(e) => setEditingCollection({ ...editingCollection, description: e.target.value })} className={`${inputCls} resize-none`} /></Field>
+                <div className="flex justify-end gap-2 pt-2">
+                  <GhostButton type="button" onClick={() => setEditingCollection(null)}>Cancel</GhostButton>
+                  <PrimaryButton type="submit" disabled={isPendingEdit} loading={isPendingEdit}>Save Changes</PrimaryButton>
+                </div>
+              </form>
+            </Modal>
+          )}
+        </AnimatePresence>
+
+        {/* Edit Media Modal */}
+        <AnimatePresence>
+          {editingMedia && (
+            <Modal title="Edit Media Item" onClose={() => setEditingMedia(null)}>
+              <form onSubmit={handleUpdateMedia} className="space-y-4">
+                
+                {/* NEW: Video Frame Capture (Replaces old File Upload) */}
+                {editingMedia.type === "VIDEO" && (
+                  <div className="space-y-1.5">
+                    <label className={labelCls}>Choose Video Cover Frame</label>
+                    <div className="rounded-xl overflow-hidden bg-black/50 border border-white/10 relative">
+                      <video 
+                        ref={videoScrubRef} 
+                        src={editingMedia.url} 
+                        controls 
+                        playsInline
+                        crossOrigin="anonymous" 
+                        className="w-full h-36 object-contain"
+                      />
+                    </div>
+                    <div className="flex items-center gap-3 p-2.5 rounded-xl bg-[var(--bg)] border border-[var(--line)]">
+                      <div className="w-14 h-14 rounded-lg overflow-hidden bg-black/40 border border-[var(--line)] shrink-0">
+                        <img 
+                          src={generatedThumb || editingMedia.thumbnailUrl || editingMedia.url.split('?')[0].replace(/\.(mp4|webm|mov)$/i, ".jpg")} 
+                          alt="Cover preview" 
+                          className="w-full h-full object-cover" 
+                        />
+                      </div>
+                      <div className="flex-1 flex flex-col items-start gap-1.5">
+                        <span className="text-[10px] text-[var(--cream)]/60 leading-tight">Pause the video at your favorite moment and capture the frame.</span>
+                        <button 
+                          type="button" 
+                          onClick={() => {
+                            if (videoScrubRef.current) {
+                              const time = videoScrubRef.current.currentTime;
+                              let cleanUrl = editingMedia.url.split('?')[0];
+                              let newThumb = cleanUrl.replace("/upload/", `/upload/so_${time.toFixed(2)}/`);
+                              newThumb = newThumb.replace(/\.(mp4|webm|mov)$/i, ".jpg");
+                              setGeneratedThumb(newThumb);
+                            }
+                          }}
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-[var(--paper)] border border-[var(--line)] hover:border-[var(--rose)] text-[var(--cream)] cursor-pointer transition-colors"
+                        >
+                          <IconImage className="w-3 h-3" /> Capture Frame
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                <Field label="Assigned Collection"><CustomSelect value={editingMedia.collectionId || "none"} onChange={(val) => setEditingMedia({ ...editingMedia, collectionId: val === "none" ? null : val })} options={collectionOptions} /></Field>
+                <Field label="Caption"><input type="text" value={editingMedia.caption || ""} onChange={(e) => setEditingMedia({ ...editingMedia, caption: e.target.value })} className={inputCls} /></Field>
+                <Field label="Alt Text"><input type="text" value={editingMedia.altText || ""} onChange={(e) => setEditingMedia({ ...editingMedia, altText: e.target.value })} className={inputCls} /></Field>
+                <div className="flex justify-end gap-2 pt-2">
+                  <GhostButton type="button" onClick={() => setEditingMedia(null)}>Cancel</GhostButton>
+                  <PrimaryButton type="submit" disabled={isPendingEdit} loading={isPendingEdit}>{isPendingEdit ? "Saving..." : "Save Changes"}</PrimaryButton>
+                </div>
+              </form>
+            </Modal>
+          )}
+        </AnimatePresence>
+
+        {/* Confirm Delete Collection Modal */}
+        <AnimatePresence>
+          {confirmDeleteCollection && (
+            <Modal title="Delete Collection?" onClose={() => setConfirmDeleteCollection(null)}>
+              <p className="text-sm text-[var(--cream)]/75 leading-relaxed mb-6">Are you sure you want to delete <span className="text-[var(--cream)] font-semibold">{confirmDeleteCollection.title}</span>? Photos and videos belonging to this collection will remain safe under unassigned media.</p>
+              <div className="flex justify-end gap-2">
+                <GhostButton onClick={() => setConfirmDeleteCollection(null)}>Cancel</GhostButton>
+                <DangerButton onClick={() => handleDeleteCollection(confirmDeleteCollection)} disabled={deletingColId === confirmDeleteCollection.id}>{deletingColId === confirmDeleteCollection.id ? <IconSpinner className="w-3.5 h-3.5" /> : <IconTrash className="w-3.5 h-3.5" />} Delete Collection</DangerButton>
+              </div>
+            </Modal>
+          )}
+        </AnimatePresence>
+
+        {/* Confirm Delete Single Media Modal */}
+        <AnimatePresence>
+          {confirmDeleteMedia && (
+            <Modal title="Delete Media Asset?" onClose={() => setConfirmDeleteMedia(null)}>
+              <p className="text-sm text-[var(--cream)]/75 leading-relaxed mb-6">Are you sure you want to permanently remove this media file? This cannot be undone.</p>
+              <div className="flex justify-end gap-2">
+                <GhostButton onClick={() => setConfirmDeleteMedia(null)}>Cancel</GhostButton>
+                <DangerButton onClick={() => handleDeleteMedia(confirmDeleteMedia)} disabled={deletingId === confirmDeleteMedia.id}>{deletingId === confirmDeleteMedia.id ? <IconSpinner className="w-3.5 h-3.5" /> : <IconTrash className="w-3.5 h-3.5" />} Delete Permanently</DangerButton>
+              </div>
+            </Modal>
+          )}
+        </AnimatePresence>
+
+      </div>
+    </div>
+  );
+}
