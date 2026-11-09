@@ -2,8 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { CONFIG } from "@/lib/config";
-import { Heart, Sparkles, CalendarHeart } from "lucide-react";
+import { CONFIG } from "@/lib/config/site";
+import { Heart, CalendarHeart } from "lucide-react";
 
 function diff(start: Date, now: Date = new Date()) {
   let ms = now.getTime() - start.getTime();
@@ -95,7 +95,7 @@ export default function CounterSection() {
         {/* Header */}
         <div className="mb-10">
           <div className="inline-flex items-center gap-1.5 text-xs uppercase tracking-[0.22em] text-[var(--gold-soft)] font-medium mb-2 bg-rose-50/60 px-3.5 py-1 rounded-full border border-rose-100/70 shadow-xs">
-            <Sparkles className="w-3 h-3 text-[var(--rose)]" />
+            
             <span>Since The Day It Began</span>
           </div>
           <h2 className="font-serif text-3xl sm:text-4xl text-[rgb(74,32,58)] font-normal tracking-tight">

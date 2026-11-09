@@ -1,9 +1,9 @@
 "use server";
 
 import { v2 as cloudinary } from "cloudinary";
-import { prisma } from "@/lib/prisma";
+import { prisma } from "@/lib/services/prisma";
 import { revalidatePath, updateTag } from "next/cache";
-import { GALLERY_CACHE_TAG } from "@/lib/gallery-cache";
+import { GALLERY_CACHE_TAG } from "@/lib/gallery/cache";
 import { MediaType } from "@prisma/client";
 
 cloudinary.config({

@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Lock, Mail, Sparkles, Heart, Calendar, X, Compass } from "lucide-react";
+import { Lock, Mail, Heart, Calendar, X, Compass } from "lucide-react";
 import { Amiri } from "next/font/google";
 
 const amiri = Amiri({
@@ -108,31 +108,6 @@ export default function FutureLetters() {
   return (
     <>
       <section id="secret-letters" className="relative w-full py-16 px-4 overflow-hidden">
-        {/* Gentle Floating Atmospheric Sparkles */}
-        <div className="absolute inset-0 pointer-events-none -z-10 overflow-hidden">
-          {[...Array(8)].map((_, i) => (
-            <motion.div
-              key={i}
-              className="absolute text-rose-300/25"
-              style={{
-                top: `${12 * i + 6}%`,
-                left: `${(i * 19 + 5) % 94}%`,
-              }}
-              animate={{
-                y: [0, -16, 0],
-                scale: [1, 1.15, 1],
-                opacity: [0.3, 0.7, 0.3],
-              }}
-              transition={{
-                duration: 4.5 + i,
-                repeat: Infinity,
-                ease: "easeInOut",
-              }}
-            >
-              <Sparkles className="w-5 h-5 fill-rose-200/40" />
-            </motion.div>
-          ))}
-        </div>
 
         <div className="max-w-5xl mx-auto">
           {/* Section Header */}
@@ -228,7 +203,7 @@ export default function FutureLetters() {
 
                       {unlocked && (
                         <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-[var(--rose)] bg-rose-50 px-2.5 py-0.5 rounded-full border border-rose-200">
-                          <Sparkles className="w-3 h-3" /> Read Now
+                           Read Now
                         </span>
                       )}
                     </div>

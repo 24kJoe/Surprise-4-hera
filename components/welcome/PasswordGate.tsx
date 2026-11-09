@@ -4,7 +4,7 @@ import React, { useState, useRef } from "react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import { Delete, Lock, ShieldCheck, ArrowLeft } from "lucide-react";
-import { CONFIG } from "@/lib/config";
+import { CONFIG } from "@/lib/config/site";
 
 interface PasswordGateProps {
   type?: "home" | "admin";

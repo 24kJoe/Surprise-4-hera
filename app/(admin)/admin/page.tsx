@@ -7,7 +7,7 @@ import {
   uploadMediaAction, updateMediaAction, deleteMediaAction, getMediaItems, getCollections,
   createCollectionAction, updateCollectionAction, deleteCollectionAction, getCloudinarySignatureAction,
   saveDirectMediaAction, checkDuplicateMediaAction, reorderMediaAction, bulkAssignMediaAction,
-} from "@/lib/actions";
+} from "@/lib/gallery/actions";
 
 export type MediaType = "IMAGE" | "VIDEO";
 

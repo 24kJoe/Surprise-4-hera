@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Heart, Lock, BookOpen, Clock, ArrowLeft, Calendar, X, Sparkles } from "lucide-react";
+import { Heart, Lock, BookOpen, Clock, ArrowLeft, Calendar, X } from "lucide-react";
 
 interface DailyReason {
   id: string;
@@ -514,10 +514,10 @@ export default function DailyReasons() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 20 }}
-            className="fixed inset-0 z-[100] bg-[#fff5fa] overflow-y-auto"
+            className="fixed inset-0 z-[170] overflow-y-auto bg-[radial-gradient(ellipse_at_top,#ffe3ee_0%,#fff7fa_55%)]"
           >
             {/* Clean, Flat Header Matching Image */}
-            <div className="sticky top-0 z-20 bg-[#fff5fa] border-b border-rose-200/50 py-4 sm:py-5 px-4 sm:px-10 flex items-center justify-center min-h-[70px] sm:min-h-[80px]">
+            <div className="sticky top-0 z-20 bg-[#fff7fa]/95 border-b border-[#ffe9f2] py-5 sm:py-6 px-4 sm:px-10 flex items-center justify-center">
               <button
                 onClick={() => setIsArchiveOpen(false)}
                 aria-label="Go back"
@@ -527,46 +527,57 @@ export default function DailyReasons() {
               </button>
               
               <div className="flex flex-col items-center text-center px-10">
-                <h2 className="font-serif text-xl sm:text-[1.75rem] font-medium text-[rgb(74,32,58)] leading-tight whitespace-nowrap">
+                <span className="mb-2 text-[9px] uppercase tracking-[0.3em] text-[#b83f6c]">Our little collection</span>
+                <h2 className="font-serif text-xl sm:text-[1.75rem] font-medium text-[rgb(74,32,58)] leading-tight">
                   A New Day, A New Reason
                 </h2>
-                <div className="flex items-center gap-1.5 mt-1 sm:mt-1.5">
+                <div className="flex items-center gap-1.5 mt-3">
                   <span className="w-1.5 h-1.5 rounded-full bg-[#ff758f]" />
                   <span className="text-[9px] sm:text-[10px] uppercase tracking-[0.2em] text-[#ff758f] font-bold">
                     {unlockedCount} / {totalCount} UNLOCKED
                   </span>
                 </div>
+                <div className="mt-3 h-1 w-32 overflow-hidden rounded-full bg-[#ffe3ee]" aria-hidden="true">
+                  <div className="h-full rounded-full bg-[#e66496]" style={{ width: `${totalCount ? unlockedCount / totalCount * 100 : 0}%` }} />
+                </div>
               </div>
             </div>
 
             {/* The 365 Notes Grid */}
-            <div className="p-4 sm:p-8 max-w-7xl mx-auto pb-24 mt-2">
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 sm:gap-6">
+            <div className="px-4 py-7 sm:px-8 sm:py-10 max-w-6xl mx-auto pb-24">
+              <div className="mb-6 flex flex-wrap items-end justify-between gap-2 border-b border-[#ffe9f2] pb-4">
+                <p className="font-serif text-lg text-[#4a2036]">Little notes, a whole lot of love.</p>
+                <p className="text-xs text-[#b83f6c]">A new reason to open each day</p>
+              </div>
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-5">
                 {dailyReasons.map((reason) => {
                   const unlocked = isUnlocked(reason.unlockDate);
 
                   return (
-                    <motion.div
+                    <motion.button
                       key={reason.id}
-                      whileHover={unlocked ? { y: -4, scale: 1.02 } : {}}
+                      type="button"
+                      disabled={!unlocked}
+                      aria-label={unlocked ? `Read day ${reason.dayNumber}` : `Day ${reason.dayNumber}, locked`}
+                      whileHover={unlocked ? { y: -4 } : {}}
                       onClick={() => unlocked && setOpenNote(reason)}
-                      className={`relative p-5 rounded-[2rem] flex flex-col items-center justify-center text-center h-48 sm:h-52 transition-all duration-300 ${
+                      className={`group relative overflow-hidden p-4 rounded-2xl flex flex-col items-center justify-center text-center h-44 sm:h-48 transition-shadow duration-300 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-rose-400 ${
                         unlocked
-                          ? "bg-white border border-rose-200 shadow-md cursor-pointer hover:border-rose-300 hover:shadow-xl"
-                          : "bg-[#fffdfa] border border-rose-100/60 shadow-sm cursor-not-allowed"
+                          ? "bg-[#ffffff] border border-[#ffd6e8] shadow-[0_5px_16px_-8px_rgba(224,85,134,0.2)] cursor-pointer hover:border-[#e66496] hover:shadow-[0_12px_25px_-10px_rgba(224,85,134,0.25)]"
+                          : "bg-[#fff5fa]/70 border border-[#ffe9f2] cursor-not-allowed"
                       }`}
                     >
                       {unlocked ? (
                         <>
-                          <div className="w-12 h-12 rounded-full border border-[#ffe9f2] flex items-center justify-center mb-3">
-                            <Heart className="w-5 h-5 fill-[#ff758f] text-[#ff758f]" strokeWidth={1} />
+                          <span aria-hidden="true" className="absolute right-3 top-2 font-serif text-4xl italic text-[#ffe3ee]">{String(reason.dayNumber).padStart(2, "0")}</span>
+                          <div className="relative w-11 h-11 rounded-full bg-[#fff0f5] border border-[#ffe9f2] flex items-center justify-center mb-3 shadow-[inset_0_2px_3px_rgba(255,255,255,0.9)]">
+                            <Heart className="w-4 h-4 fill-[#e66496] text-[#e66496]" strokeWidth={1} />
                           </div>
-                          <span className="text-[10px] font-bold tracking-[0.2em] text-[#ff758f] uppercase mb-2">
+                          <span className="text-[9px] font-bold tracking-[0.2em] text-[#b83f6c] uppercase mb-2">
                             DAY {reason.dayNumber}
                           </span>
-                          <h3 className="font-serif text-base sm:text-lg font-medium text-[rgb(74,32,58)] leading-snug px-2 line-clamp-2">
-                            
-                          </h3>
+                          <span className="font-serif text-base text-[#4a2036]">A little love for you</span>
+                          <span className="mt-3 text-[10px] text-[#b83f6c] group-hover:text-[#b83f6c]">Open your note ↗</span>
                         </>
                       ) : (
                         <>
@@ -588,7 +599,7 @@ export default function DailyReasons() {
                           </div>
                         </>
                       )}
-                    </motion.div>
+                    </motion.button>
                   );
                 })}
               </div>

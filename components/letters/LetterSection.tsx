@@ -2,8 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import { CONFIG } from "@/lib/config";
-import { Heart, Sparkles, Feather } from "lucide-react";
+import { CONFIG } from "@/lib/config/site";
+import { Heart, Feather } from "lucide-react";
 import { Amiri } from "next/font/google";
 
 const amiri = Amiri({
@@ -104,7 +104,7 @@ export default function LetterSection() {
             </span>
 
             <div className="flex items-center gap-1.5 text-xs text-rose-400 font-serif italic">
-              <Sparkles className="w-3.5 h-3.5 text-rose-300" />
+              
               <span>Written with all my heart</span>
             </div>
           </div>

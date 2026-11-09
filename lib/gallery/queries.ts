@@ -1,7 +1,7 @@
 "use server";
 
 import { MediaType } from "@prisma/client";
-import { prisma } from "@/lib/prisma";
+import { prisma } from "@/lib/services/prisma";
 
 export async function getCollectionBySlug(slug: string) {
   if (!slug) return null;

@@ -18,11 +18,11 @@ function actionsHarness() {
     create: write, update: write, updateMany: write, delete: write,
   };
   const mocks = {
-    '@/lib/prisma': { prisma: {
+    '@/lib/services/prisma': { prisma: {
       collection: model,
       mediaItem: { ...model, findUnique: async () => ({ id: 'id', publicId: null }) },
     } },
-    '@/lib/gallery-cache': { GALLERY_CACHE_TAG: 'gallery-data' },
+    '@/lib/gallery/cache': { GALLERY_CACHE_TAG: 'gallery-data' },
     '@prisma/client': { MediaType: { IMAGE: 'IMAGE', VIDEO: 'VIDEO' } },
     'next/cache': {
       updateTag: (tag) => events.push(`invalidate:${tag}`),
@@ -33,7 +33,7 @@ function actionsHarness() {
       upload_stream: (_options, callback) => ({ end: () => callback(null, { secure_url: 'https://example.com/image.jpg', public_id: 'test' }) }),
     } } },
   };
-  const code = ts.transpileModule(fs.readFileSync('lib/actions.ts', 'utf8'), {
+  const code = ts.transpileModule(fs.readFileSync('lib/gallery/actions.ts', 'utf8'), {
     compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2020 },
   }).outputText;
   const exports = {};

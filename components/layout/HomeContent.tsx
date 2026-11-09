@@ -1,14 +1,14 @@
 "use client";
 
-import FloatingHearts from "@/components/FloatingHearts";
-import NameToast from "@/components/NameToast";
-import LetterSection from "@/components/LetterSection";
-import MemoriesSection from "@/components/MemoriesSection";
-import CounterSection from "@/components/CounterSection";
-import Gallery from "@/components/Gallery";
-import DailyReasons from "@/components/DailyReasons";
-import FutureLetters from "@/components/FutureLetters";
-import SurpriseLily from "@/components/SurpriseLily";
+import BackgroundPetals from "@/components/backgrounds/BackgroundPetals";
+import NameToast from "@/components/shared/NameToast";
+import LetterSection from "@/components/letters/LetterSection";
+import MemoriesSection from "@/components/gallery/MemoriesSection";
+import CounterSection from "@/components/sections/CounterSection";
+import Gallery from "@/components/gallery/Gallery";
+import DailyReasons from "@/components/sections/DailyReasons";
+import FutureLetters from "@/components/letters/FutureLetters";
+import SurpriseLily from "@/components/letters/SurpriseLily";
 
 
 
@@ -16,7 +16,7 @@ import SurpriseLily from "@/components/SurpriseLily";
 export default function HomeContent() {
   return (
     <>
-      <FloatingHearts />
+      <BackgroundPetals />
       <NameToast />
       <SurpriseLily />
 

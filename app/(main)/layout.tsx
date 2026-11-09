@@ -1,10 +1,10 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import PasswordGate from "@/components/PasswordGate";
-import WelcomeScreen from "@/components/WelcomeScreen";
-import Nav from "@/components/Nav";
-import PopupMessage from "@/components/PopupMessage";
+import PasswordGate from "@/components/welcome/PasswordGate";
+import WelcomeScreen from "@/components/welcome/WelcomeScreen";
+import Nav from "@/components/layout/Nav";
+import PopupMessage from "@/components/letters/PopupMessage";
 
 export default function MainLayout({
     children,

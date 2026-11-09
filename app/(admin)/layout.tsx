@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import PasswordGate from "@/components/PasswordGate";
+import PasswordGate from "@/components/welcome/PasswordGate";
 
 export default function AdminLayout({
   children,

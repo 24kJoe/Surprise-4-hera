@@ -51,9 +51,5 @@ export const CONFIG: SiteConfig = {
     { src: "", caption: "" },
   ],
   timeline: [
-    { date: "The First Time We Met", story: "The moment I saw you coming up the stairs, I remember every detail of those few seconds. I was so nervous to even say hi that even I couldn’t bring myself to look at you. I honestly couldn’t believe that I was actually seeing you.." },
-    { date: "Zamalek Date", story: "Actually, one of my favorite dates. It's a place that I love with my favourite person too it was amazing . It just felt different from every other date we’ve had." },
-    { date: "Arguments", story: "I know we've had our disagreements and we've had our ups and downs, but I want you to always keep in mind that I never did anything with the intention of bothering you. I just care about you too much. I think about you too much, and sometimes I can't even imagine anything bad happening to you because I love you so much, and the thought of anything happening to you honestly kills me." },
-    { date: "Today", story: "Still choosing you every single day, and I'm so grateful you chose me back i want us to be together forever and i hope we will because my life won't be complete without you." },
   ],
 }; 

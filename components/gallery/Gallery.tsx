@@ -2,9 +2,9 @@
 
 import { useState, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
-import { getAlbumSummaries } from "@/lib/get";
-import { reorderCollectionsAction } from "@/lib/actions"; // Adjust path if needed
-import AlbumCard, { CollectionItem } from "@/components/AlbumCard";
+import { getAlbumSummaries } from "@/lib/gallery/queries";
+import { reorderCollectionsAction } from "@/lib/gallery/actions"; // Adjust path if needed
+import AlbumCard, { CollectionItem } from "@/components/gallery/AlbumCard";
 
 function GallerySkeleton() {
   return (

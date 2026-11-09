@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { CONFIG } from "@/lib/config";
+import { CONFIG } from "@/lib/config/site";
 
 export default function NameToast() {
   const [show, setShow] = useState(false);

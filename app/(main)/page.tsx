@@ -1,4 +1,4 @@
-import HomeContent from "@/components/HomeContent";
+import HomeContent from "@/components/layout/HomeContent";
 
 // The parent layout intentionally waits for the password and welcome screens.
 export const instant = false;

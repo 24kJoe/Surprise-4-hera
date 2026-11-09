@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { getCollectionBySlug } from "@/lib/get";
-import InteractiveGalleryGrid from "@/components/InteractiveGalleryGrid";
+import { getCollectionBySlug } from "@/lib/gallery/queries";
+import InteractiveGalleryGrid from "@/components/gallery/InteractiveGalleryGrid";
 
 interface CollectionPageProps {
   params: Promise<{ slug: string }>;

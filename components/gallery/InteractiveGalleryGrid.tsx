@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useRef } from "react";
-import { reorderMediaAction } from "@/lib/actions";
+import { reorderMediaAction } from "@/lib/gallery/actions";
 
 export default function InteractiveGalleryGrid({ initialMedia }: { initialMedia: any[] }) {
   const [mediaItems, setMediaItems] = useState(initialMedia);

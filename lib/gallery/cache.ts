@@ -1,5 +1,5 @@
 import { cacheLife, cacheTag } from "next/cache";
-import { prisma } from "@/lib/prisma";
+import { prisma } from "@/lib/services/prisma";
 
 export const GALLERY_CACHE_TAG = "gallery-data";
 

@@ -1,9 +1,9 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { CONFIG } from "@/lib/config";
-import { getCollectionBySlug } from "@/lib/get";
-import PolaroidCard, { MediaItem } from "@/components/PolaroidCard";
+import { CONFIG } from "@/lib/config/site";
+import { getCollectionBySlug } from "@/lib/gallery/queries";
+import PolaroidCard, { MediaItem } from "@/components/gallery/PolaroidCard";
 
 export default function MemoriesSection() {
   const [photos, setPhotos] = useState<MediaItem[]>([]);
@@ -45,7 +45,7 @@ export default function MemoriesSection() {
         <div className="section-head">
           <div className="eyebrow">Our Memories</div>
           <h2>Every little moment, kept</h2>
-          <p>A few snapshots and the timeline of us. Click a date to relive it.</p>
+          <p>A few snapshots of us.</p>
         </div>
 
         {loading ? (
@@ -67,7 +67,7 @@ export default function MemoriesSection() {
           </div>
         )}
 
-        <div className="timeline">
+        {CONFIG.timeline.length > 0 && <div className="timeline">
           {CONFIG.timeline.map((item, i) => (
             <div className={`tl-item${openIdx.has(i) ? " open" : ""}`} key={i}>
               <button className="tl-date-btn" onClick={() => toggle(i)}>
@@ -76,7 +76,7 @@ export default function MemoriesSection() {
               <div className="tl-reveal">{item.story}</div>
             </div>
           ))}
-        </div>
+        </div>}
       </div>
     </section>
   );

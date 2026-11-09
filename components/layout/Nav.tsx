@@ -6,7 +6,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { twMerge } from "tailwind-merge";
 import { Settings, Menu, X } from "lucide-react";
-import { useActiveSection } from "@/lib/hooks";
+import { useActiveSection } from "@/lib/hooks/useActiveSection";
 
 interface NavProps {
   className?: string;
