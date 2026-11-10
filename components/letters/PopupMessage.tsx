@@ -64,9 +64,12 @@ export default function PopupMessage() {
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
             onClick={handleOpenMessage}
-            className="relative flex h-12 w-12 items-center justify-center rounded-full border border-[#ffe9f2] bg-white/90 p-3 shadow-[0_8px_20px_-5px_rgba(224,85,134,0.25)] backdrop-blur-md text-[#e66496] hover:bg-[#fff0f5] transition-colors cursor-pointer"
+            type="button"
+            aria-label="Open surprise message"
+            title="A little love note"
+            className="relative flex h-12 w-12 items-center justify-center rounded-[18px] bg-gradient-to-br from-[#df86a6] to-[#bb577f] p-3 shadow-[0_6px_16px_-5px_rgba(160,66,104,0.35),inset_0_1px_0_rgba(255,255,255,0.4)] text-white hover:brightness-105 transition-[filter] cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#b34f79]"
           >
-            <Heart className="h-5 w-5 fill-current" />
+            <Heart aria-hidden="true" className="h-5 w-5 fill-current" strokeWidth={1.5} />
             
             {/* New Message Red Dot Indicator */}
             <AnimatePresence>
@@ -77,8 +80,8 @@ export default function PopupMessage() {
                   exit={{ scale: 0 }}
                   className="absolute -top-0.5 -right-0.5 flex h-3.5 w-3.5"
                 >
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
-                  <span className="relative inline-flex rounded-full h-3.5 w-3.5 bg-red-500 border-2 border-white"></span>
+                  <span className="motion-safe:animate-ping absolute inline-flex h-full w-full rounded-full bg-[#d49aaf] opacity-50"></span>
+                  <span className="relative inline-flex rounded-full h-3.5 w-3.5 bg-[#b34f79] border-2 border-[#fff7fa]"></span>
                 </motion.div>
               )}
             </AnimatePresence>

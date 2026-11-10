@@ -7,7 +7,6 @@ import CounterSection from "@/components/sections/CounterSection";
 import Gallery from "@/components/gallery/Gallery";
 import DailyReasons from "@/components/sections/DailyReasons";
 import FutureLetters from "@/components/letters/FutureLetters";
-import SurpriseLily from "@/components/letters/SurpriseLily";
 
 
 
@@ -16,7 +15,6 @@ export default function HomeContent() {
   return (
     <>
       <BackgroundPetals />
-      <SurpriseLily />
 
       <LetterSection />
       <div className="stitch-divider" />

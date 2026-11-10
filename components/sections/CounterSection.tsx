@@ -105,7 +105,7 @@ export default function CounterSection() {
         {/* Counter Tiles */}
         <div className="grid grid-cols-4 gap-2 sm:flex sm:items-center sm:justify-center sm:gap-4">
           {items.map((item, idx) => (
-            <div key={item.label} className="min-w-0 flex items-center sm:gap-4">
+            <div key={item.label} className="relative min-w-0 flex items-center sm:gap-4">
               <motion.div
                 whileHover={{ y: -3 }}
                 transition={{ duration: 0.2 }}
@@ -125,12 +125,12 @@ export default function CounterSection() {
 
               {/* Pulsing Heart Separator */}
               {idx < items.length - 1 && (
-                <div className="hidden sm:flex items-center justify-center text-[#c56d91]/60">
+                <div aria-hidden="true" className="absolute -right-1 top-[calc(50%-22px)] -translate-y-1/2 translate-x-1/2 flex items-center justify-center text-[#c56d91]/60 sm:static sm:translate-x-0 sm:-translate-y-6">
                   <motion.div
                     animate={{ scale: [1, 1.2, 1], opacity: [0.4, 0.8, 0.4] }}
                     transition={{ repeat: Infinity, duration: 1.2, ease: "easeInOut" }}
                   >
-                    <Heart className="w-3.5 h-3.5 fill-current" />
+                    <Heart className="w-2.5 h-2.5 sm:w-3.5 sm:h-3.5 fill-current" />
                   </motion.div>
                 </div>
               )}

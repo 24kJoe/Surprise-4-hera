@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import PasswordGate from "@/components/welcome/PasswordGate";
 import WelcomeScreen from "@/components/welcome/WelcomeScreen";
 import Nav from "@/components/layout/Nav";
-import PopupMessage from "@/components/letters/PopupMessage";
+import SurpriseLily from "@/components/letters/SurpriseLily";
 import NameToast from "@/components/shared/NameToast";
 
 export default function MainLayout({
@@ -66,7 +66,7 @@ export default function MainLayout({
                 <main className="w-full min-h-screen">
                     <Nav />
                     {showEntryToast && <NameToast />}
-                    <PopupMessage />
+                    <SurpriseLily />
                     {children}
                 </main>
             )}

@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Lock, Mail, Heart, Calendar, X, Compass } from "lucide-react";
+import { Lock, Mail, Heart, Calendar, X } from "lucide-react";
 import { Amiri } from "next/font/google";
 
 const amiri = Amiri({
@@ -262,40 +262,44 @@ export default function FutureLetters() {
               exit={{ opacity: 0, scale: 0.94, y: 15 }}
               transition={{ duration: 0.28, ease: "easeOut" }}
               onClick={(e) => e.stopPropagation()}
-              className="relative w-full max-w-[540px] bg-[linear-gradient(145deg,#fffefd,#fff7fa)] rounded-[2rem] border border-rose-200/80 shadow-2xl px-7 pb-7 pt-10 sm:px-12 sm:pb-9 sm:pt-12 overflow-hidden flex flex-col max-h-[82vh] mt-11 sm:mt-17 mb-8 sm:mb-12"
+              className="relative isolate w-full max-w-[560px] bg-[linear-gradient(145deg,#fffefd,#fff8fa_65%,#ffedf4)] rounded-[2rem] border border-rose-200/80 shadow-[0_30px_90px_-20px_rgba(74,32,58,0.4)] px-7 py-9 sm:px-12 sm:py-11 max-h-[85dvh] overflow-y-auto flex flex-col"
             >
               {/* Decorative Envelope Stationery Corner Stamp */}
-              <div className="absolute top-0 right-0 w-28 h-28 bg-gradient-to-bl from-rose-100/50 via-transparent to-transparent pointer-events-none rounded-tr-[2rem]" />
+              <div aria-hidden="true" className="absolute inset-3 -z-10 rounded-[1.4rem] border border-[#ebc5d3]/60 pointer-events-none" />
+              <div aria-hidden="true" className="absolute top-0 left-0 -z-10 h-40 w-40 rounded-full bg-rose-100/50 blur-3xl pointer-events-none" />
 
               {/* Close Button */}
               <button
                 onClick={() => setOpenLetter(null)}
                 aria-label="Close letter"
-                className="absolute top-5 right-5 w-9 h-9 rounded-full bg-rose-50 hover:bg-rose-100 text-rose-500 flex items-center justify-center transition-colors cursor-pointer shadow-xs z-20"
+                className="absolute top-5 right-5 p-2 rounded-full bg-white/70 text-[#a76b83] hover:bg-rose-100 hover:text-[#74334f] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#b53e6d] transition-colors z-20 cursor-pointer"
               >
-                <X className="w-4 h-4" />
+                <X className="w-5 h-5 stroke-[1.5]" />
               </button>
 
               {/* Wax Seal Emblem */}
-              <div className="flex flex-col items-center text-center mb-6 shrink-0 mt-1">
-                <div className="w-13 h-13 rounded-full bg-[var(--rose)] border-2 border-rose-300/80 flex items-center justify-center text-white shadow-lg shadow-rose-900/15 mb-3">
-                  <Heart className="w-6 h-6 fill-white" />
+              <div className="flex flex-col items-center text-center mb-5 shrink-0 mt-3">
+                <div aria-hidden="true" className="mb-5 flex items-center gap-4 text-[#c46a8e]">
+                  <span className="h-px w-12 bg-rose-200" />
+                  <Heart className="h-5 w-5 fill-rose-100" strokeWidth={1.2} />
+                  <span className="h-px w-12 bg-rose-200" />
                 </div>
-                <span className="text-[10px] font-bold tracking-[0.25em] text-[var(--rose)] uppercase">
+                <span className="text-[10px] font-medium tracking-[0.25em] text-[#956076] uppercase">
                   {openLetter.occasion}
                 </span>
-                <span className="text-xs text-rose-400 mt-0.5 font-sans">
+                <span className="font-serif italic text-[#956076] text-sm mt-2">
                   Written for {openLetter.displayDate}
                 </span>
               </div>
 
               {/* Letter Heading */}
-              <h2 className="text-center text-2xl sm:text-3xl font-serif font-medium text-[rgb(74,32,58)] mb-4 border-b border-rose-100 pb-4 shrink-0">
+              <h2 className="text-center font-serif text-3xl sm:text-4xl tracking-tight text-[#74334f] mb-7 shrink-0">
                 {openLetter.title}
               </h2>
 
               {/* Letter Body Parchment (Scrollable Area) */}
-              <div className="flex-1 overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-rose-200 overscroll-contain">
+              <div className="relative z-10 shrink-0 rounded-2xl border border-rose-100/80 bg-white/60 px-5 py-7 sm:px-7 sm:py-8 shadow-[0_4px_20px_rgba(174,62,104,0.03)]">
+                <span aria-hidden="true" className="absolute -top-5 left-5 font-serif text-6xl leading-none text-[#d99ab2]">“</span>
                 <p 
                   dir="auto"
                   className={`text-center text-sm sm:text-base leading-[2.2] text-rose-950/80 whitespace-pre-wrap italic ${amiri.className}`}
@@ -306,9 +310,13 @@ export default function FutureLetters() {
               </div>
 
               {/* Letter Sign-off Footer */}
-              <div className="pt-4 mt-4 border-t border-rose-100/80 flex justify-between items-center text-xs text-rose-400 font-serif italic shrink-0">
+              <div className="relative z-10 mt-7 flex flex-col items-center gap-3 pb-2 text-center text-base text-[#956076] font-serif italic shrink-0">
+                <div aria-hidden="true" className="flex items-center justify-center gap-4">
+                  <span className="h-px w-16 bg-gradient-to-r from-transparent to-[#dfafc2]" />
+                  <Heart className="w-4 h-4 fill-[#c56d91] text-[#c56d91]" strokeWidth={1.2} />
+                  <span className="h-px w-16 bg-gradient-to-l from-transparent to-[#dfafc2]" />
+                </div>
                 <span>With all my love</span>
-                <Compass className="w-4 h-4 text-rose-300" />
               </div>
             </motion.div>
           </motion.div>

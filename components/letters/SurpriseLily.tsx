@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { AnimatePresence, LayoutGroup, motion, useReducedMotion } from "framer-motion";
-import { Mail, Heart, X } from "lucide-react";
+import { Heart, X } from "lucide-react";
 import LilyFlower from "./LilyFlower";
 import styles from "./SurpriseLily.module.css";
 import { Amiri } from "next/font/google";
@@ -21,10 +21,15 @@ const LILY_LETTER = {
   signOff: "Y.",
 };
 const SEEN_KEY = "lily-letter-seen-v1";
+const READ_KEY = "lily-letter-read-content";
+// Changing any part of the letter automatically makes it unread again.
+const LETTER_REVISION = JSON.stringify(LILY_LETTER);
 
 export default function SurpriseLily() {
   const [phase, setPhase] = useState<"loading" | "bloom" | "aside" | "open" | "closed">("loading");
   const [visible, setVisible] = useState(true);
+  const [readRevision, setReadRevision] = useState<string | null>(null);
+  const isUnread = readRevision !== LETTER_REVISION;
   const reduceMotion = useReducedMotion();
   const closeRef = useRef<HTMLButtonElement>(null);
   const circleRef = useRef<HTMLButtonElement>(null);
@@ -35,6 +40,7 @@ export default function SurpriseLily() {
   useEffect(() => {
     const timer = setTimeout(() => {
       try {
+        setReadRevision(localStorage.getItem(READ_KEY));
         setPhase(localStorage.getItem(SEEN_KEY) === "true" ? "closed" : "bloom");
       } catch {
         setPhase("bloom");
@@ -45,11 +51,18 @@ export default function SurpriseLily() {
 
   useEffect(() => {
     if (!open || !visible) return;
-    try { localStorage.setItem(SEEN_KEY, "true"); } catch { /* Storage may be disabled. */ }
+    try {
+      localStorage.setItem(SEEN_KEY, "true");
+      localStorage.setItem(READ_KEY, LETTER_REVISION);
+    } catch { /* Storage may be disabled. */ }
+    const readTimer = setTimeout(() => setReadRevision(LETTER_REVISION), 0);
     const previousOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
     closeRef.current?.focus({ preventScroll: true });
-    return () => { document.body.style.overflow = previousOverflow; };
+    return () => {
+      clearTimeout(readTimer);
+      document.body.style.overflow = previousOverflow;
+    };
   }, [open, visible]);
 
   useEffect(() => {
@@ -174,15 +187,22 @@ export default function SurpriseLily() {
           <motion.button
             key="circle" ref={circleRef} type="button"
             layoutId={reduceMotion ? undefined : "lily-paper"}
-            aria-label="Open lily letter" title="Open lily letter"
+            aria-label={isUnread ? "Open letter, new message" : "Open letter"}
+            title={isUnread ? "A new love note for you" : "A little love note"}
             onClick={() => { moveFocus.current = true; setPhase("open"); }}
             initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-            transition={transition} style={{ borderRadius: 999 }}
+            transition={transition} style={{ borderRadius: 18 }}
             whileHover={reduceMotion ? undefined : { scale: 1.08 }}
             whileTap={reduceMotion ? undefined : { scale: 0.94 }}
-            className="fixed right-4 top-40 z-[140] flex h-12 w-12 items-center justify-center border border-[#ffe9f2] bg-white/95 text-[#e66496] shadow-[0_8px_20px_-5px_rgba(224,85,134,0.25)] backdrop-blur-md hover:bg-rose-50 focus-visible:outline-2 focus-visible:outline-rose-500 sm:right-6 sm:top-44"
+            className="fixed right-4 top-24 z-[150] flex h-12 w-12 items-center justify-center bg-gradient-to-br from-[#df86a6] to-[#bb577f] text-white shadow-[0_6px_16px_-5px_rgba(160,66,104,0.35),inset_0_1px_0_rgba(255,255,255,0.4)] hover:brightness-105 transition-[filter] cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#b34f79] sm:right-6 sm:top-28"
           >
-            <Mail aria-hidden="true" className="h-5 w-5" />
+            <Heart aria-hidden="true" className="h-5 w-5 fill-current" strokeWidth={1.5} />
+            {isUnread && (
+              <span aria-hidden="true" className="absolute -right-0.5 -top-0.5 flex h-3.5 w-3.5">
+                <span className="absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-50 motion-safe:animate-ping" />
+                <span className="relative inline-flex h-3.5 w-3.5 rounded-full border-2 border-[#fff7fa] bg-red-500" />
+              </span>
+            )}
           </motion.button>
         )}
       </AnimatePresence>
