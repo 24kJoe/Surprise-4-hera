@@ -39,7 +39,7 @@ const dailyReasons: DailyReason[] = [
   { id: "24", dayNumber: 24, unlockDate: "2026-11-07T00:00:00", content: "I love it when all of a sudden, we're in a call talking, your voice softens when i compliment you or tell you that i love you, your so cute and that's not a bad thing, i like it i really do honestly i appreciate you in every way possible, you really need to acknowledge that ." },
   { id: "25", dayNumber: 25, unlockDate: "2026-11-08T00:00:00", content: "انتي حلوه اوي علفكره" },
   { id: "26", dayNumber: 26, unlockDate: "2026-11-09T00:00:00", content: "انتي اغلي حد عندي و مفيش احلي و اجمل منك انت بالنسبالي ف حته محدش يقرب منك اساسا بموت فيكي" },
-  { id: "27", dayNumber: 27, unlockDate: "2026-11-10T00:00:00", content: "You actually listen when I talk, making me feel heard and valued every single time." },
+  { id: "27", dayNumber: 27, unlockDate: "2026-11-10T00:00:00", content: "علفكره انتي لازم تعرفي انك لازم متزعليش خالص خالص لو زعلتي هجبلك ورد براحتك بقا بس بجد متزعليش و لو اتضايقتي علطول كلميني انا  عارف اني مش علطول حلو بس بحاو اعملي الي اقدر عليه يعني زعلك مهم بالنسبالي مش عايزك تزعلي ابدا يارب علطول تبقي مبسوطه و اقدر اخليكي فرحانه يارب انا بحبك و بموت فيكي بقولك يعني عشان لو مش باينن بس اعتقد باين  انتي حلوه يارب يخليكي ليا ❤️❤️❤️" },
   { id: "28", dayNumber: 28, unlockDate: "2026-11-11T00:00:00", content: "Even a light brush against your arm sends sparks through me." },
   { id: "29", dayNumber: 29, unlockDate: "2026-11-12T00:00:00", content: "The way you look at me makes me feel like I'm the only person in a crowded room." },
   { id: "30", dayNumber: 30, unlockDate: "2026-11-13T00:00:00", content: "I love all our random inside jokes and memories that only we share." },

@@ -109,16 +109,16 @@ export default function CounterSection() {
               <motion.div
                 whileHover={{ y: -3 }}
                 transition={{ duration: 0.2 }}
-                className="relative w-full min-w-0 sm:w-auto sm:min-w-[120px] rounded-2xl border border-rose-200/60 bg-gradient-to-br from-white to-[#fff2f7] px-1 py-4 sm:px-5 sm:py-6 shadow-[0_5px_18px_-10px_rgba(174,62,104,0.2)] flex flex-col items-center justify-center group hover:border-[#dba5bc] hover:shadow-[0_8px_24px_-10px_rgba(174,62,104,0.25)] transition-colors"
+                className="relative w-full min-w-0 sm:w-auto sm:min-w-[128px] px-1 py-5 sm:px-5 sm:py-7 flex flex-col items-center justify-center group"
               >
                 {/* Number Display */}
-                <div className="text-[clamp(1.125rem,5vw,1.75rem)] sm:text-4xl font-serif text-[#b34f79] tabular-nums leading-none">
+                <div className="text-[clamp(1.5rem,6.5vw,2.25rem)] sm:text-5xl font-serif text-[#b34f79] tabular-nums leading-none drop-shadow-[0_2px_8px_rgba(179,79,121,0.12)]">
                   <AnimatedNumber value={item.value} pad={item.pad} />
                 </div>
 
                 {/* Subtitle Label */}
-                <span aria-hidden="true" className="mt-3 h-px w-6 bg-rose-200/80" />
-                <span className="mt-2 text-[10px] sm:text-sm font-serif italic text-[#a17489]">
+                <span aria-hidden="true" className="mt-4 h-px w-8 bg-gradient-to-r from-transparent via-[#dba5bc] to-transparent" />
+                <span className="mt-3 text-[9px] sm:text-[11px] font-sans font-semibold uppercase tracking-[0.14em] sm:tracking-[0.18em] text-[#80516a] group-hover:text-[#b34f79] transition-colors">
                   {item.label}
                 </span>
               </motion.div>
