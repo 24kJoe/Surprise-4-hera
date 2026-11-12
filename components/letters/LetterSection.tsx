@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { CONFIG } from "@/lib/config/site";
-import { Heart, Feather } from "lucide-react";
+import { Heart } from "lucide-react";
 import { Amiri } from "next/font/google";
 
 const amiri = Amiri({
@@ -56,23 +56,28 @@ export default function LetterSection() {
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[750px] h-[750px] bg-rose-100/40 rounded-full blur-3xl pointer-events-none -z-10" />
 
       {/* Expanded Max-Width for a wider parchment spread */}
-      <div className="max-w-5xl mx-auto">
+      <div className="w-full max-w-3xl mx-auto">
         {/* Parchment Letter Card */}
         <motion.div
           initial={{ opacity: 0, y: 25 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, ease: "easeOut" }}
-          className="relative bg-[#fffdfa] rounded-[2.5rem] border border-rose-200/80 shadow-2xl shadow-rose-950/5 p-8 sm:p-14 md:p-20 overflow-hidden"
+          className="relative isolate bg-[#fffdfc] rounded-[28px] sm:rounded-[36px] border border-[var(--line)] shadow-[0_18px_60px_-30px_rgba(144,57,94,0.2)] px-7 py-10 sm:px-14 sm:py-12 md:px-16 overflow-hidden"
         >
-          {/* Faint Stationery Watermark */}
-          <div className="absolute top-6 right-6 sm:top-10 sm:right-10 opacity-10 pointer-events-none text-[var(--rose)]">
-            <Feather className="w-28 h-28 sm:w-36 sm:h-36" />
+          <div aria-hidden="true" className="absolute inset-3 -z-10 rounded-[19px] sm:rounded-[25px] border border-rose-100/70 pointer-events-none" />
+          <div aria-hidden="true" className="absolute inset-0 pointer-events-none text-[#dda4b8]">
+            <Heart className="absolute left-4 top-16 h-5 w-5 -rotate-12 fill-current sm:left-7 sm:h-6 sm:w-6" strokeWidth={1} />
+            <Heart className="absolute right-4 top-32 h-4 w-4 rotate-12 fill-current text-[#e8bdcc] sm:right-7 sm:h-5 sm:w-5" strokeWidth={1} />
+            <Heart className="absolute bottom-32 left-4 h-4 w-4 rotate-12 fill-current text-[#e8bdcc] sm:left-7 sm:h-5 sm:w-5" strokeWidth={1} />
+            <Heart className="absolute bottom-16 right-4 h-5 w-5 -rotate-12 fill-current sm:right-7 sm:h-6 sm:w-6" strokeWidth={1} />
           </div>
 
           {/* Top Stamp / Emblem */}
-          <div className="flex flex-col items-center text-center mb-8 sm:mb-10">
-            <div className="w-12 h-12 rounded-full bg-rose-50 border border-rose-200/80 flex items-center justify-center text-[var(--rose)] mb-3 shadow-xs">
-              <Heart className="w-5 h-5 fill-rose-300/40" />
+          <div className="flex flex-col items-center text-center mb-6 sm:mb-7">
+            <div aria-hidden="true" className="flex items-center gap-4 text-[#c56d91] mb-4">
+              <span className="h-px w-12 bg-gradient-to-r from-transparent to-rose-200" />
+              <Heart className="w-5 h-5 fill-current" strokeWidth={1.2} />
+              <span className="h-px w-12 bg-gradient-to-l from-transparent to-rose-200" />
             </div>
             <span className="text-[11px] font-bold tracking-[0.28em] text-[var(--rose)] uppercase font-sans">
               {CONFIG.toLine}
@@ -80,15 +85,15 @@ export default function LetterSection() {
           </div>
 
           {/* Letter Title */}
-          <h1 className={`${amiri.className} text-3xl sm:text-4xl md:text-5xl font-serif font-medium text-[rgb(74,32,58)] text-center mb-8 sm:mb-10 tracking-tight`}>
+          <h1 dir="auto" className={`${amiri.className} text-3xl sm:text-4xl md:text-5xl font-serif font-medium text-[rgb(74,32,58)] text-center mb-6 sm:mb-7 leading-[1.6] tracking-tight`}>
             {CONFIG.heroTitle}
           </h1>
 
           {/* Ruled Paper Divider */}
-          <div className="w-24 h-0.5 bg-gradient-to-r from-transparent via-rose-300/80 to-transparent mx-auto mb-8 sm:mb-10" />
+          <div className="w-32 h-px bg-gradient-to-r from-transparent via-rose-200 to-transparent mx-auto mb-7 sm:mb-8" />
 
           {/* Typed Body Content */}
-          <div className={`${amiri.className} min-h-[160px] sm:min-h-[200px] text-rose-950/85 font-serif text-base sm:text-lg md:text-xl leading-[2] tracking-wide whitespace-pre-wrap pl-1 sm:pl-2`}>
+          <div dir="auto" className={`${amiri.className} min-h-[160px] sm:min-h-[200px] text-rose-950/85 font-serif text-base sm:text-lg md:text-xl leading-[2.2] whitespace-pre-wrap break-words text-start px-1 sm:px-2`}>
             {typed}
             <span
               className={`inline-block w-0.5 h-[1.15em] bg-[var(--rose)] ml-1 align-middle transition-opacity duration-300 ${
@@ -98,7 +103,16 @@ export default function LetterSection() {
           </div>
 
           {/* Sign-off Footer */}
-          <div className="mt-14 pt-8 border-t border-rose-100/90 flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div aria-hidden="true" className="mx-auto mt-10 flex w-full max-w-xs items-center justify-center gap-4 sm:gap-5">
+            <span className="h-px flex-1 bg-gradient-to-r from-transparent to-[#dfafc2]" />
+            <div className="flex items-center gap-2.5">
+              <Heart className="h-2.5 w-2.5 -rotate-12 fill-current text-[#dfafc2]" strokeWidth={1} />
+              <Heart className="h-5 w-5 fill-current text-[#bd708e]" strokeWidth={1} />
+              <Heart className="h-2.5 w-2.5 rotate-12 fill-current text-[#dfafc2]" strokeWidth={1} />
+            </div>
+            <span className="h-px flex-1 bg-gradient-to-l from-transparent to-[#dfafc2]" />
+          </div>
+          <div className="relative pt-6 flex justify-end text-end">
             <span className={`${amiri.className} font-serif italic text-base sm:text-lg text-[rgb(74,32,58)]`}>
               {CONFIG.signOff}
             </span>

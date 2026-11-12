@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
-import { Play, X } from "lucide-react";
+import { Play, X, Heart } from "lucide-react";
 
 export type MediaType = "IMAGE" | "VIDEO";
 
@@ -22,6 +22,7 @@ interface PolaroidCardProps {
   onClick?: () => void;
   index?: number;
   href?: string;
+  memoryStyle?: boolean;
 }
 
 export default function PolaroidCard({
@@ -30,6 +31,7 @@ export default function PolaroidCard({
   onClick,
   index = 0,
   href,
+  memoryStyle = false,
 }: PolaroidCardProps) {
   const [isOpen, setIsOpen] = useState(false);
   const isVideo = photo.type === "VIDEO";
@@ -64,6 +66,7 @@ export default function PolaroidCard({
 
   const content = (
     <>
+      {memoryStyle && <span aria-hidden="true" className="absolute -top-4 left-1/2 z-10 -translate-x-1/2 flex h-8 w-8 items-center justify-center rounded-full border border-[var(--line)] bg-[var(--paper)]"><Heart className="h-[18px] w-[18px] fill-current text-[var(--rose)]" strokeWidth={1.4} /></span>}
       {/* Media frame with smooth rounded-2xl corners */}
       <div className="aspect-[4/5] w-full rounded-2xl overflow-hidden bg-gradient-to-br from-[var(--rose-dim)] to-[var(--gold-soft)] flex items-center justify-center relative group shadow-inner">
         {photo.url ? (
@@ -100,14 +103,14 @@ export default function PolaroidCard({
         )}
       </div>
 
-      <div className="font-serif italic text-sm text-center mt-3.5 text-rose-950/80 line-clamp-2 px-1">
+      <div className={memoryStyle ? "font-serif italic text-base sm:text-lg text-center mt-3 text-[var(--cream)] line-clamp-2 px-2" : "font-serif italic text-sm text-center mt-3.5 text-rose-950/80 line-clamp-2 px-1"}>
         {photo.caption || "A special moment"}
       </div>
     </>
   );
 
   // Soft rounded-3xl container styling
-  const cardClasses =
+  const cardClasses = memoryStyle ? "relative bg-gradient-to-b from-[var(--bg)] to-[var(--paper)] p-3 pb-4 rounded-3xl text-[var(--ink)] shadow-[0_8px_24px_-12px_rgba(224,85,134,0.2)] border border-[var(--line)] flex flex-col justify-between w-full cursor-pointer" :
     "bg-[#fffdfa] p-3.5 pb-6 rounded-3xl text-[var(--ink)] shadow-md hover:shadow-xl border border-rose-200/80 hover:border-rose-300 transition-all duration-300 flex flex-col justify-between block w-full";
 
   return (

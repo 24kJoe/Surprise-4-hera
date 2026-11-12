@@ -1,0 +1,38 @@
+.section {
+  position: relative;
+  isolation: isolate;
+  padding: 55px 24px 65px !important;
+  background: var(--bg);
+}
+.inner { position: relative; max-width: 1100px; margin: auto; }
+.heading { text-align: center; margin-bottom: 48px; color: var(--cream); }
+.bow { color: #eaa1af; font: 58px/0.7 Georgia, serif; margin-bottom: 24px; }
+.bow span { display: block; font-size: 38px; line-height: 0.5; }
+.eyebrow { display: flex; justify-content: center; align-items: center; gap: 22px; font-size: 11px; text-transform: uppercase; letter-spacing: 0.45em; font-weight: 600; }
+.eyebrow span { height: 1px; width: 65px; background: linear-gradient(90deg, transparent, #b2798c); }
+.eyebrow span:last-child { transform: rotate(180deg); }
+.heading h2 { font-family: var(--serif); font-weight: 400; font-size: clamp(30px, 4.3vw, 48px); line-height: 1.2; margin: 14px 0 18px; }
+.heading em { color: var(--rose); font-weight: 400; position: relative; white-space: nowrap; }
+.heading em::after { content: ''; position: absolute; left: 0; right: 0; bottom: -7px; height: 9px; border-top: 2px solid #e99ab3; border-radius: 50%; transform: rotate(-2deg); }
+.heading p { font-family: var(--serif); font-size: 18px; color: #956076; }
+.heading p span { color: #b66a83; font-size: 13px; padding: 0 5px; }
+.gallery { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 20px; }
+.decorations { position: absolute; inset: 0; z-index: -1; pointer-events: none; }
+.decorations svg { position: absolute; width: 20px; color: var(--rose); fill: none; stroke-width: 1.2; opacity: 0.3; }
+.decorations svg:nth-child(1) { left: 4%; top: 24%; transform: rotate(-20deg); }
+.decorations svg:nth-child(2) { right: 7%; top: 29%; transform: rotate(18deg); }
+.decorations svg:nth-child(3) { left: 10%; top: 12%; transform: rotate(-15deg); }
+.decorations svg:nth-child(4) { right: 3%; bottom: 15%; transform: rotate(20deg); }
+.decorations svg:nth-child(5) { left: 3%; bottom: 27%; color: white; fill: white; }
+.decorations svg:nth-child(6) { right: 19%; top: 9%; color: white; fill: white; }
+.topWave, .bottomWave { position: absolute; left: 0; width: 100%; height: 55px; pointer-events: none; z-index: -1; fill: none; stroke: #fff; stroke-width: 2; opacity: 0.85; }
+.topWave { top: 0; }
+.bottomWave { bottom: 0; }
+@media (max-width: 700px) {
+  .section { padding: 40px 18px 50px !important; }
+  .gallery { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 30px 14px; }
+  .heading { margin-bottom: 36px; }
+  .eyebrow { gap: 12px; font-size: 9px; }
+  .eyebrow span { width: 30px; }
+  .heading p { font-size: 16px; }
+}

@@ -5,7 +5,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { twMerge } from "tailwind-merge";
-import { Settings, Menu, X } from "lucide-react";
+import { Settings, Menu, X, Heart } from "lucide-react";
 import { useActiveSection } from "@/lib/hooks/useActiveSection";
 
 interface NavProps {
@@ -45,6 +45,20 @@ export default function Nav({ className }: NavProps) {
       setActiveTab(`#${scrolledActiveSection}`);
     }
   }, [scrolledActiveSection, isGallerySubpage]);
+
+  // Keep the shareable URL in sync with the same section used by the tabs.
+  // Replacing the entry avoids adding a history entry for every scroll.
+  useEffect(() => {
+    if (pathname !== "/" || !scrolledActiveSection) return;
+    const timer = setTimeout(() => {
+      const hash = `#${scrolledActiveSection}`;
+      if (window.location.pathname !== "/" || window.location.hash === hash) return;
+      const url = new URL(window.location.href);
+      url.hash = hash;
+      window.history.replaceState(window.history.state, "", url);
+    }, 200);
+    return () => clearTimeout(timer);
+  }, [pathname, scrolledActiveSection]);
 
   // Shrink the nav once the page is scrolled a bit — never hide it entirely.
   useEffect(() => {
@@ -119,56 +133,37 @@ export default function Nav({ className }: NavProps) {
       transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
       className={twMerge(
         "fixed top-0 left-0 right-0 z-50 transform-gpu will-change-transform",
-        "bg-white/70 backdrop-blur-xl",
-        "border-b border-[#e05586]/25",
-        "shadow-[0_8px_32px_rgba(224,85,134,0.12)]",
+        "bg-[#fff0f6]/95 backdrop-blur-xl",
+        "border-b border-[var(--line)]",
+        "shadow-[0_4px_20px_rgba(116,51,79,0.04)]",
         "px-4 md:px-8",
         isScrolled ? "py-2" : "py-3",
         "transition-[padding] duration-300 ease-out",
         className
       )}
     >
-      <div className="pointer-events-none absolute top-0 left-0 right-0 h-[2px] overflow-hidden">
-        <motion.div
-          className="h-full w-1/3 bg-gradient-to-r from-transparent via-[#ff4f93] to-transparent"
-          animate={{ x: ["-100%", "300%"] }}
-          transition={{ repeat: Infinity, duration: 3.2, ease: "linear" }}
-        />
-      </div>
-      <div className="pointer-events-none absolute bottom-[-1px] left-0 right-0 h-px bg-gradient-to-r from-transparent via-[#e05586]/60 to-transparent" />
 
-      <div className="max-w-7xl mx-auto flex items-center justify-between">
-        <div className="flex items-center gap-8">
+      <div className="max-w-7xl mx-auto flex items-center justify-between gap-5">
+        <div className="flex min-w-0 flex-1 items-center justify-start gap-7">
           <Link
             href="/#letter"
             onClick={(e) => handleLinkClick({ href: "/#letter", id: "#letter" }, e)}
-            className="font-serif text-lg md:text-xl text-[#4a2036] tracking-wider flex items-center gap-2 group shrink-0"
+            className="text-[#4a2036] flex items-center gap-3 group shrink-0 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#b96386] rounded-lg"
           >
             <span
               className={twMerge(
-                "relative inline-flex items-center justify-center rounded-full border border-[#e05586]/40 bg-gradient-to-br from-[#ffe3ee]/80 to-white/40 shadow-[0_0_12px_rgba(224,85,134,0.35)] group-hover:shadow-[0_0_20px_rgba(255,79,147,0.55)] transition-all duration-300",
-                isScrolled ? "w-6 h-6" : "w-7 h-7"
+                "relative inline-flex items-center justify-center rounded-xl bg-[#f7dce7] text-[var(--rose)] transition-colors duration-300 group-hover:bg-[#f1cbdc] group-hover:text-[var(--rose-dim)]",
+                "w-9 h-9"
               )}
             >
-              <motion.span
-                animate={{ scale: [1, 1.2, 1] }}
-                transition={{ repeat: Infinity, duration: 2, ease: "easeInOut" }}
-                className="text-[#e05586] text-base leading-none inline-block drop-shadow-[0_0_6px_rgba(255,79,147,0.55)]"
-              >
-                ♥
-              </motion.span>
-              <motion.span
-                className="absolute inset-0 rounded-full border border-[#ff4f93]/50"
-                animate={{ scale: [1, 1.5], opacity: [0.6, 0] }}
-                transition={{ repeat: Infinity, duration: 2, ease: "easeOut" }}
-              />
+              <Heart aria-hidden="true" className="h-4 w-4 fill-current" strokeWidth={1.3} />
             </span>
-            <span className="group-hover:opacity-80 transition-opacity font-semibold bg-gradient-to-r from-[#4a2036] via-[#b83f6c] to-[#4a2036] bg-clip-text text-transparent bg-[length:200%_auto] group-hover:bg-[position:100%_0]">
+            <span className="font-[family-name:var(--serif)] text-xl leading-normal font-normal tracking-normal text-[var(--cream)]">
               Our Story
             </span>
           </Link>
 
-          <div className="hidden md:flex items-center gap-1.5 p-1 rounded-full border border-[#e05586]/15 bg-white/40 backdrop-blur-sm shadow-[inset_0_1px_2px_rgba(224,85,134,0.08)]">
+          <div className="hidden xl:flex items-center gap-1.5 border-l border-[#ead3dd] pl-6">
             {links.map((link) => {
               const isActive = activeTab === link.id;
               return (
@@ -176,17 +171,18 @@ export default function Nav({ className }: NavProps) {
                   key={link.id}
                   href={link.href}
                   onClick={(e) => handleLinkClick(link, e)}
+                  aria-current={isActive ? "location" : undefined}
                   className={twMerge(
-                    "relative text-xs uppercase tracking-widest px-4 py-2 rounded-full transition-colors duration-200 z-10 font-medium whitespace-nowrap",
+                    "relative isolate font-[family-name:var(--sans)] text-[11px] uppercase tracking-[0.12em] px-3.5 py-3 rounded-lg transition-colors duration-200 z-10 font-medium whitespace-nowrap focus-visible:outline-2 focus-visible:outline-[#b96386]",
                     isActive
-                      ? "text-white"
-                      : "text-[#4a2036]/80 hover:text-[#4a2036]"
+                      ? "text-[var(--rose-dim)] bg-[#f4d3e1]"
+                      : "text-[var(--cream)]/75 hover:text-[var(--cream)] hover:bg-[#f9eef3]/70"
                   )}
                 >
                   {isActive && (
                     <motion.div
                       layoutId="active-pill"
-                      className="absolute inset-0 rounded-full -z-10 bg-gradient-to-r from-[#e05586] via-[#ff4f93] to-[#e8659a] shadow-[0_0_16px_rgba(255,79,147,0.55)]"
+                      className="absolute bottom-1 left-1/2 -translate-x-1/2 h-0.5 w-6 rounded-full -z-10 bg-[#c45d86]"
                       transition={{
                         type: "spring",
                         stiffness: 400,
@@ -205,12 +201,12 @@ export default function Nav({ className }: NavProps) {
           <Link
             href="/admin"
             className={twMerge(
-              "hidden md:flex items-center gap-2 group relative overflow-hidden",
-              "bg-white/60 hover:bg-white/80 text-[#e05586] hover:text-[#b83f6c]",
-              "border border-[#e05586]/30 hover:border-[#ff4f93]/60",
-              "text-xs tracking-wider uppercase font-semibold",
-              "px-4 py-2 rounded-full backdrop-blur-sm",
-              "shadow-[0_0_0_rgba(255,79,147,0)] hover:shadow-[0_0_18px_rgba(255,79,147,0.35)]",
+              "hidden xl:flex items-center gap-2 group relative overflow-hidden",
+              "bg-transparent hover:bg-[#f9eef3] text-[#956076] hover:text-[#74334f]",
+              "border border-transparent",
+              "text-xs tracking-wide font-medium",
+              "px-3 py-2 rounded-lg",
+              "focus-visible:outline-2 focus-visible:outline-[#b96386]",
               "transition-all duration-300 active:scale-95"
             )}
             title="Admin Panel"
@@ -221,8 +217,10 @@ export default function Nav({ className }: NavProps) {
 
           <button
             onClick={() => setIsOpen(!isOpen)}
-            className="md:hidden relative p-2 text-[#4a2036] focus:outline-none rounded-lg border border-[#e05586]/25 bg-white/50 hover:bg-pink-100/50 hover:border-[#ff4f93]/50 hover:shadow-[0_0_14px_rgba(255,79,147,0.35)] transition-all"
+            className="xl:hidden relative p-2.5 text-[#74465b] rounded-xl bg-[#f8e6ed] hover:bg-[#f3d9e4] focus-visible:outline-2 focus-visible:outline-[#b96386] transition-colors"
             aria-label="Toggle Menu"
+            aria-expanded={isOpen}
+            aria-controls="mobile-navigation"
           >
             {isOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
           </button>
@@ -236,7 +234,8 @@ export default function Nav({ className }: NavProps) {
             animate={{ opacity: 1, height: "auto" }}
             exit={{ opacity: 0, height: 0 }}
             transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
-            className="md:hidden overflow-hidden border-t border-[#e05586]/20 mt-3 pt-3 flex flex-col gap-1.5 pb-2"
+            id="mobile-navigation"
+            className="xl:hidden overflow-hidden border-t border-[#efd7e1] mt-3 pt-3 grid grid-cols-2 gap-2 pb-2"
           >
             {links.map((link) => {
               const isActive = activeTab === link.id;
@@ -246,25 +245,25 @@ export default function Nav({ className }: NavProps) {
                   href={link.href}
                   onClick={(e) => handleLinkClick(link, e)}
                   className={twMerge(
-                    "text-xs uppercase tracking-widest px-4 py-3 rounded-xl transition-all font-medium flex items-center justify-between border",
+                    "font-[family-name:var(--sans)] text-[11px] uppercase tracking-[0.12em] px-4 py-3 rounded-xl transition-colors font-medium flex items-center justify-between border",
                     isActive
-                      ? "bg-gradient-to-r from-[#e05586] via-[#ff4f93] to-[#e8659a] text-white border-transparent shadow-[0_0_16px_rgba(255,79,147,0.45)]"
+                      ? "bg-[#f4d3e1] text-[#873e5e] border-transparent"
                       : "text-[#4a2036] border-transparent hover:bg-pink-100/50 hover:border-[#e05586]/20"
                   )}
                 >
                   <span>{link.label}</span>
                   {isActive && (
-                    <span className="drop-shadow-[0_0_6px_rgba(255,255,255,0.8)]">♥</span>
+                    <Heart aria-hidden="true" className="h-3 w-3 fill-current" />
                   )}
                 </a>
               );
             })}
 
-            <div className="pt-2 mt-1 border-t border-[#e05586]/15">
+            <div className="col-span-2 pt-2 mt-1 border-t border-[#e05586]/15">
               <Link
                 href="/admin"
                 onClick={() => setIsOpen(false)}
-                className="flex items-center justify-between text-xs uppercase tracking-widest px-4 py-3 rounded-xl bg-white/60 hover:bg-pink-100 border border-[#e05586]/30 hover:border-[#ff4f93]/60 text-[#e05586] font-semibold transition-colors hover:shadow-[0_0_14px_rgba(255,79,147,0.35)]"
+                className="flex items-center justify-between text-xs tracking-wide px-4 py-3 rounded-xl hover:bg-[#f9edf2] text-[#956076] font-medium transition-colors"
               >
                 <span>Admin Panel</span>
                 <Settings className="w-4 h-4 text-[#e05586]" />

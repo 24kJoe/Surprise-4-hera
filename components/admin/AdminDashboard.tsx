@@ -35,7 +35,6 @@ function IconFolder(p: React.SVGProps<SVGSVGElement>) { return (<svg viewBox="0 
 function IconSearch(p: React.SVGProps<SVGSVGElement>) { return (<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" {...p}><circle cx="11" cy="11" r="8" {...iS} /><path {...iS} d="m21 21-4.35-4.35" /></svg>); }
 function IconEye(p: React.SVGProps<SVGSVGElement>) { return (<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" {...p}><path {...iS} d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z" /><circle cx="12" cy="12" r="3" {...iS} /></svg>); }
 function IconCheckSquare(p: React.SVGProps<SVGSVGElement>) { return (<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" {...p}><polyline points="9 11 12 14 22 4" {...iS} /><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" {...iS} /></svg>); }
-function IconSliders(p: React.SVGProps<SVGSVGElement>) { return (<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" {...p}><line x1="4" y1="21" x2="4" y2="14" {...iS} /><line x1="4" y1="10" x2="4" y2="3" {...iS} /><line x1="12" y1="21" x2="12" y2="12" {...iS} /><line x1="12" y1="8" x2="12" y2="3" {...iS} /><line x1="20" y1="21" x2="20" y2="16" {...iS} /><line x1="20" y1="12" x2="20" y2="3" {...iS} /><line x1="1" y1="14" x2="7" y2="14" {...iS} /><line x1="9" y1="8" x2="15" y2="8" {...iS} /><line x1="17" y1="16" x2="23" y2="16" {...iS} /></svg>); }
 function IconSpinner(p: React.SVGProps<SVGSVGElement>) { return (<svg viewBox="0 0 24 24" fill="none" className={`animate-spin ${p.className || ""}`}><circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="2" strokeOpacity="0.25" /><path d="M21 12a9 9 0 0 0-9-9" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /></svg>); }
 function IconGrip(p: React.SVGProps<SVGSVGElement>) { return (<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...p}><circle cx="9" cy="5" r="1" /><circle cx="9" cy="12" r="1" /><circle cx="9" cy="19" r="1" /><circle cx="15" cy="5" r="1" /><circle cx="15" cy="12" r="1" /><circle cx="15" cy="19" r="1" /></svg>); }
 function IconZoomIn(p: React.SVGProps<SVGSVGElement>) { return (<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" {...p}><circle cx="11" cy="11" r="8" {...iS} /><path {...iS} d="m21 21-4.35-4.35M11 8v6M8 11h6" /></svg>); }
@@ -46,25 +45,17 @@ function IconZoomOut(p: React.SVGProps<SVGSVGElement>) { return (<svg viewBox="0
 /*  Native Hardware Image Compression Engine                              */
 /* ---------------------------------------------------------------------- */
 
-type QualityPreset = "ultra" | "high" | "compact";
-interface PresetConfig { label: string; maxDimension: number; quality: number; description: string; }
-
-const QUALITY_PRESETS: Record<QualityPreset, PresetConfig> = {
-  ultra: { label: "Ultra / 4K", maxDimension: 3840, quality: 0.94, description: "Keep the original file" },
-  high: { label: "High / 2K", maxDimension: 2560, quality: 0.88, description: "Recommended: clear photos with smaller uploads" },
-  compact: { label: "Compact / 1080p", maxDimension: 1920, quality: 0.78, description: "Smaller photos for slower connections" },
-};
-
-async function compressAndroidSafe(file: File, preset: QualityPreset): Promise<File> {
-  if (!file.type.startsWith("image/") || preset === "ultra") return file;
-  const config = QUALITY_PRESETS[preset];
+async function preparePhoto(file: File): Promise<File> {
+  // Preserve small files, transparency, animation, and unsupported formats.
+  if (file.type !== "image/jpeg" || file.size <= 1.5 * 1024 * 1024) return file;
+  const config = { maxDimension: 3200, quality: 0.92 };
   try {
-    let bitmap = await createImageBitmap(file);
+    const bitmap = await createImageBitmap(file);
     let { width, height } = bitmap;
-    const needsResize = width > config.maxDimension || height > config.maxDimension;
+
     if (width > height && width > config.maxDimension) { height = Math.round((height * config.maxDimension) / width); width = config.maxDimension; } 
     else if (height > config.maxDimension) { width = Math.round((width * config.maxDimension) / height); height = config.maxDimension; }
-    if (!needsResize) { bitmap.close(); return file; }
+
     const canvas = document.createElement("canvas"); canvas.width = width; canvas.height = height;
     const ctx = canvas.getContext("2d", { alpha: false });
     if (!ctx) { bitmap.close(); return file; }
@@ -72,7 +63,7 @@ async function compressAndroidSafe(file: File, preset: QualityPreset): Promise<F
     return new Promise((resolve) => {
       canvas.toBlob((blob) => {
           canvas.width = 0; canvas.height = 0;
-          if (!blob || blob.size >= file.size) return resolve(file);
+          if (!blob || blob.size > file.size * 0.9) return resolve(file);
           resolve(new File([blob], file.name.replace(/\.[^/.]+$/, ".jpg"), { type: "image/jpeg", lastModified: Date.now() }));
         }, "image/jpeg", config.quality);
     });
@@ -315,7 +306,6 @@ export default function AdminDashboard() {
   const [caption, setCaption] = useState("");
   const [altText, setAltText] = useState("");
   const [selectedCollectionId, setSelectedCollectionId] = useState("none");
-  const [qualityPreset, setQualityPreset] = useState<QualityPreset>("high");
   const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -497,7 +487,7 @@ export default function AdminDashboard() {
           const index = nextIndex++; const file = batch[index]; let request: XMLHttpRequest | undefined;
           try {
             const isVideo = file.type.startsWith("video/");
-            const ready = isVideo ? file : await compressAndroidSafe(file, qualityPreset);
+            const ready = isVideo ? file : await preparePhoto(file);
             if (abortUploadRef.current) { failed.set(index, "Cancelled"); continue; }
             const uploaded = await directUploadToCloudinary(ready, signResult as any, (percent) => {
               setUploadProgress({ current: completed, total, statusText: "Uploading " + file.name + " · " + percent + "%", currentFileName: file.name });
@@ -706,24 +696,13 @@ export default function AdminDashboard() {
                           <select aria-label="Upload album" value={selectedCollectionId} onChange={(e) => setSelectedCollectionId(e.target.value)} disabled={isBatchUploading || !loaded} className={inputCls}>{collectionOptions.map((option) => <option key={option.id} value={option.id}>{option.label}</option>)}</select><button type="button" disabled={isBatchUploading} onClick={() => setActiveStudioTab("collection")} className="mt-2 text-xs font-semibold text-[var(--rose)]">+ Create a new album</button>
                         </Field>
 
-                        <details className="rounded-2xl border border-rose-100 p-4">
-                          <summary className="cursor-pointer text-sm text-[#956076]">Optional: quality & captions</summary>
-                          <div className="mt-4 space-y-4">
-                        <div>
-                          <label className="flex items-center gap-1.5 text-[11px] font-semibold tracking-wider text-[var(--gold-soft)] uppercase mb-1.5"><IconSliders className="w-3 h-3" /><span>Photo quality</span></label>
-                          <div className="grid grid-cols-3 gap-2">
-                            {(["ultra", "high", "compact"] as QualityPreset[]).map((preset) => {
-                              const config = QUALITY_PRESETS[preset]; const isSelected = qualityPreset === preset;
-                              return (
-                                <button key={preset} type="button" onClick={() => setQualityPreset(preset)} disabled={isBatchUploading} className={`px-2.5 py-2 rounded-xl border text-left flex flex-col justify-between transition-all cursor-pointer disabled:opacity-50 ${isSelected ? "border-[var(--rose)] bg-[var(--rose)]/15 text-[var(--cream)] ring-1 ring-[var(--rose)]/40" : "border-[var(--line)] bg-[var(--bg)] text-[var(--cream)]/60 hover:text-[var(--cream)] hover:border-[var(--cream)]/25"}`}>
-                                  <span className="text-xs font-semibold block leading-tight">{config.label}</span><span className="text-[10px] text-[var(--cream)]/40 mt-1 block leading-none">{preset === "ultra" ? "4K / Original" : preset === "high" ? "2K / Fast" : "1080p"}</span>
-                                </button>
-                              );
-                            })}
-                          </div>
-                          <p className="text-[11px] text-[var(--cream)]/40 mt-1 font-serif italic">{QUALITY_PRESETS[qualityPreset].description}</p>
+                        <div className="rounded-2xl bg-rose-50/70 px-4 py-3">
+                          <p className="text-sm font-semibold text-[#80516a]">High-quality photos, automatically</p>
+                          <p className="mt-1 text-xs leading-relaxed text-[#956076]">Choose your photos and upload. Large JPEG photos are optimized for smaller uploads while keeping crisp detail.</p>
                         </div>
-
+                        <details className="rounded-2xl border border-rose-100 p-4">
+                          <summary className="cursor-pointer text-sm text-[#956076]">Optional: captions & descriptions</summary>
+                          <div className="mt-4 space-y-4">
                         <Field label="Caption or Note">
                           <input type="text" value={caption} onChange={(e) => setCaption(e.target.value)} disabled={isBatchUploading} placeholder="e.g. Walking under the evening lights..." className={`${inputCls} disabled:opacity-50`} />
                         </Field>
