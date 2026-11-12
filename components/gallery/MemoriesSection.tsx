@@ -47,7 +47,7 @@ export default function MemoriesSection() {
       <svg aria-hidden="true" className={styles.topWave} viewBox="0 0 1200 70" preserveAspectRatio="none"><path d="M0 60 Q100 -10 200 15 T400 12 T600 20 T800 15 T1000 20 T1200 55" /></svg>
       <div className={`section-inner ${styles.inner}`}>
         <div className={styles.heading}>
-          <div aria-hidden="true" className={styles.bow}>♡<span>⌁</span></div>
+          <div aria-hidden="true" className={styles.bow}><Heart size={32} strokeWidth={1.2} fill="currentColor" /></div>
           <div className={styles.eyebrow}><span />Our Memories<span /></div>
           <h2>Every little <em>moment,</em> kept</h2>
           <p><span>✦</span> A few snapshots of us. <span>✦</span></p>
