@@ -46,7 +46,15 @@ const dailyReasons: DailyReason[] = [
   { id: "31", dayNumber: 31, unlockDate: "2026-11-14T00:00:00", content: "عايزك دايما تقوليلي بتعملي ايه حتي لو حاجه تافهه اه ساعات كتير يعني بقولك مسألتكيش او مش مهتم بس انا برخم مش اكتر بحب اسمع منك الحجات  دي بحس اني مهم بالنسبالك و بفرح اوي والله." },
   { id: "32", dayNumber: 32, unlockDate: "2026-11-15T00:00:00", content: "هختارك و هفضل اختارك فوق الناس كلها  من غير ما افكر ثانيه انتي روحي🌹." },
   { id: "33", dayNumber: 33, unlockDate: "2026-11-16T00:00:00", content: "بحبك علفكره ساعات كده فجأه بكون عايز اقولك كلام كتير اوي حتي من غير سبب وحتي اما اقول مش هعرف اقولك حاجه عشان مفيش حاجه تتقال توصلك قد ايه انا بحبك  انا بموت فيكي يا حبيبتي ربنا يخليكي ليا❤️❤️❤️." },
-  { id: "34", dayNumber: 34, unlockDate: "2026-11-17T00:00:00", content: "You radiate so much warmth and positivity wherever you go." },
+  { id: "34", dayNumber: 34, unlockDate: "2026-11-17T00:00:00", content: `Something I really love about you? Actually, I can't name just one thing because there's so much about you for me to love. You radiate so much love and warmth, and I really appreciate every single thing about you.
+
+From the bottom of my heart, I would do anything for you, and I really mean it. I hope we stay together for the rest of our lives. There's absolutely nobody who could ever take your place, and I would probably just lose hope in love at that point. I'm with you at your worst before your best, and I'm always going to have your back, no matter what.
+
+I wanna be a huge part of your life, just like how you are such a huge part of mine. You're literally a part of me, for real. I would sacrifice anything for you, and I'm not even exaggerating. I love you, I admire you, and I want you to always be my girl, my wife hopefully soon tho, because I genuinely can't wait.
+
+One of my biggest reasons for happiness is you. You just have that special place in my heart that nobody else could ever have. Actually, let's just act like you didn't already steal my whole heart.
+
+I love you, sweetie. I really do, and I hope you never doubt that for even a second. ❤️` },
   { id: "35", dayNumber: 35, unlockDate: "2026-11-18T00:00:00", content: "I deeply value your honesty and how open we can be with one another." },
   { id: "36", dayNumber: 36, unlockDate: "2026-11-19T00:00:00", content: "Thank you for trusting me with your deepest thoughts and feelings." },
   { id: "37", dayNumber: 37, unlockDate: "2026-11-20T00:00:00", content: "There is nobody else in this entire world anything like you." },
