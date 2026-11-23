@@ -61,7 +61,7 @@ I love you, sweetie. I really do, and I hope you never doubt that for even a sec
   { id: "38", dayNumber: 38, unlockDate: "2026-11-21T00:00:00", content: "من اكتر الحجات الي بحبها فيكي انك كيوت و هقولك تاني مش حاجه وحشه ولا هي ولا بيبي علفكره يعني بس انا بحب ده فيكي اه مش صغيره عارف بس انا بشوفك كده بقا بحبك" },
   { id: "39", dayNumber: 39, unlockDate: "2026-11-22T00:00:00", content: "حتى و انتي متعصبه شكلك حلو انتي علطول شكلك حلو" },
   { id: "40", dayNumber: 40, unlockDate: "2026-11-23T00:00:00", content: "بحب اسمع صوتك جدا ياريت نكتر فويس نوتس بعد اذنك" },
-  { id: "41", dayNumber: 41, unlockDate: "2026-11-24T00:00:00", content: "انتي حلوه مش شكلا بس يعني كل حاجه انا بحب كل حاجه فيكي يا روحي" },
+  { id: "41", dayNumber: 41, unlockDate: "2026-11-24T00:00:00", content: "انتي حلوه مش شكلا بس يعني كل حاجه انا بحب كل حاجه فيكي يا روحي." },
   { id: "42", dayNumber: 42, unlockDate: "2026-11-25T00:00:00", content: "We just click so effortlessly, like puzzle pieces that finally found their match." },
   { id: "43", dayNumber: 43, unlockDate: "2026-11-26T00:00:00", content: "You give so much of your heart to the people you love without ever asking for anything back." },
   { id: "44", dayNumber: 44, unlockDate: "2026-11-27T00:00:00", content: "Eating together and sharing food with you is one of my absolute favorite things." },
