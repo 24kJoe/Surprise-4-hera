@@ -442,7 +442,9 @@ export default function DailyReasons() {
 
   const isUnlocked = (dateStr: string) => mounted && new Date(dateStr).getTime() <= now;
   const nextUnlock = mounted ? getNextUnlockCountdown(dailyReasons, now) : null;
-  const unlockedCount = dailyReasons.filter((r) => isUnlocked(r.unlockDate)).length;
+  const unlockedReasons = dailyReasons.filter((reason) => isUnlocked(reason.unlockDate));
+  const latestReason = unlockedReasons.at(-1);
+  const unlockedCount = unlockedReasons.length;
   const totalCount = dailyReasons.length;
 
   return (
@@ -503,10 +505,19 @@ export default function DailyReasons() {
               </div>
             )}
 
-            {/* Button to Open the Archive */}
+            {latestReason && (
+              <button
+                type="button"
+                onClick={() => setOpenNote(latestReason)}
+                className="mb-3 w-full rounded-full bg-[#cc4f80] px-6 py-4 text-sm font-semibold text-white shadow-[0_8px_24px_-6px_rgba(194,70,117,0.4)] transition-colors hover:bg-[#b53e6d] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#b53e6d] sm:w-auto"
+              >
+                Read the latest note
+              </button>
+            )}
             <button
+              type="button"
               onClick={() => setIsArchiveOpen(true)}
-              className="w-full sm:w-auto relative rounded-full bg-[#cc4f80] px-10 py-4 font-semibold text-sm text-white shadow-[0_8px_24px_-6px_rgba(194,70,117,0.4)] transition-colors hover:bg-[#b53e6d] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#b53e6d]"
+              className="w-full sm:w-auto rounded-full border border-rose-200 bg-white/70 px-6 py-3 font-semibold text-sm text-[#a83c66] transition-colors hover:bg-rose-50 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#b53e6d]"
             >
               Open collection <span aria-hidden="true" className="ml-3">↗</span>
             </button>
@@ -628,7 +639,7 @@ export default function DailyReasons() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[200] flex items-center justify-center p-4 sm:p-6 bg-[rgb(50,20,38)]/60 backdrop-blur-md"
+            className="fixed inset-0 z-[200] flex items-center justify-center p-3 sm:p-6 bg-[rgb(50,20,38)]/60 backdrop-blur-md"
             onClick={() => setOpenNote(null)}
           >
             <motion.div
@@ -637,7 +648,7 @@ export default function DailyReasons() {
               exit={{ opacity: 0, scale: 0.96, rotate: 2, y: 15 }}
               transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
               onClick={(e) => e.stopPropagation()}
-              className="relative isolate w-full max-w-[560px] bg-[linear-gradient(145deg,#fffefd,#fff8fa_65%,#ffedf4)] rounded-[2rem] border border-rose-200/80 shadow-[0_30px_90px_-20px_rgba(74,32,58,0.4)] px-7 py-9 sm:px-12 sm:py-11 max-h-[85dvh] overflow-y-auto flex flex-col"
+              className="relative isolate w-full max-w-[560px] bg-[linear-gradient(145deg,#fffefd,#fff8fa_65%,#ffedf4)] rounded-[2rem] border border-rose-200/80 shadow-[0_30px_90px_-20px_rgba(74,32,58,0.4)] flex max-h-[calc(100dvh-1.5rem)] flex-col overflow-hidden pt-14 sm:max-h-[calc(100dvh-3rem)]"
             >
               <div aria-hidden="true" className="absolute inset-3 -z-10 rounded-[1.4rem] border border-[#ebc5d3]/60 pointer-events-none" />
               <div aria-hidden="true" className="absolute top-0 left-0 -z-10 h-40 w-40 rounded-full bg-rose-100/50 blur-3xl pointer-events-none" />
@@ -648,53 +659,55 @@ export default function DailyReasons() {
 
               <button
                 onClick={() => setOpenNote(null)}
+                type="button"
                 aria-label="Close letter"
-                className="absolute top-5 right-5 p-2 rounded-full bg-white/70 text-[#a76b83] hover:bg-rose-100 hover:text-[#74334f] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#b53e6d] transition-colors z-20 cursor-pointer"
+                className="absolute right-3 top-2 grid h-11 w-11 place-items-center rounded-full sm:right-5 bg-white/70 text-[#a76b83] hover:bg-rose-100 hover:text-[#74334f] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#b53e6d] transition-colors z-20 cursor-pointer"
               >
                 <X className="w-5 h-5 stroke-[1.5]" />
               </button>
 
-              <div className="flex flex-col items-center text-center mt-3 mb-7 shrink-0">
-                <div aria-hidden="true" className="mb-5 flex items-center gap-4 text-[#c46a8e]">
-                  <span className="h-px w-12 bg-rose-200" />
-                  <Heart className="h-5 w-5 fill-rose-100" strokeWidth={1.2} />
-                  <span className="h-px w-12 bg-rose-200" />
-                </div>
-                <div className="flex flex-col items-center">
-                  <h2 className="font-serif text-3xl sm:text-4xl tracking-tight text-[#74334f] mb-3">One more reason <span className="italic">I love you.</span></h2>
-                  <span className="font-serif italic text-[#956076] text-sm">
-                    {new Date(openNote.unlockDate).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
-                  </span>
-                </div>
-                
-                <div className="mt-4 flex items-center gap-1.5 px-3 py-1 border border-rose-200/60 rounded-full bg-white/60">
-                  <Calendar className="w-3 h-3 text-[#4a2036]/40" strokeWidth={1.5} />
-                  <span className="font-mono text-[9px] text-[#4a2036]/60 font-medium tracking-widest uppercase">
-                    Unlocked
-                  </span>
-                </div>
-              </div>
+              <div className="min-h-0 overflow-y-auto overscroll-contain px-5 pb-6 pt-2 sm:px-12 sm:pb-9 [scrollbar-width:thin] [scrollbar-color:#dfafc2_transparent]">
+                <div className="flex flex-col items-center text-center mb-5 sm:mb-7">
+                  <div aria-hidden="true" className="mb-3 flex items-center gap-4 sm:mb-5 text-[#c46a8e]">
+                    <span className="h-px w-12 bg-rose-200" />
+                    <Heart className="h-5 w-5 fill-rose-100" strokeWidth={1.2} />
+                    <span className="h-px w-12 bg-rose-200" />
+                  </div>
+                  <div className="flex flex-col items-center">
+                    <h2 className="font-serif text-[1.65rem] sm:text-4xl tracking-tight text-[#74334f] mb-3">One more reason <span className="italic">I love you.</span></h2>
+                    <span className="font-serif italic text-[#956076] text-sm">
+                      {new Date(openNote.unlockDate).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
+                    </span>
+                  </div>
 
-              <div className="relative z-10 rounded-2xl border border-rose-100/80 bg-white/60 px-5 py-7 sm:px-7 sm:py-8 shadow-[0_4px_20px_rgba(174,62,104,0.03)]">
-                <span aria-hidden="true" className="absolute -top-5 left-5 font-serif text-6xl leading-none text-[#d99ab2]">“</span>
-                <p 
-                  dir="auto" 
-                  className="text-lg sm:text-xl leading-[2] text-[#64344e] w-full text-start whitespace-pre-wrap break-words"
-                  style={{ fontFamily: "'Hail Elastic Light', 'Amiri', serif" }}
-                >
-                  {openNote.content}
-                </p>
-              </div>
-
-              <div className="relative z-10 mt-7 flex flex-col items-center gap-3 pb-2 w-full shrink-0 text-center">
-                <div aria-hidden="true" className="flex items-center justify-center gap-4 w-full">
-                  <span className="h-px w-16 bg-gradient-to-r from-transparent to-[#dfafc2]" />
-                  <Heart className="w-4 h-4 fill-[#c56d91] text-[#c56d91]" strokeWidth={1.2} />
-                  <span className="h-px w-16 bg-gradient-to-l from-transparent to-[#dfafc2]" />
+                  <div className="mt-4 flex items-center gap-1.5 px-3 py-1 border border-rose-200/60 rounded-full bg-white/60">
+                    <Calendar className="w-3 h-3 text-[#4a2036]/40" strokeWidth={1.5} />
+                    <span className="font-mono text-[9px] text-[#4a2036]/60 font-medium tracking-widest uppercase">
+                      Unlocked
+                    </span>
+                  </div>
                 </div>
-                <div className="flex flex-col items-center gap-2">
-                  <span className="font-serif italic text-base leading-relaxed text-[#956076]">Always you. Every day.</span>
-                  <span className="font-serif italic text-2xl leading-none text-[#9c4669]">Y.</span>
+
+                <div dir="auto" className="relative z-10 rounded-2xl border border-rose-100/80 bg-white/60 px-4 py-5 sm:px-7 sm:py-8 shadow-[0_4px_20px_rgba(174,62,104,0.03)]">
+                  <span aria-hidden="true" className="absolute -top-5 start-5 font-serif text-6xl leading-none text-[#d99ab2]">“</span>
+                  <p
+                    className="text-lg sm:text-xl leading-relaxed sm:leading-[2] text-[#64344e] w-full text-start whitespace-pre-wrap break-words"
+                    style={{ fontFamily: "'Hail Elastic Light', 'Amiri', serif" }}
+                  >
+                    {openNote.content}
+                  </p>
+                </div>
+
+                <div className="relative z-10 mt-5 flex flex-col items-center gap-3 w-full sm:mt-7 text-center">
+                  <div aria-hidden="true" className="flex items-center justify-center gap-4 w-full">
+                    <span className="h-px w-16 bg-gradient-to-r from-transparent to-[#dfafc2]" />
+                    <Heart className="w-4 h-4 fill-[#c56d91] text-[#c56d91]" strokeWidth={1.2} />
+                    <span className="h-px w-16 bg-gradient-to-l from-transparent to-[#dfafc2]" />
+                  </div>
+                  <div className="flex flex-col items-center gap-2">
+                    <span className="font-serif italic text-base leading-relaxed text-[#956076]">Always you. Every day.</span>
+                    <span className="font-serif italic text-2xl leading-none text-[#9c4669]">Y.</span>
+                  </div>
                 </div>
               </div>
             </motion.div>
