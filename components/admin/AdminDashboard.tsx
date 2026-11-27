@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useTransition, useRef, useCallback, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
+import { BookOpen } from "lucide-react";
 import {
   updateMediaAction, deleteMediaAction, getMediaItems, getCollections,
   createCollectionAction, updateCollectionAction, deleteCollectionAction, getCloudinarySignatureAction,
@@ -286,12 +287,12 @@ function SingleFilePreviewModal({
 /*  Album management dashboard                                            */
 /* ---------------------------------------------------------------------- */
 
-export default function AdminDashboard() {
+export default function AdminDashboard({ dailyLetters }: { dailyLetters: React.ReactNode }) {
   const [mediaItems, setMediaItems] = useState<MediaItem[]>([]);
   const [collections, setCollections] = useState<CollectionItem[]>([]);
   const [loaded, setLoaded] = useState(false);
 
-  const [currentView, setCurrentView] = useState<"studio" | "gallery">("studio");
+  const [currentView, setCurrentView] = useState<"studio" | "gallery" | "letters">("letters");
   const [activeStudioTab, setActiveStudioTab] = useState<"upload" | "collection">("upload");
   const [searchQuery, setSearchQuery] = useState("");
   const [inspectingMedia, setInspectingMedia] = useState<MediaItem | null>(null);
@@ -637,11 +638,14 @@ export default function AdminDashboard() {
               <h1 className="font-serif text-3xl sm:text-4xl font-bold text-[var(--cream)] mt-0.5 leading-tight">Your memory studio</h1><p className="mt-2 text-sm text-[#956076]">Add a few photos. Make a new album. Keep your favorite days together.</p>
             </div>
           </div>
-          <div className="p-1.5 rounded-2xl bg-[var(--paper)] border border-[var(--line)] flex items-center gap-1 shadow-sm w-full sm:w-auto">
+          <div className="p-1.5 rounded-2xl bg-[var(--paper)] border border-[var(--line)] flex flex-wrap items-center gap-1 shadow-sm w-full sm:w-auto">
             <button onClick={() => setCurrentView("studio")} className={`flex-1 sm:flex-none px-4 py-2 rounded-xl text-xs font-semibold tracking-wide transition-all cursor-pointer flex items-center justify-center gap-2 ${currentView === "studio" ? "bg-[var(--rose)] text-white shadow-sm" : "text-[var(--cream)]/65 hover:text-[var(--cream)] hover:bg-[var(--bg)]/50"}`}><IconUpload className="w-4 h-4" /><span>Add photos</span></button>
             <button onClick={() => setCurrentView("gallery")} className={`flex-1 sm:flex-none px-4 py-2 rounded-xl text-xs font-semibold tracking-wide transition-all cursor-pointer flex items-center justify-center gap-2 ${currentView === "gallery" ? "bg-[var(--rose)] text-white shadow-sm" : "text-[var(--cream)]/65 hover:text-[var(--cream)] hover:bg-[var(--bg)]/50"}`}><IconImage className="w-4 h-4" /><span>Manage photos ({mediaItems.length})</span></button>
+            <button type="button" aria-pressed={currentView === "letters"} onClick={() => setCurrentView("letters")} className={`flex-1 sm:flex-none px-4 py-2 rounded-xl text-xs font-semibold tracking-wide transition-all cursor-pointer flex items-center justify-center gap-2 ${currentView === "letters" ? "bg-[var(--rose)] text-white shadow-sm" : "text-[var(--cream)]/65 hover:text-[var(--cream)] hover:bg-[var(--bg)]/50"}`}><BookOpen aria-hidden="true" className="w-4 h-4" /><span>Daily Letters</span></button>
           </div>
         </header>
+
+        <div hidden={currentView !== "letters"}>{dailyLetters}</div>
 
         {/* View 1: Studio */}
         {currentView === "studio" && (

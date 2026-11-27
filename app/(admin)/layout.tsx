@@ -1,24 +1,3 @@
-"use client";
-
-import { useState } from "react";
-import PasswordGate from "@/components/welcome/PasswordGate";
-
-export default function AdminLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
-  const [isUnlocked, setIsUnlocked] = useState(false);
-
-  return (
-    <>
-      <PasswordGate
-        type="admin"
-        unlocked={isUnlocked}
-        onUnlock={() => setIsUnlocked(true)}
-        expectedPassword="Joe2112008"
-      />
-      {isUnlocked ? children : null}
-    </>
-  );
+export default function AdminLayout({ children }: { children: React.ReactNode }) {
+  return <div className="min-h-screen bg-rose-50 p-4 text-[#4a2036]">{children}</div>;
 }

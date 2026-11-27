@@ -53,3 +53,8 @@ model MediaItem {
   createdAt        DateTime    @default(now())
   updatedAt        DateTime    @updatedAt
 }
+model DailyLetter {
+  date      String  @id @map("_id")
+  draft     String?
+  published String?
+}

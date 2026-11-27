@@ -4,389 +4,7 @@ import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Heart, Lock, BookOpen, Clock, ArrowLeft, Calendar, X } from "lucide-react";
 
-interface DailyReason {
-  id: string;
-  dayNumber: number;
-  unlockDate: string; // Format: "YYYY-MM-DDThh:mm:ss"
-  content: string;
-}
-
-// All 365 reasons strictly written out. Day 1 is set to unlock today!
-const dailyReasons: DailyReason[] = [
-  { id: "1", dayNumber: 1, unlockDate: "2026-10-15T00:00:00", content: "انا حقيقي يعني مش عارف اقول انا بحبك قد ايه عشان حقيقي الكلام مش كفايه الي بعمله مش كفايه عشان بالنسبالي انتي تستاهلي كل حاجه حلوه تتعملك انتي هتفضلي احلي حاجه فحياتي" },
-  { id: "2", dayNumber: 2, unlockDate: "2026-10-16T00:00:00", content: "انتي حلوه و علطول حلوه و مش عايزك تفكري ابدا ان انتي ف يوم شكلك مش حلو عشان انتي في عيني احلي بنت في الدنيا" },
-  { id: "3", dayNumber: 3, unlockDate: "2026-10-17T00:00:00", content: "متعرفيش بحب مناخيرك الحلوه دي قد ايه او ودانك الصغنونه و عنيكي الي مفيش احلي منهم " },
-  { id: "4", dayNumber: 4, unlockDate: "2026-10-18T00:00:00", content: "بحب انك فارق معاكي فعلا مع انك مش بتقولي مبتعبريش بالكلام بس انا بالنسبالي انت اكتر من كفايه " },
-  { id: "5", dayNumber: 5, unlockDate: "2026-10-19T00:00:00", content: "انتي طيبه و كيوت و حقيقي مشوفتش اطيب و اجمل منك" },
-  { id: "6", dayNumber: 6, unlockDate: "2026-10-20T00:00:00", content: "لو قعدت اكتب من هنا للسنه الجايه عمري ما هعرف اوصلك انا بحبك قد ايه " },
-  { id: "7", dayNumber: 7, unlockDate: "2026-10-21T00:00:00", content: "انا عارف انك علطول بتقولي اما تكوني عايزه تجيبي لبس  بتقعدي تقولي كل الناس بتلبس ده ومش عارف ايه بس يعني حتي لو انتي متعرفيش انك علطول احلي منهم و ان انتي الي بتحلي الحاجه" },
-  { id: "8", dayNumber: 8, unlockDate: "2026-10-22T00:00:00", content: "من احلي الناس الي عرفتهم فحياتي او يعني انتي احلي حد عرفته ف حياتي فعلا واجمل بنت كمان مفيش احلي منك" },
-  { id: "9", dayNumber: 9, unlockDate: "2026-10-23T00:00:00", content: "نفسي اكون بشوفك كل يوم انا اما بشوفك اليوم الي بعديه بتوحشيني يعني مبشبعش منك ومبزهقش منك احلي وقت بقعده هو الوقت الي بكون فيه معاكي" },
-  { id: "10", dayNumber: 10, unlockDate: "2026-10-24T00:00:00", content: "انتي هتفضلي معايا علطول علفكره يعني خلاص انا بتاعك و انتي بتاعتي من غير نقاش خالص" },
-  { id: "11", dayNumber: 11, unlockDate: "2026-10-25T00:00:00", content: "تعرفي ان صوتك حلو بحب صوتك مش عارف انتي مش شايفه صوتك حلو ازاي انا بموت فيه يعني" },
-  { id: "12", dayNumber: 12, unlockDate: "2026-10-26T00:00:00", content: "مستني اليوم الي نبقي فيه مع بعض  الي هو 💍 هبقي اخرجك بليل متأخر بقا و اوديكي الزمالك بليل و نرجع  متأخر بقا براحتنا" },
-  { id: "13", dayNumber: 13, unlockDate: "2026-10-27T00:00:00", content: "عايز اجيب قطه جيبيهالي بعد اذنك انا عارف انك موجوده و كده بس عايز برضو قطه تانيه يعني " },
-  { id: "14", dayNumber: 14, unlockDate: "2026-10-28T00:00:00", content: "صعب عليا اعترف يعني بس انتي دمك خفيف ضحكتك حلوه و زي القمر يعني هعوز ايه تاني بقا" },
-  { id: "15", dayNumber: 15, unlockDate: "2026-10-29T00:00:00", content: "بحب اعرف انتي بتفكري ف ايه حتي لو حاجه تافهه حتي لو انا مببينش اني مهتم يعني بس انا بجد مهتم و عايز اعرف كل حاجه عنك ومش هزهق لو فضلتي تقوليلي حجات تافهه حتي كفايه انك بتتكلمي معايا و بتقوليلي" },
-  { id: "16", dayNumber: 16, unlockDate: "2026-10-30T00:00:00", content: "يوم عيد ميلادك كنتي حلوه اوي يعني انا لسه فاكر شكلك عامل ازاي كنت بقعد ابص عليكي علفكره و انتي مش باصه بيبقي شكلك كيوت " },
-  { id: "17", dayNumber: 17, unlockDate: "2026-10-31T00:00:00", content: "عارفه انا مستني يوم عيد ميلادي مش عشان اعرف هديتك انتي كده كده انتي هديتي اساسا انا بس كل الي عايز اعمله اني اشوفك بس ده عندي بكل حاجه و هيكون احلي عيد ميلاد عشان شوفتك بس اصل لو مش واخده بالك انا بموت فيكي يعني " },
-  { id: "18", dayNumber: 18, unlockDate: "2026-11-01T00:00:00", content: "الوقت بيعدي بسرعه جدا اعتقد لو انا صح بكره عيد ميلادي بحبك بحبك فكريني بالهودي بقا" },
-  { id: "19", dayNumber: 19, unlockDate: "2026-11-02T00:00:00", content: "اتمني تتبسطيي بكره اتمنى اتمنى بس خدي بالك هديتي احلي متنسيش المحك مش لابسه الخاتم بكره هسيبك و امشي " },
-  { id: "20", dayNumber: 20, unlockDate: "2026-11-03T00:00:00", content: "مش تقوليلي انك كنتي هتبقي زي القمر كده ولا ايه اي تحذير حتي يعني و شكرا علي الهديه حلوه اوي يا حبيبتي ربنا يخليكي ليا " },
-  { id: "21", dayNumber: 21, unlockDate: "2026-11-04T00:00:00", content: "I would do anything for you and i mean it , you mean so much to me more than you could ever imagine." },
-  { id: "22", dayNumber: 22, unlockDate: "2026-11-05T00:00:00", content: "I love the letter you wrote for me every word in that card means the world to me specially when you're the one who wrote it." },
-  { id: "23", dayNumber: 23, unlockDate: "2026-11-06T00:00:00", content: "We have quite a story to tell to our kids you know, Imagine saying that we knew each other since 2024 from a game and we were complete strangers and that game grew to what we are now, Sounds shocking when you think about it and that doesn't happen often we don't happen often i guess we can say we are one of a kind."},
-  { id: "24", dayNumber: 24, unlockDate: "2026-11-07T00:00:00", content: "I love it when all of a sudden, we're in a call talking, your voice softens when i compliment you or tell you that i love you, your so cute and that's not a bad thing, i like it i really do honestly i appreciate you in every way possible, you really need to acknowledge that ." },
-  { id: "25", dayNumber: 25, unlockDate: "2026-11-08T00:00:00", content: "انتي حلوه اوي علفكره" },
-  { id: "26", dayNumber: 26, unlockDate: "2026-11-09T00:00:00", content: "انتي اغلي حد عندي و مفيش احلي و اجمل منك انت بالنسبالي ف حته محدش يقرب منك اساسا بموت فيكي" },
-  { id: "27", dayNumber: 27, unlockDate: "2026-11-10T00:00:00", content: "علفكره انتي لازم تعرفي انك لازم متزعليش خالص خالص لو زعلتي هجبلك ورد براحتك بقا بس بجد متزعليش و لو اتضايقتي علطول كلميني انا  عارف اني مش علطول حلو بس بحاو اعملي الي اقدر عليه يعني زعلك مهم بالنسبالي مش عايزك تزعلي ابدا يارب علطول تبقي مبسوطه و اقدر اخليكي فرحانه يارب انا بحبك و بموت فيكي بقولك يعني عشان لو مش باينن بس اعتقد باين  انتي حلوه يارب يخليكي ليا ❤️❤️❤️" },
-  { id: "28", dayNumber: 28, unlockDate: "2026-11-11T00:00:00", content: "انا لما حبيبتي هتكبر و النعمه لتاكل الجو بتحبيها انتي  دي انا عارف  المهم خفي حلاوه شويه عشان كتير عليا كل ده انتي كتير عليا   بحبك جدا و بموت فيكي علفكره لازم اجبلك ورد" },
-  { id: "29", dayNumber: 29, unlockDate: "2026-11-12T00:00:00", content: "بجد يعني الواحد مكنش متوقع انه يلاقي حد زيك والله ساعات بفكر ازاي انتي معايا انا من حلاوتك انا مش مصدق بحمد ربنا اني  عرفتك و حبيتك عشان انا مش شايف ان في حد ممكن ياخد مكانك ابدا  انا بموت فيكي وربنا يخليكي ليا وتفضلي معايا علطول." },
-  { id: "30", dayNumber: 30, unlockDate: "2026-11-13T00:00:00", content: "انتي عارفه ان انتي معايا ف اي قرار باخده قصدي ان اي قرار ممكن اخده دايما بفكر فيكي دايما بعتبرك حاجه اساسيه انتي فعلا حاجه اساسيه عايز اي قرار ايا كان دلوقتي او بعدين يبقى معاكي و تبقي جزء منه احنا مش علطول مع بعض بس  وعد هشاركك كل الي بعمله و علفكره رأيك مهم والله حتي لو ساعات انا بهزل و اقولك رأيك مش مهم انتي الي هرجعلك في الاخر لو عايز رأي حد عشان انتي مهمه بالنسبالي ." },
-  { id: "31", dayNumber: 31, unlockDate: "2026-11-14T00:00:00", content: "عايزك دايما تقوليلي بتعملي ايه حتي لو حاجه تافهه اه ساعات كتير يعني بقولك مسألتكيش او مش مهتم بس انا برخم مش اكتر بحب اسمع منك الحجات  دي بحس اني مهم بالنسبالك و بفرح اوي والله." },
-  { id: "32", dayNumber: 32, unlockDate: "2026-11-15T00:00:00", content: "هختارك و هفضل اختارك فوق الناس كلها  من غير ما افكر ثانيه انتي روحي🌹." },
-  { id: "33", dayNumber: 33, unlockDate: "2026-11-16T00:00:00", content: "بحبك علفكره ساعات كده فجأه بكون عايز اقولك كلام كتير اوي حتي من غير سبب وحتي اما اقول مش هعرف اقولك حاجه عشان مفيش حاجه تتقال توصلك قد ايه انا بحبك  انا بموت فيكي يا حبيبتي ربنا يخليكي ليا❤️❤️❤️." },
-  { id: "34", dayNumber: 34, unlockDate: "2026-11-17T00:00:00", content: `Something I really love about you? Actually, I can't name just one thing because there's so much about you for me to love. You radiate so much love and warmth, and I really appreciate every single thing about you.
-
-From the bottom of my heart, I would do anything for you, and I really mean it. I hope we stay together for the rest of our lives. There's absolutely nobody who could ever take your place, and I would probably just lose hope in love at that point. I'm with you at your worst before your best, and I'm always going to have your back, no matter what.
-
-I wanna be a huge part of your life, just like how you are such a huge part of mine. You're literally a part of me, for real. I would sacrifice anything for you, and I'm not even exaggerating. I love you, I admire you, and I want you to always be my girl, my wife hopefully soon tho, because I genuinely can't wait.
-
-One of my biggest reasons for happiness is you. You just have that special place in my heart that nobody else could ever have. Actually, let's just act like you didn't already steal my whole heart.
-
-I love you, sweetie. I really do, and I hope you never doubt that for even a second. ❤️` },
-  { id: "35", dayNumber: 35, unlockDate: "2026-11-18T00:00:00", content: "كتبتلك كلام كتير في الليترالي فات اتمني يكون عجبك يعني طبعا كان في كلام كتير تاني بس قولت كفايه عشان الليتر طول مني حبتين  بس مهما كتبت يعني في الاول وفي الاخر انا مش هعرف اوصلك الي عايز اقوله المهم ان انا بحبك و علفكره انا عارف انك شطوره و هتعملي الي عليكي و ان شاء الله يارب اشوفك احسن حد في الدنيا كلها و يارب يخليكي ليا علطول  علطول  و عايزك تبتسمي انتي مبتسمه دلوقتي انا عارف بس ابتسمي علطول و بحبكك" },
-  { id: "36", dayNumber: 36, unlockDate: "2026-11-19T00:00:00", content: "عارفه استيكر القطه انا جايبلك استيكر برضو تاني مش هقولك هو ايه بس اما اشوفك هتعرفي ساعتها بقا بس قوليلي بقا عشان منساش اما اجي اشوفك يأما هتستني تاني" },
-  { id: "37", dayNumber: 37, unlockDate: "2026-11-20T00:00:00", content: "مفيش حد في الدنيا دي كلها زيك انتي Special كده ولازم تفضلي عارفه ان مفيش حد زيك يحبيبتي" },
-  { id: "38", dayNumber: 38, unlockDate: "2026-11-21T00:00:00", content: "من اكتر الحجات الي بحبها فيكي انك كيوت و هقولك تاني مش حاجه وحشه ولا هي ولا بيبي علفكره يعني بس انا بحب ده فيكي اه مش صغيره عارف بس انا بشوفك كده بقا بحبك" },
-  { id: "39", dayNumber: 39, unlockDate: "2026-11-22T00:00:00", content: "حتى و انتي متعصبه شكلك حلو انتي علطول شكلك حلو" },
-  { id: "40", dayNumber: 40, unlockDate: "2026-11-23T00:00:00", content: "بحب اسمع صوتك جدا ياريت نكتر فويس نوتس بعد اذنك" },
-  { id: "41", dayNumber: 41, unlockDate: "2026-11-24T00:00:00", content: "انتي حلوه مش شكلا بس يعني كل حاجه انا بحب كل حاجه فيكي يا روحي." },
-  { id: "42", dayNumber: 42, unlockDate: "2026-11-25T00:00:00", content: "لازم لازم نجيب كلب عشان انا عايز كلب بعد اذنك يعني هيبقي عندي كلب و قطه و الدنيا جميله يعني هعوز ايه تاني" },
-  { id: "43", dayNumber: 43, unlockDate: "2026-11-26T00:00:00", content: "في كذا مفاجأه هبقي اقولهوملك بس مش دلوقتي بقا عايزين شويه صبر" },
-  { id: "44", dayNumber: 44, unlockDate: "2026-11-27T00:00:00", content: "اجمل بنت في الدنيا والله انتي مفيش احلي منك بحبك علفكره يعني مفيش زيك" },
-  { id: "45", dayNumber: 45, unlockDate: "2026-11-28T00:00:00", content: "كنت قاعد بفكر انتي لو مش موجوده حياتي مثلا هتبقى عامله ازاي و يعني انا مش عارف والله ما عارف انتي جزء كبير اوي من حياتي انا مش متخيل حياتي هتبقى كامله من غيرك انا فرحان انكي معايا و مبسوط اني معاكي و يارب يخليكي ليا علطول  بجد ونكمل حياتنا مع بعض علطوللل وعد وعد هعمل كل الي اقدر عليه عشانك بحبك وربنا يخليكي ليا يارب  انا مبقتش اكلمك كل يوم كتير زي الاول بس انا لسه يوم بعد يوم بحبك اكتر من الاول يعني اصلا ازاي محبكيش اكتر  وانتي اول حد علي بالي اما اصحى او قبل ما نام او اليوم كله اصلا انا علطول بفكر فيكي طبيعي يعني  شوفي  انا عمري ما فكرت فحد كده او كل ده بس انتي خليتيني افكر فيكي علطول."},
-  { id: "46", dayNumber: 46, unlockDate: "2026-11-29T00:00:00", content: "" },
-  { id: "47", dayNumber: 47, unlockDate: "2026-11-30T00:00:00", content: "I love the way your face lights up when you talk about something you're excited about." },
-  { id: "48", dayNumber: 48, unlockDate: "2026-12-01T00:00:00", content: "Your ability to find the silver lining in tough situations always amazes me." },
-  { id: "49", dayNumber: 49, unlockDate: "2026-12-02T00:00:00", content: "I love exchanging songs with you and finding pieces of you in every melody." },
-  { id: "50", dayNumber: 50, unlockDate: "2026-12-03T00:00:00", content: "We are fifty days into our countdown, and my love for you has only grown stronger with every single day." },
-  { id: "51", dayNumber: 51, unlockDate: "2026-12-04T00:00:00", content: "No matter what life throws at you, you bounce back with such grace and courage." },
-  { id: "52", dayNumber: 52, unlockDate: "2026-12-05T00:00:00", content: "You push me to think deeper, grow faster, and be the best version of myself." },
-  { id: "53", dayNumber: 53, unlockDate: "2026-12-06T00:00:00", content: "Getting unexpected sweet texts from you brightens up my entire day." },
-  { id: "54", dayNumber: 54, unlockDate: "2026-12-07T00:00:00", content: "I love when we start laughing so hard we cant even breathe or talk." },
-  { id: "55", dayNumber: 55, unlockDate: "2026-12-08T00:00:00", content: "The world can be harsh, but you remain so soft, pure, and caring." },
-  { id: "56", dayNumber: 56, unlockDate: "2026-12-09T00:00:00", content: "You always know exactly what to say to make me feel better when I'm down." },
-  { id: "57", dayNumber: 57, unlockDate: "2026-12-10T00:00:00", content: "You always act from a place of genuine love and goodness." },
-  { id: "58", dayNumber: 58, unlockDate: "2026-12-11T00:00:00", content: "Walking side by side with you anywhere in the world is my favorite place to be." },
-  { id: "59", dayNumber: 59, unlockDate: "2026-12-12T00:00:00", content: "I love how curious you are and how eager you are to discover new things." },
-  { id: "60", dayNumber: 60, unlockDate: "2026-12-13T00:00:00", content: "Thank you for loving all my flaws and being patient with me as I grow." },
-  { id: "61", dayNumber: 61, unlockDate: "2026-12-14T00:00:00", content: "You make the funniest, most adorable facial expressions when you're concentrating." },
-  { id: "62", dayNumber: 62, unlockDate: "2026-12-15T00:00:00", content: "Sometimes I just pause and smile simply because you exist in my life." },
-  { id: "63", dayNumber: 63, unlockDate: "2026-12-16T00:00:00", content: "I love how fiercely loyal and protective you are of the people you love." },
-  { id: "64", dayNumber: 64, unlockDate: "2026-12-17T00:00:00", content: "Your vibrant energy can completely transform the mood of any room." },
-  { id: "65", dayNumber: 65, unlockDate: "2026-12-18T00:00:00", content: "Your unwavering faith in our relationship gives me so much confidence for our future." },
-  { id: "66", dayNumber: 66, unlockDate: "2026-12-19T00:00:00", content: "I admire your independence, your drive, and how capable you are." },
-  { id: "67", dayNumber: 67, unlockDate: "2026-12-20T00:00:00", content: "Planning our future together is something I look forward to every single day." },
-  { id: "68", dayNumber: 68, unlockDate: "2026-12-21T00:00:00", content: "Watching you sleep peacefully is one of the most comforting, heartwarming sights." },
-  { id: "69", dayNumber: 69, unlockDate: "2026-12-22T00:00:00", content: "The compliments you give me always feel so sincere and from the heart." },
-  { id: "70", dayNumber: 70, unlockDate: "2026-12-23T00:00:00", content: "You notice and appreciate the tiny little details that others usually overlook." },
-  { id: "71", dayNumber: 71, unlockDate: "2026-12-24T00:00:00", content: "The holidays are so much brighter, warmer, and more meaningful with you in them." },
-  { id: "72", dayNumber: 72, unlockDate: "2026-12-25T00:00:00", content: "You are truly the greatest gift I could ever ask for, today and every day." },
-  { id: "73", dayNumber: 73, unlockDate: "2026-12-26T00:00:00", content: "Loving you has never felt like work; it is the easiest and most natural thing in the world." },
-  { id: "74", dayNumber: 74, unlockDate: "2026-12-27T00:00:00", content: "Being wrapped in your arms is my favorite safe haven from the world." },
-  { id: "75", dayNumber: 75, unlockDate: "2026-12-28T00:00:00", content: "Hearing your voice when I replay your audio messages melts my heart every time." },
-  { id: "76", dayNumber: 76, unlockDate: "2026-12-29T00:00:00", content: "I love when you step into your power and own how amazing you truly are." },
-  { id: "77", dayNumber: 77, unlockDate: "2026-12-30T00:00:00", content: "Looking back at everything we've shared makes me so excited for all our tomorrows." },
-  { id: "78", dayNumber: 78, unlockDate: "2026-12-31T00:00:00", content: "There is nobody else I'd rather close out this year and welcome the new year with." },
-  { id: "79", dayNumber: 79, unlockDate: "2027-01-01T00:00:00", content: "A new year means more days of loving you, and I can't wait for every single one." },
-  { id: "80", dayNumber: 80, unlockDate: "2027-01-02T00:00:00", content: "You keep my heart warm even on the coldest winter days." },
-  { id: "81", dayNumber: 81, unlockDate: "2027-01-03T00:00:00", content: "Everything you do inspires me to work harder and dream bigger." },
-  { id: "82", dayNumber: 82, unlockDate: "2027-01-04T00:00:00", content: "Starting my day knowing you're thinking of me makes all the difference." },
-  { id: "83", dayNumber: 83, unlockDate: "2027-01-05T00:00:00", content: "I love your taste in food, music, and—most importantly—your choice in partners!" },
-  { id: "84", dayNumber: 84, unlockDate: "2027-01-06T00:00:00", content: "With you, I never have to pretend. I can be completely goofy and free." },
-  { id: "85", dayNumber: 85, unlockDate: "2027-01-07T00:00:00", content: "Your heart is genuinely one of the purest and most beautiful things I've ever known." },
-  { id: "86", dayNumber: 86, unlockDate: "2027-01-08T00:00:00", content: "Even when things get overwhelming, you keep your grace and composure." },
-  { id: "87", dayNumber: 87, unlockDate: "2027-01-09T00:00:00", content: "Your words of encouragement always arrive right when I need them most." },
-  { id: "88", dayNumber: 88, unlockDate: "2027-01-10T00:00:00", content: "I love diving into deep, meaningful talks about life, dreams, and everything in between." },
-  { id: "89", dayNumber: 89, unlockDate: "2027-01-11T00:00:00", content: "You literally glow from the inside out when you're happy." },
-  { id: "90", dayNumber: 90, unlockDate: "2027-01-12T00:00:00", content: "We are almost at the end of our reasons, but my love for you is only just beginning." },
-  { id: "91", dayNumber: 91, unlockDate: "2027-01-13T00:00:00", content: "Falling asleep knowing you love me is the best peace of mind." },
-  { id: "92", dayNumber: 92, unlockDate: "2027-01-14T00:00:00", content: "The effort you put into showing you care never goes unnoticed by me." },
-  { id: "93", dayNumber: 93, unlockDate: "2027-01-15T00:00:00", content: "I love watching how your brilliant and creative thoughts turn into reality." },
-  { id: "94", dayNumber: 94, unlockDate: "2027-01-16T00:00:00", content: "Even the way you walk across a room captures my attention instantly." },
-  { id: "95", dayNumber: 95, unlockDate: "2027-01-17T00:00:00", content: "Thank you for always standing in my corner through thick and thin." },
-  { id: "96", dayNumber: 96, unlockDate: "2027-01-18T00:00:00", content: "Every single memory we've built together is a treasure I hold close to my heart." },
-  { id: "97", dayNumber: 97, unlockDate: "2027-01-19T00:00:00", content: "Your happiness is contagious; when you're happy, I can't help but beam too." },
-  { id: "98", dayNumber: 98, unlockDate: "2027-01-20T00:00:00", content: "Out of everyone in this world, you are my absolute favorite person." },
-  { id: "99", dayNumber: 99, unlockDate: "2027-01-21T00:00:00", content: "Ninety-nine reasons down, and yet words still feel too short to express how much I love you." },
-  { id: "100", dayNumber: 100, unlockDate: "2027-01-22T00:00:00", content: "Reason number 100: I love you simply because you are you. Perfectly, wonderfully, entirely you, today and forever." },
-  { id: "101", dayNumber: 101, unlockDate: "2027-01-23T00:00:00", content: "Type your reason here..." },
-  { id: "102", dayNumber: 102, unlockDate: "2027-01-24T00:00:00", content: "Type your reason here..." },
-  { id: "103", dayNumber: 103, unlockDate: "2027-01-25T00:00:00", content: "Type your reason here..." },
-  { id: "104", dayNumber: 104, unlockDate: "2027-01-26T00:00:00", content: "Type your reason here..." },
-  { id: "105", dayNumber: 105, unlockDate: "2027-01-27T00:00:00", content: "Type your reason here..." },
-  { id: "106", dayNumber: 106, unlockDate: "2027-01-28T00:00:00", content: "Type your reason here..." },
-  { id: "107", dayNumber: 107, unlockDate: "2027-01-29T00:00:00", content: "Type your reason here..." },
-  { id: "108", dayNumber: 108, unlockDate: "2027-01-30T00:00:00", content: "Type your reason here..." },
-  { id: "109", dayNumber: 109, unlockDate: "2027-01-31T00:00:00", content: "Type your reason here..." },
-  { id: "110", dayNumber: 110, unlockDate: "2027-02-01T00:00:00", content: "Type your reason here..." },
-  { id: "111", dayNumber: 111, unlockDate: "2027-02-02T00:00:00", content: "Type your reason here..." },
-  { id: "112", dayNumber: 112, unlockDate: "2027-02-03T00:00:00", content: "Type your reason here..." },
-  { id: "113", dayNumber: 113, unlockDate: "2027-02-04T00:00:00", content: "Type your reason here..." },
-  { id: "114", dayNumber: 114, unlockDate: "2027-02-05T00:00:00", content: "Type your reason here..." },
-  { id: "115", dayNumber: 115, unlockDate: "2027-02-06T00:00:00", content: "Type your reason here..." },
-  { id: "116", dayNumber: 116, unlockDate: "2027-02-07T00:00:00", content: "Type your reason here..." },
-  { id: "117", dayNumber: 117, unlockDate: "2027-02-08T00:00:00", content: "Type your reason here..." },
-  { id: "118", dayNumber: 118, unlockDate: "2027-02-09T00:00:00", content: "Type your reason here..." },
-  { id: "119", dayNumber: 119, unlockDate: "2027-02-10T00:00:00", content: "Type your reason here..." },
-  { id: "120", dayNumber: 120, unlockDate: "2027-02-11T00:00:00", content: "Type your reason here..." },
-  { id: "121", dayNumber: 121, unlockDate: "2027-02-12T00:00:00", content: "Type your reason here..." },
-  { id: "122", dayNumber: 122, unlockDate: "2027-02-13T00:00:00", content: "Type your reason here..." },
-  { id: "123", dayNumber: 123, unlockDate: "2027-02-14T00:00:00", content: "Type your reason here..." },
-  { id: "124", dayNumber: 124, unlockDate: "2027-02-15T00:00:00", content: "Type your reason here..." },
-  { id: "125", dayNumber: 125, unlockDate: "2027-02-16T00:00:00", content: "Type your reason here..." },
-  { id: "126", dayNumber: 126, unlockDate: "2027-02-17T00:00:00", content: "Type your reason here..." },
-  { id: "127", dayNumber: 127, unlockDate: "2027-02-18T00:00:00", content: "Type your reason here..." },
-  { id: "128", dayNumber: 128, unlockDate: "2027-02-19T00:00:00", content: "Type your reason here..." },
-  { id: "129", dayNumber: 129, unlockDate: "2027-02-20T00:00:00", content: "Type your reason here..." },
-  { id: "130", dayNumber: 130, unlockDate: "2027-02-21T00:00:00", content: "Type your reason here..." },
-  { id: "131", dayNumber: 131, unlockDate: "2027-02-22T00:00:00", content: "Type your reason here..." },
-  { id: "132", dayNumber: 132, unlockDate: "2027-02-23T00:00:00", content: "Type your reason here..." },
-  { id: "133", dayNumber: 133, unlockDate: "2027-02-24T00:00:00", content: "Type your reason here..." },
-  { id: "134", dayNumber: 134, unlockDate: "2027-02-25T00:00:00", content: "Type your reason here..." },
-  { id: "135", dayNumber: 135, unlockDate: "2027-02-26T00:00:00", content: "Type your reason here..." },
-  { id: "136", dayNumber: 136, unlockDate: "2027-02-27T00:00:00", content: "Type your reason here..." },
-  { id: "137", dayNumber: 137, unlockDate: "2027-02-28T00:00:00", content: "Type your reason here..." },
-  { id: "138", dayNumber: 138, unlockDate: "2027-03-01T00:00:00", content: "Type your reason here..." },
-  { id: "139", dayNumber: 139, unlockDate: "2027-03-02T00:00:00", content: "Type your reason here..." },
-  { id: "140", dayNumber: 140, unlockDate: "2027-03-03T00:00:00", content: "Type your reason here..." },
-  { id: "141", dayNumber: 141, unlockDate: "2027-03-04T00:00:00", content: "Type your reason here..." },
-  { id: "142", dayNumber: 142, unlockDate: "2027-03-05T00:00:00", content: "Type your reason here..." },
-  { id: "143", dayNumber: 143, unlockDate: "2027-03-06T00:00:00", content: "Type your reason here..." },
-  { id: "144", dayNumber: 144, unlockDate: "2027-03-07T00:00:00", content: "Type your reason here..." },
-  { id: "145", dayNumber: 145, unlockDate: "2027-03-08T00:00:00", content: "Type your reason here..." },
-  { id: "146", dayNumber: 146, unlockDate: "2027-03-09T00:00:00", content: "Type your reason here..." },
-  { id: "147", dayNumber: 147, unlockDate: "2027-03-10T00:00:00", content: "Type your reason here..." },
-  { id: "148", dayNumber: 148, unlockDate: "2027-03-11T00:00:00", content: "Type your reason here..." },
-  { id: "149", dayNumber: 149, unlockDate: "2027-03-12T00:00:00", content: "Type your reason here..." },
-  { id: "150", dayNumber: 150, unlockDate: "2027-03-13T00:00:00", content: "Type your reason here..." },
-  { id: "151", dayNumber: 151, unlockDate: "2027-03-14T00:00:00", content: "Type your reason here..." },
-  { id: "152", dayNumber: 152, unlockDate: "2027-03-15T00:00:00", content: "Type your reason here..." },
-  { id: "153", dayNumber: 153, unlockDate: "2027-03-16T00:00:00", content: "Type your reason here..." },
-  { id: "154", dayNumber: 154, unlockDate: "2027-03-17T00:00:00", content: "Type your reason here..." },
-  { id: "155", dayNumber: 155, unlockDate: "2027-03-18T00:00:00", content: "Type your reason here..." },
-  { id: "156", dayNumber: 156, unlockDate: "2027-03-19T00:00:00", content: "Type your reason here..." },
-  { id: "157", dayNumber: 157, unlockDate: "2027-03-20T00:00:00", content: "Type your reason here..." },
-  { id: "158", dayNumber: 158, unlockDate: "2027-03-21T00:00:00", content: "Type your reason here..." },
-  { id: "159", dayNumber: 159, unlockDate: "2027-03-22T00:00:00", content: "Type your reason here..." },
-  { id: "160", dayNumber: 160, unlockDate: "2027-03-23T00:00:00", content: "Type your reason here..." },
-  { id: "161", dayNumber: 161, unlockDate: "2027-03-24T00:00:00", content: "Type your reason here..." },
-  { id: "162", dayNumber: 162, unlockDate: "2027-03-25T00:00:00", content: "Type your reason here..." },
-  { id: "163", dayNumber: 163, unlockDate: "2027-03-26T00:00:00", content: "Type your reason here..." },
-  { id: "164", dayNumber: 164, unlockDate: "2027-03-27T00:00:00", content: "Type your reason here..." },
-  { id: "165", dayNumber: 165, unlockDate: "2027-03-28T00:00:00", content: "Type your reason here..." },
-  { id: "166", dayNumber: 166, unlockDate: "2027-03-29T00:00:00", content: "Type your reason here..." },
-  { id: "167", dayNumber: 167, unlockDate: "2027-03-30T00:00:00", content: "Type your reason here..." },
-  { id: "168", dayNumber: 168, unlockDate: "2027-03-31T00:00:00", content: "Type your reason here..." },
-  { id: "169", dayNumber: 169, unlockDate: "2027-04-01T00:00:00", content: "Type your reason here..." },
-  { id: "170", dayNumber: 170, unlockDate: "2027-04-02T00:00:00", content: "Type your reason here..." },
-  { id: "171", dayNumber: 171, unlockDate: "2027-04-03T00:00:00", content: "Type your reason here..." },
-  { id: "172", dayNumber: 172, unlockDate: "2027-04-04T00:00:00", content: "Type your reason here..." },
-  { id: "173", dayNumber: 173, unlockDate: "2027-04-05T00:00:00", content: "Type your reason here..." },
-  { id: "174", dayNumber: 174, unlockDate: "2027-04-06T00:00:00", content: "Type your reason here..." },
-  { id: "175", dayNumber: 175, unlockDate: "2027-04-07T00:00:00", content: "Type your reason here..." },
-  { id: "176", dayNumber: 176, unlockDate: "2027-04-08T00:00:00", content: "Type your reason here..." },
-  { id: "177", dayNumber: 177, unlockDate: "2027-04-09T00:00:00", content: "Type your reason here..." },
-  { id: "178", dayNumber: 178, unlockDate: "2027-04-10T00:00:00", content: "Type your reason here..." },
-  { id: "179", dayNumber: 179, unlockDate: "2027-04-11T00:00:00", content: "Type your reason here..." },
-  { id: "180", dayNumber: 180, unlockDate: "2027-04-12T00:00:00", content: "Type your reason here..." },
-  { id: "181", dayNumber: 181, unlockDate: "2027-04-13T00:00:00", content: "Type your reason here..." },
-  { id: "182", dayNumber: 182, unlockDate: "2027-04-14T00:00:00", content: "Type your reason here..." },
-  { id: "183", dayNumber: 183, unlockDate: "2027-04-15T00:00:00", content: "Type your reason here..." },
-  { id: "184", dayNumber: 184, unlockDate: "2027-04-16T00:00:00", content: "Type your reason here..." },
-  { id: "185", dayNumber: 185, unlockDate: "2027-04-17T00:00:00", content: "Type your reason here..." },
-  { id: "186", dayNumber: 186, unlockDate: "2027-04-18T00:00:00", content: "Type your reason here..." },
-  { id: "187", dayNumber: 187, unlockDate: "2027-04-19T00:00:00", content: "Type your reason here..." },
-  { id: "188", dayNumber: 188, unlockDate: "2027-04-20T00:00:00", content: "Type your reason here..." },
-  { id: "189", dayNumber: 189, unlockDate: "2027-04-21T00:00:00", content: "Type your reason here..." },
-  { id: "190", dayNumber: 190, unlockDate: "2027-04-22T00:00:00", content: "Type your reason here..." },
-  { id: "191", dayNumber: 191, unlockDate: "2027-04-23T00:00:00", content: "Type your reason here..." },
-  { id: "192", dayNumber: 192, unlockDate: "2027-04-24T00:00:00", content: "Type your reason here..." },
-  { id: "193", dayNumber: 193, unlockDate: "2027-04-25T00:00:00", content: "Type your reason here..." },
-  { id: "194", dayNumber: 194, unlockDate: "2027-04-26T00:00:00", content: "Type your reason here..." },
-  { id: "195", dayNumber: 195, unlockDate: "2027-04-27T00:00:00", content: "Type your reason here..." },
-  { id: "196", dayNumber: 196, unlockDate: "2027-04-28T00:00:00", content: "Type your reason here..." },
-  { id: "197", dayNumber: 197, unlockDate: "2027-04-29T00:00:00", content: "Type your reason here..." },
-  { id: "198", dayNumber: 198, unlockDate: "2027-04-30T00:00:00", content: "Type your reason here..." },
-  { id: "199", dayNumber: 199, unlockDate: "2027-05-01T00:00:00", content: "Type your reason here..." },
-  { id: "200", dayNumber: 200, unlockDate: "2027-05-02T00:00:00", content: "Type your reason here..." },
-  { id: "201", dayNumber: 201, unlockDate: "2027-05-03T00:00:00", content: "Type your reason here..." },
-  { id: "202", dayNumber: 202, unlockDate: "2027-05-04T00:00:00", content: "Type your reason here..." },
-  { id: "203", dayNumber: 203, unlockDate: "2027-05-05T00:00:00", content: "Type your reason here..." },
-  { id: "204", dayNumber: 204, unlockDate: "2027-05-06T00:00:00", content: "Type your reason here..." },
-  { id: "205", dayNumber: 205, unlockDate: "2027-05-07T00:00:00", content: "Type your reason here..." },
-  { id: "206", dayNumber: 206, unlockDate: "2027-05-08T00:00:00", content: "Type your reason here..." },
-  { id: "207", dayNumber: 207, unlockDate: "2027-05-09T00:00:00", content: "Type your reason here..." },
-  { id: "208", dayNumber: 208, unlockDate: "2027-05-10T00:00:00", content: "Type your reason here..." },
-  { id: "209", dayNumber: 209, unlockDate: "2027-05-11T00:00:00", content: "Type your reason here..." },
-  { id: "210", dayNumber: 210, unlockDate: "2027-05-12T00:00:00", content: "Type your reason here..." },
-  { id: "211", dayNumber: 211, unlockDate: "2027-05-13T00:00:00", content: "Type your reason here..." },
-  { id: "212", dayNumber: 212, unlockDate: "2027-05-14T00:00:00", content: "Type your reason here..." },
-  { id: "213", dayNumber: 213, unlockDate: "2027-05-15T00:00:00", content: "Type your reason here..." },
-  { id: "214", dayNumber: 214, unlockDate: "2027-05-16T00:00:00", content: "Type your reason here..." },
-  { id: "215", dayNumber: 215, unlockDate: "2027-05-17T00:00:00", content: "Type your reason here..." },
-  { id: "216", dayNumber: 216, unlockDate: "2027-05-18T00:00:00", content: "Type your reason here..." },
-  { id: "217", dayNumber: 217, unlockDate: "2027-05-19T00:00:00", content: "Type your reason here..." },
-  { id: "218", dayNumber: 218, unlockDate: "2027-05-20T00:00:00", content: "Type your reason here..." },
-  { id: "219", dayNumber: 219, unlockDate: "2027-05-21T00:00:00", content: "Type your reason here..." },
-  { id: "220", dayNumber: 220, unlockDate: "2027-05-22T00:00:00", content: "Type your reason here..." },
-  { id: "221", dayNumber: 221, unlockDate: "2027-05-23T00:00:00", content: "Type your reason here..." },
-  { id: "222", dayNumber: 222, unlockDate: "2027-05-24T00:00:00", content: "Type your reason here..." },
-  { id: "223", dayNumber: 223, unlockDate: "2027-05-25T00:00:00", content: "Type your reason here..." },
-  { id: "224", dayNumber: 224, unlockDate: "2027-05-26T00:00:00", content: "Type your reason here..." },
-  { id: "225", dayNumber: 225, unlockDate: "2027-05-27T00:00:00", content: "Type your reason here..." },
-  { id: "226", dayNumber: 226, unlockDate: "2027-05-28T00:00:00", content: "Type your reason here..." },
-  { id: "227", dayNumber: 227, unlockDate: "2027-05-29T00:00:00", content: "Type your reason here..." },
-  { id: "228", dayNumber: 228, unlockDate: "2027-05-30T00:00:00", content: "Type your reason here..." },
-  { id: "229", dayNumber: 229, unlockDate: "2027-05-31T00:00:00", content: "Type your reason here..." },
-  { id: "230", dayNumber: 230, unlockDate: "2027-06-01T00:00:00", content: "Type your reason here..." },
-  { id: "231", dayNumber: 231, unlockDate: "2027-06-02T00:00:00", content: "Type your reason here..." },
-  { id: "232", dayNumber: 232, unlockDate: "2027-06-03T00:00:00", content: "Type your reason here..." },
-  { id: "233", dayNumber: 233, unlockDate: "2027-06-04T00:00:00", content: "Type your reason here..." },
-  { id: "234", dayNumber: 234, unlockDate: "2027-06-05T00:00:00", content: "Type your reason here..." },
-  { id: "235", dayNumber: 235, unlockDate: "2027-06-06T00:00:00", content: "Type your reason here..." },
-  { id: "236", dayNumber: 236, unlockDate: "2027-06-07T00:00:00", content: "Type your reason here..." },
-  { id: "237", dayNumber: 237, unlockDate: "2027-06-08T00:00:00", content: "Type your reason here..." },
-  { id: "238", dayNumber: 238, unlockDate: "2027-06-09T00:00:00", content: "Type your reason here..." },
-  { id: "239", dayNumber: 239, unlockDate: "2027-06-10T00:00:00", content: "Type your reason here..." },
-  { id: "240", dayNumber: 240, unlockDate: "2027-06-11T00:00:00", content: "Type your reason here..." },
-  { id: "241", dayNumber: 241, unlockDate: "2027-06-12T00:00:00", content: "Type your reason here..." },
-  { id: "242", dayNumber: 242, unlockDate: "2027-06-13T00:00:00", content: "Type your reason here..." },
-  { id: "243", dayNumber: 243, unlockDate: "2027-06-14T00:00:00", content: "Type your reason here..." },
-  { id: "244", dayNumber: 244, unlockDate: "2027-06-15T00:00:00", content: "Type your reason here..." },
-  { id: "245", dayNumber: 245, unlockDate: "2027-06-16T00:00:00", content: "Type your reason here..." },
-  { id: "246", dayNumber: 246, unlockDate: "2027-06-17T00:00:00", content: "Type your reason here..." },
-  { id: "247", dayNumber: 247, unlockDate: "2027-06-18T00:00:00", content: "Type your reason here..." },
-  { id: "248", dayNumber: 248, unlockDate: "2027-06-19T00:00:00", content: "Type your reason here..." },
-  { id: "249", dayNumber: 249, unlockDate: "2027-06-20T00:00:00", content: "Type your reason here..." },
-  { id: "250", dayNumber: 250, unlockDate: "2027-06-21T00:00:00", content: "Type your reason here..." },
-  { id: "251", dayNumber: 251, unlockDate: "2027-06-22T00:00:00", content: "Type your reason here..." },
-  { id: "252", dayNumber: 252, unlockDate: "2027-06-23T00:00:00", content: "Type your reason here..." },
-  { id: "253", dayNumber: 253, unlockDate: "2027-06-24T00:00:00", content: "Type your reason here..." },
-  { id: "254", dayNumber: 254, unlockDate: "2027-06-25T00:00:00", content: "Type your reason here..." },
-  { id: "255", dayNumber: 255, unlockDate: "2027-06-26T00:00:00", content: "Type your reason here..." },
-  { id: "256", dayNumber: 256, unlockDate: "2027-06-27T00:00:00", content: "Type your reason here..." },
-  { id: "257", dayNumber: 257, unlockDate: "2027-06-28T00:00:00", content: "Type your reason here..." },
-  { id: "258", dayNumber: 258, unlockDate: "2027-06-29T00:00:00", content: "Type your reason here..." },
-  { id: "259", dayNumber: 259, unlockDate: "2027-06-30T00:00:00", content: "Type your reason here..." },
-  { id: "260", dayNumber: 260, unlockDate: "2027-07-01T00:00:00", content: "Type your reason here..." },
-  { id: "261", dayNumber: 261, unlockDate: "2027-07-02T00:00:00", content: "Type your reason here..." },
-  { id: "262", dayNumber: 262, unlockDate: "2027-07-03T00:00:00", content: "Type your reason here..." },
-  { id: "263", dayNumber: 263, unlockDate: "2027-07-04T00:00:00", content: "Type your reason here..." },
-  { id: "264", dayNumber: 264, unlockDate: "2027-07-05T00:00:00", content: "Type your reason here..." },
-  { id: "265", dayNumber: 265, unlockDate: "2027-07-06T00:00:00", content: "Type your reason here..." },
-  { id: "266", dayNumber: 266, unlockDate: "2027-07-07T00:00:00", content: "Type your reason here..." },
-  { id: "267", dayNumber: 267, unlockDate: "2027-07-08T00:00:00", content: "Type your reason here..." },
-  { id: "268", dayNumber: 268, unlockDate: "2027-07-09T00:00:00", content: "Type your reason here..." },
-  { id: "269", dayNumber: 269, unlockDate: "2027-07-10T00:00:00", content: "Type your reason here..." },
-  { id: "270", dayNumber: 270, unlockDate: "2027-07-11T00:00:00", content: "Type your reason here..." },
-  { id: "271", dayNumber: 271, unlockDate: "2027-07-12T00:00:00", content: "Type your reason here..." },
-  { id: "272", dayNumber: 272, unlockDate: "2027-07-13T00:00:00", content: "Type your reason here..." },
-  { id: "273", dayNumber: 273, unlockDate: "2027-07-14T00:00:00", content: "Type your reason here..." },
-  { id: "274", dayNumber: 274, unlockDate: "2027-07-15T00:00:00", content: "Type your reason here..." },
-  { id: "275", dayNumber: 275, unlockDate: "2027-07-16T00:00:00", content: "Type your reason here..." },
-  { id: "276", dayNumber: 276, unlockDate: "2027-07-17T00:00:00", content: "Type your reason here..." },
-  { id: "277", dayNumber: 277, unlockDate: "2027-07-18T00:00:00", content: "Type your reason here..." },
-  { id: "278", dayNumber: 278, unlockDate: "2027-07-19T00:00:00", content: "Type your reason here..." },
-  { id: "279", dayNumber: 279, unlockDate: "2027-07-20T00:00:00", content: "Type your reason here..." },
-  { id: "280", dayNumber: 280, unlockDate: "2027-07-21T00:00:00", content: "Type your reason here..." },
-  { id: "281", dayNumber: 281, unlockDate: "2027-07-22T00:00:00", content: "Type your reason here..." },
-  { id: "282", dayNumber: 282, unlockDate: "2027-07-23T00:00:00", content: "Type your reason here..." },
-  { id: "283", dayNumber: 283, unlockDate: "2027-07-24T00:00:00", content: "Type your reason here..." },
-  { id: "284", dayNumber: 284, unlockDate: "2027-07-25T00:00:00", content: "Type your reason here..." },
-  { id: "285", dayNumber: 285, unlockDate: "2027-07-26T00:00:00", content: "Type your reason here..." },
-  { id: "286", dayNumber: 286, unlockDate: "2027-07-27T00:00:00", content: "Type your reason here..." },
-  { id: "287", dayNumber: 287, unlockDate: "2027-07-28T00:00:00", content: "Type your reason here..." },
-  { id: "288", dayNumber: 288, unlockDate: "2027-07-29T00:00:00", content: "Type your reason here..." },
-  { id: "289", dayNumber: 289, unlockDate: "2027-07-30T00:00:00", content: "Type your reason here..." },
-  { id: "290", dayNumber: 290, unlockDate: "2027-07-31T00:00:00", content: "Type your reason here..." },
-  { id: "291", dayNumber: 291, unlockDate: "2027-08-01T00:00:00", content: "Type your reason here..." },
-  { id: "292", dayNumber: 292, unlockDate: "2027-08-02T00:00:00", content: "Type your reason here..." },
-  { id: "293", dayNumber: 293, unlockDate: "2027-08-03T00:00:00", content: "Type your reason here..." },
-  { id: "294", dayNumber: 294, unlockDate: "2027-08-04T00:00:00", content: "Type your reason here..." },
-  { id: "295", dayNumber: 295, unlockDate: "2027-08-05T00:00:00", content: "Type your reason here..." },
-  { id: "296", dayNumber: 296, unlockDate: "2027-08-06T00:00:00", content: "Type your reason here..." },
-  { id: "297", dayNumber: 297, unlockDate: "2027-08-07T00:00:00", content: "Type your reason here..." },
-  { id: "298", dayNumber: 298, unlockDate: "2027-08-08T00:00:00", content: "Type your reason here..." },
-  { id: "299", dayNumber: 299, unlockDate: "2027-08-09T00:00:00", content: "Type your reason here..." },
-  { id: "300", dayNumber: 300, unlockDate: "2027-08-10T00:00:00", content: "Type your reason here..." },
-  { id: "301", dayNumber: 301, unlockDate: "2027-08-11T00:00:00", content: "Type your reason here..." },
-  { id: "302", dayNumber: 302, unlockDate: "2027-08-12T00:00:00", content: "Type your reason here..." },
-  { id: "303", dayNumber: 303, unlockDate: "2027-08-13T00:00:00", content: "Type your reason here..." },
-  { id: "304", dayNumber: 304, unlockDate: "2027-08-14T00:00:00", content: "Type your reason here..." },
-  { id: "305", dayNumber: 305, unlockDate: "2027-08-15T00:00:00", content: "Type your reason here..." },
-  { id: "306", dayNumber: 306, unlockDate: "2027-08-16T00:00:00", content: "Type your reason here..." },
-  { id: "307", dayNumber: 307, unlockDate: "2027-08-17T00:00:00", content: "Type your reason here..." },
-  { id: "308", dayNumber: 308, unlockDate: "2027-08-18T00:00:00", content: "Type your reason here..." },
-  { id: "309", dayNumber: 309, unlockDate: "2027-08-19T00:00:00", content: "Type your reason here..." },
-  { id: "310", dayNumber: 310, unlockDate: "2027-08-20T00:00:00", content: "Type your reason here..." },
-  { id: "311", dayNumber: 311, unlockDate: "2027-08-21T00:00:00", content: "Type your reason here..." },
-  { id: "312", dayNumber: 312, unlockDate: "2027-08-22T00:00:00", content: "Type your reason here..." },
-  { id: "313", dayNumber: 313, unlockDate: "2027-08-23T00:00:00", content: "Type your reason here..." },
-  { id: "314", dayNumber: 314, unlockDate: "2027-08-24T00:00:00", content: "Type your reason here..." },
-  { id: "315", dayNumber: 315, unlockDate: "2027-08-25T00:00:00", content: "Type your reason here..." },
-  { id: "316", dayNumber: 316, unlockDate: "2027-08-26T00:00:00", content: "Type your reason here..." },
-  { id: "317", dayNumber: 317, unlockDate: "2027-08-27T00:00:00", content: "Type your reason here..." },
-  { id: "318", dayNumber: 318, unlockDate: "2027-08-28T00:00:00", content: "Type your reason here..." },
-  { id: "319", dayNumber: 319, unlockDate: "2027-08-29T00:00:00", content: "Type your reason here..." },
-  { id: "320", dayNumber: 320, unlockDate: "2027-08-30T00:00:00", content: "Type your reason here..." },
-  { id: "321", dayNumber: 321, unlockDate: "2027-08-31T00:00:00", content: "Type your reason here..." },
-  { id: "322", dayNumber: 322, unlockDate: "2027-09-01T00:00:00", content: "Type your reason here..." },
-  { id: "323", dayNumber: 323, unlockDate: "2027-09-02T00:00:00", content: "Type your reason here..." },
-  { id: "324", dayNumber: 324, unlockDate: "2027-09-03T00:00:00", content: "Type your reason here..." },
-  { id: "325", dayNumber: 325, unlockDate: "2027-09-04T00:00:00", content: "Type your reason here..." },
-  { id: "326", dayNumber: 326, unlockDate: "2027-09-05T00:00:00", content: "Type your reason here..." },
-  { id: "327", dayNumber: 327, unlockDate: "2027-09-06T00:00:00", content: "Type your reason here..." },
-  { id: "328", dayNumber: 328, unlockDate: "2027-09-07T00:00:00", content: "Type your reason here..." },
-  { id: "329", dayNumber: 329, unlockDate: "2027-09-08T00:00:00", content: "Type your reason here..." },
-  { id: "330", dayNumber: 330, unlockDate: "2027-09-09T00:00:00", content: "Type your reason here..." },
-  { id: "331", dayNumber: 331, unlockDate: "2027-09-10T00:00:00", content: "Type your reason here..." },
-  { id: "332", dayNumber: 332, unlockDate: "2027-09-11T00:00:00", content: "Type your reason here..." },
-  { id: "333", dayNumber: 333, unlockDate: "2027-09-12T00:00:00", content: "Type your reason here..." },
-  { id: "334", dayNumber: 334, unlockDate: "2027-09-13T00:00:00", content: "Type your reason here..." },
-  { id: "335", dayNumber: 335, unlockDate: "2027-09-14T00:00:00", content: "Type your reason here..." },
-  { id: "336", dayNumber: 336, unlockDate: "2027-09-15T00:00:00", content: "Type your reason here..." },
-  { id: "337", dayNumber: 337, unlockDate: "2027-09-16T00:00:00", content: "Type your reason here..." },
-  { id: "338", dayNumber: 338, unlockDate: "2027-09-17T00:00:00", content: "Type your reason here..." },
-  { id: "339", dayNumber: 339, unlockDate: "2027-09-18T00:00:00", content: "Type your reason here..." },
-  { id: "340", dayNumber: 340, unlockDate: "2027-09-19T00:00:00", content: "Type your reason here..." },
-  { id: "341", dayNumber: 341, unlockDate: "2027-09-20T00:00:00", content: "Type your reason here..." },
-  { id: "342", dayNumber: 342, unlockDate: "2027-09-21T00:00:00", content: "Type your reason here..." },
-  { id: "343", dayNumber: 343, unlockDate: "2027-09-22T00:00:00", content: "Type your reason here..." },
-  { id: "344", dayNumber: 344, unlockDate: "2027-09-23T00:00:00", content: "Type your reason here..." },
-  { id: "345", dayNumber: 345, unlockDate: "2027-09-24T00:00:00", content: "Type your reason here..." },
-  { id: "346", dayNumber: 346, unlockDate: "2027-09-25T00:00:00", content: "Type your reason here..." },
-  { id: "347", dayNumber: 347, unlockDate: "2027-09-26T00:00:00", content: "Type your reason here..." },
-  { id: "348", dayNumber: 348, unlockDate: "2027-09-27T00:00:00", content: "Type your reason here..." },
-  { id: "349", dayNumber: 349, unlockDate: "2027-09-28T00:00:00", content: "Type your reason here..." },
-  { id: "350", dayNumber: 350, unlockDate: "2027-09-29T00:00:00", content: "Type your reason here..." },
-  { id: "351", dayNumber: 351, unlockDate: "2027-09-30T00:00:00", content: "Type your reason here..." },
-  { id: "352", dayNumber: 352, unlockDate: "2027-10-01T00:00:00", content: "Type your reason here..." },
-  { id: "353", dayNumber: 353, unlockDate: "2027-10-02T00:00:00", content: "Type your reason here..." },
-  { id: "354", dayNumber: 354, unlockDate: "2027-10-03T00:00:00", content: "Type your reason here..." },
-  { id: "355", dayNumber: 355, unlockDate: "2027-10-04T00:00:00", content: "Type your reason here..." },
-  { id: "356", dayNumber: 356, unlockDate: "2027-10-05T00:00:00", content: "Type your reason here..." },
-  { id: "357", dayNumber: 357, unlockDate: "2027-10-06T00:00:00", content: "Type your reason here..." },
-  { id: "358", dayNumber: 358, unlockDate: "2027-10-07T00:00:00", content: "Type your reason here..." },
-  { id: "359", dayNumber: 359, unlockDate: "2027-10-08T00:00:00", content: "Type your reason here..." },
-  { id: "360", dayNumber: 360, unlockDate: "2027-10-09T00:00:00", content: "Type your reason here..." },
-  { id: "361", dayNumber: 361, unlockDate: "2027-10-10T00:00:00", content: "Type your reason here..." },
-  { id: "362", dayNumber: 362, unlockDate: "2027-10-11T00:00:00", content: "Type your reason here..." },
-  { id: "363", dayNumber: 363, unlockDate: "2027-10-12T00:00:00", content: "Type your reason here..." },
-  { id: "364", dayNumber: 364, unlockDate: "2027-10-13T00:00:00", content: "Type your reason here..." },
-  { id: "365", dayNumber: 365, unlockDate: "2027-10-14T00:00:00", content: "Type your reason here..." }
-];
+import type { DailyReason } from "@/lib/letters/types";
 
 function getNextUnlockCountdown(reasons: DailyReason[], now: number) {
   const futureReasons = reasons
@@ -420,15 +38,42 @@ function getNoteCountdown(targetDate: string, now: number) {
 
 export default function DailyReasons() {
   const [now, setNow] = useState<number>(0);
-  const [mounted, setMounted] = useState(false);
+  const [dailyReasons, setDailyReasons] = useState<DailyReason[]>([]);
+  const [loadFailed, setLoadFailed] = useState(false);
   const [isArchiveOpen, setIsArchiveOpen] = useState(false);
   const [openNote, setOpenNote] = useState<DailyReason | null>(null);
 
   useEffect(() => {
-    setMounted(true);
-    setNow(Date.now());
-    const interval = setInterval(() => setNow(Date.now()), 1000);
-    return () => clearInterval(interval);
+    const initial = setTimeout(() => setNow(Date.now()), 0);
+    const timer = setInterval(() => setNow(Date.now()), 1000);
+    return () => { clearTimeout(initial); clearInterval(timer); };
+  }, []);
+
+  useEffect(() => {
+    const controller = new AbortController();
+    let loading = false;
+    async function refresh() {
+      if (loading) return;
+      loading = true;
+      try {
+        const response = await fetch("/api/daily-letters", { signal: controller.signal });
+        if (!response.ok) throw new Error("Letters unavailable");
+        const letters: DailyReason[] = await response.json();
+        if (!controller.signal.aborted) { setDailyReasons(letters); setLoadFailed(false); }
+      } catch {
+        if (!controller.signal.aborted) setLoadFailed(true);
+      } finally {
+        loading = false;
+      }
+    }
+    void refresh();
+    const interval = setInterval(refresh, 30_000);
+    window.addEventListener("focus", refresh);
+    return () => {
+      controller.abort();
+      clearInterval(interval);
+      window.removeEventListener("focus", refresh);
+    };
   }, []);
 
   useEffect(() => {
@@ -440,10 +85,10 @@ export default function DailyReasons() {
     return () => { document.body.style.overflow = "auto"; };
   }, [isArchiveOpen, openNote]);
 
-  const isUnlocked = (dateStr: string) => mounted && new Date(dateStr).getTime() <= now;
-  const nextUnlock = mounted ? getNextUnlockCountdown(dailyReasons, now) : null;
+  const isUnlocked = (dateStr: string) => new Date(dateStr).getTime() <= now;
+  const nextUnlock = now ? getNextUnlockCountdown(dailyReasons, now) : null;
   const unlockedReasons = dailyReasons.filter((reason) => isUnlocked(reason.unlockDate));
-  const latestReason = unlockedReasons.at(-1);
+  const latestReason = unlockedReasons.findLast((reason) => Boolean(reason.content.trim()));
   const unlockedCount = unlockedReasons.length;
   const totalCount = dailyReasons.length;
 
@@ -486,7 +131,7 @@ export default function DailyReasons() {
             </h2>
             
             <p className="text-base sm:text-lg leading-relaxed text-[#906579] font-serif mb-7 max-w-sm">
-              {totalCount} reasons why I fell in love with you, sealed away and unlocking one by one.
+              {loadFailed && !totalCount ? "Letters unavailable. Trying again shortly." : "Little reasons why I fell in love with you, unlocking one by one."}
             </p>
 
             {/* Next Unlock Countdown */}
@@ -516,6 +161,7 @@ export default function DailyReasons() {
             )}
             <button
               type="button"
+              disabled={!totalCount}
               onClick={() => setIsArchiveOpen(true)}
               className="w-full sm:w-auto rounded-full border border-rose-200 bg-white/70 px-6 py-3 font-semibold text-sm text-[#a83c66] transition-colors hover:bg-rose-50 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#b53e6d]"
             >
@@ -523,7 +169,7 @@ export default function DailyReasons() {
             </button>
             <p className="mt-4 text-[11px] tracking-wide text-[#956076]">{unlockedCount} of {totalCount} little reasons unlocked</p>
             <div className="mt-2 h-1 w-44 rounded-full overflow-hidden bg-rose-100" aria-hidden="true">
-              <div className="h-full rounded-full bg-[#d887a6]" style={{ width: `${unlockedCount / totalCount * 100}%` }} />
+              <div className="h-full rounded-full bg-[#d887a6]" style={{ width: `${unlockedCount / (totalCount || 1) * 100}%` }} />
             </div>
           </div>
         </div>
@@ -562,7 +208,7 @@ export default function DailyReasons() {
                   </span>
                 </div>
                 <div className="mt-3 h-1 w-32 overflow-hidden rounded-full bg-[#ffe3ee]" aria-hidden="true">
-                  <div className="h-full rounded-full bg-[#e66496]" style={{ width: `${totalCount ? unlockedCount / totalCount * 100 : 0}%` }} />
+                  <div className="h-full rounded-full bg-[#e66496]" style={{ width: `${totalCount ? unlockedCount / (totalCount || 1) * 100 : 0}%` }} />
                 </div>
               </div>
             </div>
@@ -576,22 +222,23 @@ export default function DailyReasons() {
               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-5">
                 {dailyReasons.map((reason) => {
                   const unlocked = isUnlocked(reason.unlockDate);
+                  const readable = unlocked && Boolean(reason.content.trim());
 
                   return (
                     <motion.button
                       key={reason.id}
                       type="button"
-                      disabled={!unlocked}
-                      aria-label={unlocked ? `Read day ${reason.dayNumber}` : `Day ${reason.dayNumber}, locked`}
-                      whileHover={unlocked ? { y: -4 } : {}}
-                      onClick={() => unlocked && setOpenNote(reason)}
+                      disabled={!readable}
+                      aria-label={readable ? `Read day ${reason.dayNumber}` : `Day ${reason.dayNumber}, ${unlocked ? "awaiting a note" : "locked"}`}
+                      whileHover={readable ? { y: -4 } : {}}
+                      onClick={() => readable && setOpenNote(reason)}
                       className={`group relative overflow-hidden p-4 rounded-2xl flex flex-col items-center justify-center text-center h-44 sm:h-48 transition-shadow duration-300 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-rose-400 ${
-                        unlocked
+                        readable
                           ? "bg-[#ffffff] border border-[#ffd6e8] shadow-[0_5px_16px_-8px_rgba(224,85,134,0.2)] cursor-pointer hover:border-[#e66496] hover:shadow-[0_12px_25px_-10px_rgba(224,85,134,0.25)]"
                           : "bg-[#fff5fa]/70 border border-[#ffe9f2] cursor-not-allowed"
                       }`}
                     >
-                      {unlocked ? (
+                      {readable ? (
                         <>
                           <span aria-hidden="true" className="absolute right-3 top-2 font-serif text-4xl italic text-[#ffe3ee]">{String(reason.dayNumber).padStart(2, "0")}</span>
                           <div className="relative w-11 h-11 rounded-full bg-[#fff0f5] border border-[#ffe9f2] flex items-center justify-center mb-3 shadow-[inset_0_2px_3px_rgba(255,255,255,0.9)]">
@@ -603,6 +250,8 @@ export default function DailyReasons() {
                           <span className="font-serif text-base text-[#4a2036]">A little love for you</span>
                           <span className="mt-3 text-[10px] text-[#b83f6c] group-hover:text-[#b83f6c]">Open your note ↗</span>
                         </>
+                      ) : unlocked ? (
+                        <span className="font-serif text-sm text-[#74334f]">A note is on its way</span>
                       ) : (
                         <>
                           <div className="w-12 h-12 rounded-full border border-[#ffe9f2] flex items-center justify-center mb-4 bg-transparent">
@@ -618,7 +267,7 @@ export default function DailyReasons() {
                               Unlocks In
                             </span>
                             <span className="font-mono text-[11px] font-semibold text-[#d6336c] tracking-tight">
-                              {mounted ? getNoteCountdown(reason.unlockDate, now) : "..."}
+                              {now ? getNoteCountdown(reason.unlockDate, now) : "..."}
                             </span>
                           </div>
                         </>
@@ -676,7 +325,7 @@ export default function DailyReasons() {
                   <div className="flex flex-col items-center">
                     <h2 className="font-serif text-[1.65rem] sm:text-4xl tracking-tight text-[#74334f] mb-3">One more reason <span className="italic">I love you.</span></h2>
                     <span className="font-serif italic text-[#956076] text-sm">
-                      {new Date(openNote.unlockDate).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
+                      {new Date(openNote.unlockDate).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric', timeZone: 'Africa/Cairo' })}
                     </span>
                   </div>
 
