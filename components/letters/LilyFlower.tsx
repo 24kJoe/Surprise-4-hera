@@ -3,7 +3,7 @@
 import { memo, useId } from "react";
 import styles from "./LilyFlower.module.css";
 
-function LilyFlower() {
+function LilyFlower({ still = false }: { still?: boolean }) {
   const id = useId();
 
   return (
@@ -19,7 +19,7 @@ function LilyFlower() {
           <stop offset="1" stopColor="#54745b" />
         </linearGradient>
       </defs>
-      <g className={styles.stem}>
+      <g className={still ? undefined : styles.stem}>
         <path d="M130 171 C119 218 146 263 122 329" stroke="#6e8c70" strokeWidth="4" strokeLinecap="round" />
         <path d="M132 276 C83 273 65 243 64 215 C102 222 130 243 132 276Z" fill={`url(#${id}-leaf)`} />
         <path d="M134 251 C173 245 192 213 190 189 C157 205 138 226 134 251Z" fill={`url(#${id}-leaf)`} />
@@ -28,7 +28,7 @@ function LilyFlower() {
       {[-120, -60, 0, 60, 120, 180].map((angle, index) => (
         <g key={angle} transform={`rotate(${angle} 130 151)`}>
           <g
-            className={styles.petal}
+            className={still ? undefined : styles.petal}
             style={{ animationDelay: `${index * 0.075}s` }}
           >
             <path d="M130 155 C93 130 91 83 130 27 C169 83 167 130 130 155Z" fill={`url(#${id}-petal)`} stroke="#eab7c9" strokeWidth="0.7" />

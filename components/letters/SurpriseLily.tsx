@@ -102,7 +102,7 @@ export default function SurpriseLily() {
             initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
             transition={{ duration: reduceMotion ? 0 : 0.35 }}
             onClick={close}
-            className="fixed inset-0 z-[154] bg-[#4a2036]/15 backdrop-blur-md"
+            className="fixed inset-0 z-[154] bg-[#4a2036]/15 md:backdrop-blur-md"
           />
         )}
         {(phase === "bloom" || phase === "aside") && (
@@ -138,11 +138,10 @@ export default function SurpriseLily() {
         {open && (
           <motion.div key="letter-position" className="pointer-events-none fixed inset-0 z-[155] flex items-center justify-center p-4" exit={{ opacity: 1 }}>
             <motion.div
-              layoutId={reduceMotion ? undefined : "lily-paper"}
               role="dialog" aria-modal="true" aria-labelledby="lily-letter-title"
-              initial={{ opacity: 0, y: 30, scale: 0.92 }}
+              initial={{ opacity: 0, y: 6, scale: 1 }}
               animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0 }}
-              transition={transition} style={{ borderRadius: 28 }}
+              transition={{ ...transition, duration: reduceMotion ? 0 : 0.18 }} style={{ borderRadius: 28 }}
               onKeyDown={(event) => {
                 if (event.key === "Escape") close();
                 if (event.key === "Tab") { event.preventDefault(); closeRef.current?.focus(); }
@@ -153,7 +152,7 @@ export default function SurpriseLily() {
                   <X aria-hidden="true" className="h-4 w-4" />
                 </button>
                 <motion.div layoutId="lily-flower" transition={transition} aria-hidden="true" className="pointer-events-none absolute -left-6 top-20 z-10 w-20 drop-shadow-[0_12px_20px_rgba(157,76,106,0.15)] sm:-left-24 sm:w-40">
-                  <LilyFlower />
+                  <LilyFlower still />
                 </motion.div>
                 <motion.div
                   aria-hidden="true"
@@ -162,7 +161,7 @@ export default function SurpriseLily() {
                   transition={{ ...transition, delay: reduceMotion ? 0 : 0.15 }}
                   className="pointer-events-none absolute -right-2 top-[40%] z-10 w-14 drop-shadow-[0_8px_16px_rgba(157,76,106,0.12)] sm:-right-16 sm:w-28"
                 >
-                  <LilyFlower />
+                  <LilyFlower still />
                 </motion.div>
                 <motion.div
                   aria-hidden="true"
@@ -171,7 +170,7 @@ export default function SurpriseLily() {
                   transition={{ ...transition, delay: reduceMotion ? 0 : 0.3 }}
                   className="pointer-events-none absolute -left-3 bottom-4 z-10 w-16 drop-shadow-[0_8px_16px_rgba(157,76,106,0.12)] sm:-left-16 sm:w-28"
                 >
-                  <LilyFlower />
+                  <LilyFlower still />
                 </motion.div>
               <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: reduceMotion ? 0 : 0.25 }} className={`${styles.letterScroll} max-h-[75dvh] overflow-y-auto rounded-[28px] px-16 pb-8 pt-16 text-center sm:px-20 sm:pb-12`}>
                 <div className="mb-5 flex justify-center"><Heart aria-hidden="true" className="h-6 w-6 fill-rose-100 text-rose-400" strokeWidth={1.3} /></div>
@@ -186,12 +185,11 @@ export default function SurpriseLily() {
         {phase === "closed" && (
           <motion.button
             key="circle" ref={circleRef} type="button"
-            layoutId={reduceMotion ? undefined : "lily-paper"}
             aria-label={isUnread ? "Open letter, new message" : "Open letter"}
             title={isUnread ? "A new love note for you" : "A little love note"}
             onClick={() => { moveFocus.current = true; setPhase("open"); }}
             initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-            transition={transition} style={{ borderRadius: 18 }}
+            transition={{ ...transition, duration: reduceMotion ? 0 : 0.18 }} style={{ borderRadius: 18 }}
             whileHover={reduceMotion ? undefined : { scale: 1.08 }}
             whileTap={reduceMotion ? undefined : { scale: 0.94 }}
             className="fixed right-4 top-24 z-[150] flex h-12 w-12 items-center justify-center bg-gradient-to-br from-[#df86a6] to-[#bb577f] text-white shadow-[0_6px_16px_-5px_rgba(160,66,104,0.35),inset_0_1px_0_rgba(255,255,255,0.4)] hover:brightness-105 transition-[filter] cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#b34f79] sm:right-6 sm:top-28"

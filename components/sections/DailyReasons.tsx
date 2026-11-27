@@ -37,6 +37,71 @@ function getNoteCountdown(targetDate: string, now: number) {
   return `Unlocks in ${String(hours).padStart(2, "0")}h ${String(minutes).padStart(2, "0")}m ${String(seconds).padStart(2, "0")}s`;
 }
 
+const ArchiveGrid = React.memo(function ArchiveGrid({ dailyReasons, now, onOpen }: {
+  dailyReasons: DailyReason[];
+  now: number;
+  onOpen: (reason: DailyReason) => void;
+}) {
+  return (
+    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-5">
+      {dailyReasons.map((reason) => {
+        const unlocked = Date.parse(reason.unlockDate) <= now;
+        const readable = unlocked && Boolean(reason.content.trim());
+
+        return (
+          <button
+            key={reason.id}
+            type="button"
+            disabled={!readable}
+            aria-label={readable ? `Read day ${reason.dayNumber}` : `Day ${reason.dayNumber}, ${unlocked ? "awaiting a note" : "locked"}`}
+            onClick={() => readable && onOpen(reason)}
+            className={`group relative [content-visibility:auto] overflow-hidden p-4 rounded-2xl flex flex-col items-center justify-center text-center h-44 sm:h-48 transition-shadow duration-300 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-rose-400 ${
+              readable
+                ? "bg-[#ffffff] border border-[#ffd6e8] shadow-[0_5px_16px_-8px_rgba(224,85,134,0.2)] cursor-pointer hover:-translate-y-1 hover:border-[#e66496] hover:shadow-[0_12px_25px_-10px_rgba(224,85,134,0.25)]"
+                : "bg-[#fff5fa]/70 border border-[#ffe9f2] cursor-not-allowed"
+            }`}
+          >
+            {readable ? (
+              <>
+                <span aria-hidden="true" className="absolute right-3 top-2 font-serif text-4xl italic text-[#ffe3ee]">{String(reason.dayNumber).padStart(2, "0")}</span>
+                <div className="relative w-11 h-11 rounded-full bg-[#fff0f5] border border-[#ffe9f2] flex items-center justify-center mb-3 shadow-[inset_0_2px_3px_rgba(255,255,255,0.9)]">
+                  <Heart className="w-4 h-4 fill-[#e66496] text-[#e66496]" strokeWidth={1} />
+                </div>
+                <span className="text-[9px] font-bold tracking-[0.2em] text-[#b83f6c] uppercase mb-2">
+                  DAY {reason.dayNumber}
+                </span>
+                <span className="font-serif text-base text-[#4a2036]">A little love for you</span>
+                <span className="mt-3 text-[10px] text-[#b83f6c] group-hover:text-[#b83f6c]">Open your note ↗</span>
+              </>
+            ) : unlocked ? (
+              <span className="font-serif text-sm text-[#74334f]">A note is on its way</span>
+            ) : (
+              <>
+                <div className="w-12 h-12 rounded-full border border-[#ffe9f2] flex items-center justify-center mb-4 bg-transparent">
+                  <Lock className="w-4 h-4 text-[#ff758f] stroke-[1.5]" />
+                </div>
+
+                <span className="text-[10px] font-bold tracking-[0.2em] text-[#ff758f] uppercase mb-5">
+                  DAY {reason.dayNumber}
+                </span>
+
+                <div className="w-full max-w-[130px] py-2 rounded-2xl bg-[#fff5fa] flex flex-col items-center justify-center">
+                  <span className="text-[8px] uppercase tracking-widest text-[#ff758f] font-bold mb-1">
+                    Unlocks In
+                  </span>
+                  <span className="font-mono text-[11px] font-semibold text-[#d6336c] tracking-tight">
+                    {now ? getNoteCountdown(reason.unlockDate, now) : "..."}
+                  </span>
+                </div>
+              </>
+            )}
+          </button>
+        );
+      })}
+    </div>
+  );
+});
+
 export default function DailyReasons() {
   const [now, setNow] = useState<number>(0);
   const [dailyReasons, setDailyReasons] = useState<DailyReason[]>([]);
@@ -45,16 +110,17 @@ export default function DailyReasons() {
   const [openNote, setOpenNote] = useState<DailyReason | null>(null);
 
   const { ref, active } = useVisibleSection(isArchiveOpen || Boolean(openNote));
+  const updating = active && !openNote;
 
   useEffect(() => {
-    if (!active) return;
+    if (!updating) return;
     const initial = setTimeout(() => setNow(Date.now()), 0);
     const timer = setInterval(() => setNow(Date.now()), 1000);
     return () => { clearTimeout(initial); clearInterval(timer); };
-  }, [active]);
+  }, [updating]);
 
   useEffect(() => {
-    if (!active) return;
+    if (!updating) return;
     const controller = new AbortController();
     let loading = false;
     async function refresh() {
@@ -79,7 +145,7 @@ export default function DailyReasons() {
       clearInterval(interval);
       window.removeEventListener("focus", refresh);
     };
-  }, [active]);
+  }, [updating]);
 
   useEffect(() => {
     if (isArchiveOpen || openNote) {
@@ -224,63 +290,7 @@ export default function DailyReasons() {
                 <p className="font-serif text-lg text-[#4a2036]">Little notes, a whole lot of love.</p>
                 <p className="text-xs text-[#b83f6c]">A new reason to open each day</p>
               </div>
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-5">
-                {dailyReasons.map((reason) => {
-                  const unlocked = isUnlocked(reason.unlockDate);
-                  const readable = unlocked && Boolean(reason.content.trim());
-
-                  return (
-                    <motion.button
-                      key={reason.id}
-                      type="button"
-                      disabled={!readable}
-                      aria-label={readable ? `Read day ${reason.dayNumber}` : `Day ${reason.dayNumber}, ${unlocked ? "awaiting a note" : "locked"}`}
-                      whileHover={readable ? { y: -4 } : {}}
-                      onClick={() => readable && setOpenNote(reason)}
-                      className={`group relative overflow-hidden p-4 rounded-2xl flex flex-col items-center justify-center text-center h-44 sm:h-48 transition-shadow duration-300 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-rose-400 ${
-                        readable
-                          ? "bg-[#ffffff] border border-[#ffd6e8] shadow-[0_5px_16px_-8px_rgba(224,85,134,0.2)] cursor-pointer hover:border-[#e66496] hover:shadow-[0_12px_25px_-10px_rgba(224,85,134,0.25)]"
-                          : "bg-[#fff5fa]/70 border border-[#ffe9f2] cursor-not-allowed"
-                      }`}
-                    >
-                      {readable ? (
-                        <>
-                          <span aria-hidden="true" className="absolute right-3 top-2 font-serif text-4xl italic text-[#ffe3ee]">{String(reason.dayNumber).padStart(2, "0")}</span>
-                          <div className="relative w-11 h-11 rounded-full bg-[#fff0f5] border border-[#ffe9f2] flex items-center justify-center mb-3 shadow-[inset_0_2px_3px_rgba(255,255,255,0.9)]">
-                            <Heart className="w-4 h-4 fill-[#e66496] text-[#e66496]" strokeWidth={1} />
-                          </div>
-                          <span className="text-[9px] font-bold tracking-[0.2em] text-[#b83f6c] uppercase mb-2">
-                            DAY {reason.dayNumber}
-                          </span>
-                          <span className="font-serif text-base text-[#4a2036]">A little love for you</span>
-                          <span className="mt-3 text-[10px] text-[#b83f6c] group-hover:text-[#b83f6c]">Open your note ↗</span>
-                        </>
-                      ) : unlocked ? (
-                        <span className="font-serif text-sm text-[#74334f]">A note is on its way</span>
-                      ) : (
-                        <>
-                          <div className="w-12 h-12 rounded-full border border-[#ffe9f2] flex items-center justify-center mb-4 bg-transparent">
-                            <Lock className="w-4 h-4 text-[#ff758f] stroke-[1.5]" />
-                          </div>
-                          
-                          <span className="text-[10px] font-bold tracking-[0.2em] text-[#ff758f] uppercase mb-5">
-                            DAY {reason.dayNumber}
-                          </span>
-                          
-                          <div className="w-full max-w-[130px] py-2 rounded-2xl bg-[#fff5fa] flex flex-col items-center justify-center">
-                            <span className="text-[8px] uppercase tracking-widest text-[#ff758f] font-bold mb-1">
-                              Unlocks In
-                            </span>
-                            <span className="font-mono text-[11px] font-semibold text-[#d6336c] tracking-tight">
-                              {now ? getNoteCountdown(reason.unlockDate, now) : "..."}
-                            </span>
-                          </div>
-                        </>
-                      )}
-                    </motion.button>
-                  );
-                })}
-              </div>
+              <ArchiveGrid dailyReasons={dailyReasons} now={now} onOpen={setOpenNote} />
             </div>
           </motion.div>
         )}
@@ -293,14 +303,14 @@ export default function DailyReasons() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[200] flex items-center justify-center p-3 sm:p-6 bg-[rgb(50,20,38)]/60 backdrop-blur-md"
+            className="fixed inset-0 z-[200] flex items-center justify-center p-3 sm:p-6 bg-[rgb(50,20,38)]/60 md:backdrop-blur-md"
             onClick={() => setOpenNote(null)}
           >
             <motion.div
-              initial={{ opacity: 0, scale: 0.96, rotate: -2, y: 15 }}
-              animate={{ opacity: 1, scale: 1, rotate: 0, y: 0 }}
-              exit={{ opacity: 0, scale: 0.96, rotate: 2, y: 15 }}
-              transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
+              initial={{ opacity: 0, y: 6 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 6 }}
+              transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
               onClick={(e) => e.stopPropagation()}
               className="relative isolate w-full max-w-[560px] bg-[linear-gradient(145deg,#fffefd,#fff8fa_65%,#ffedf4)] rounded-[2rem] border border-rose-200/80 shadow-[0_30px_90px_-20px_rgba(74,32,58,0.4)] flex max-h-[calc(100dvh-1.5rem)] flex-col overflow-hidden pt-14 sm:max-h-[calc(100dvh-3rem)]"
             >

@@ -77,13 +77,14 @@ function getLiveCountdown(target: string, now: number) {
 }
 
 export default function FutureLetters() {
-  const [now, setNow] = useState<number>(Date.now());
+  const [now, setNow] = useState<number>(Date.now);
   const [openLetter, setOpenLetter] = useState<FutureLetter | null>(null);
 
   const { ref, active } = useVisibleSection(Boolean(openLetter));
+  const updating = active && !openLetter;
 
   useEffect(() => {
-    if (!active) return;
+    if (!updating) return;
     const tick = () => setNow(Date.now());
     const initial = window.setTimeout(tick, 0);
     const interval = window.setInterval(tick, 1000);
@@ -91,7 +92,7 @@ export default function FutureLetters() {
       window.clearTimeout(initial);
       window.clearInterval(interval);
     };
-  }, [active]);
+  }, [updating]);
 
   // Lock background scroll when letter is open
   useEffect(() => {
@@ -139,10 +140,8 @@ export default function FutureLetters() {
               const countdown = !unlocked ? getLiveCountdown(letter.unlockDate, now) : null;
 
               return (
-                <motion.div
+                <div
                   key={letter.id}
-                  whileHover={{ y: -5 }}
-                  transition={{ duration: 0.25, ease: "easeOut" }}
                   role={unlocked ? "button" : undefined}
                   tabIndex={unlocked ? 0 : undefined}
                   aria-label={unlocked ? `Read ${letter.title}` : undefined}
@@ -157,7 +156,7 @@ export default function FutureLetters() {
                       setOpenLetter(letter);
                     }
                   }}
-                  className={`group relative rounded-[2rem] p-7 sm:p-8 flex flex-col justify-between transition-all duration-300 border focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#b53e6d] ${
+                  className={`group relative rounded-[2rem] p-7 sm:p-8 flex flex-col justify-between motion-safe:hover:-translate-y-1 transition-transform duration-200 border focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#b53e6d] ${
                     unlocked
                       ? "bg-[linear-gradient(145deg,#ffffff,#fffafb_65%,#ffeaf2)] border-rose-200/90 shadow-[0_18px_45px_-20px_rgba(174,62,104,0.3)] cursor-pointer hover:border-[#d887a6] hover:shadow-xl hover:shadow-rose-900/10"
                       : "bg-[linear-gradient(145deg,#fffdfd,#fff5f8)] border-rose-200/60 shadow-[0_10px_30px_-20px_rgba(174,62,104,0.2)] select-none"
@@ -248,7 +247,7 @@ export default function FutureLetters() {
                       </div>
                     )}
                   </div>
-                </motion.div>
+                </div>
               );
             })}
           </div>
@@ -262,14 +261,15 @@ export default function FutureLetters() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[1000] flex items-center justify-center p-4 sm:p-6 bg-[rgb(50,20,38)]/50 backdrop-blur-md"
+            transition={{ duration: 0.18 }}
+            className="fixed inset-0 z-[1000] flex items-center justify-center p-4 sm:p-6 bg-[rgb(50,20,38)]/50 md:backdrop-blur-md"
             onClick={() => setOpenLetter(null)}
           >
             <motion.div
-              initial={{ opacity: 0, scale: 0.94, y: 15 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.94, y: 15 }}
-              transition={{ duration: 0.28, ease: "easeOut" }}
+              initial={{ opacity: 0, y: 6 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 6 }}
+              transition={{ duration: 0.18, ease: "easeOut" }}
               onClick={(e) => e.stopPropagation()}
               className="relative isolate w-full max-w-[560px] bg-[linear-gradient(145deg,#fffefd,#fff8fa_65%,#ffedf4)] rounded-[2rem] border border-rose-200/80 shadow-[0_30px_90px_-20px_rgba(74,32,58,0.4)] px-7 py-9 sm:px-12 sm:py-11 max-h-[85dvh] overflow-y-auto flex flex-col"
             >
