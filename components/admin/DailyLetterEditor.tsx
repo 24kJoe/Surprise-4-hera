@@ -10,26 +10,43 @@ const dateLabel = new Intl.DateTimeFormat("en-US", {
   dateStyle: "long", timeZone: "UTC",
 });
 const formatDate = (date: string) => dateLabel.format(new Date(date));
+const navigationButton = "inline-flex min-h-10 items-center justify-center rounded-xl border border-rose-200 bg-white px-3 py-2 text-sm font-medium hover:bg-rose-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-rose-500 disabled:opacity-40";
+
+function hasLetter(day: Day, saved?: SavedLetter) {
+  return Boolean(day.content.trim() || saved?.draft?.trim() || saved?.published?.trim());
+}
 
 export default function DailyLetterEditor({ dates, letters, today }: {
   dates: Day[]; letters: SavedLetter[]; today: string;
 }) {
   const [saved, setSaved] = useState(() => new Map(letters.map((letter) => [letter.date, letter])));
-  const [date, setDate] = useState(dates.find((day) => day.date >= today)?.date ?? dates[dates.length - 1].date);
+  const [date, setDate] = useState(() => {
+    const todaySlot = dates.find((day) => day.date === today);
+    const todaySaved = saved.get(today);
+    if (todaySlot && (todaySaved?.draft?.trim() || !hasLetter(todaySlot, todaySaved))) {
+      return today;
+    }
+    return dates.find((day) => day.date >= today && !hasLetter(day, saved.get(day.date)))?.date
+      ?? todaySlot?.date
+      ?? dates.find((day) => day.date >= today)?.date
+      ?? dates[dates.length - 1].date;
+  });
   const [edits, setEdits] = useState<Record<string, string>>({});
   const [message, setMessage] = useState("");
   const [pending, startTransition] = useTransition();
+  const selectedIndex = dates.findIndex((day) => day.date === date);
+  const selected = dates[selectedIndex];
   const letter = saved.get(date);
-  const text = edits[date] ?? letter?.draft ?? letter?.published ?? dates.find((day) => day.date === date)?.content ?? "";
+  const savedText = letter?.draft ?? letter?.published ?? selected.content;
+  const text = edits[date] ?? savedText;
   const future = date > today;
   const todaySlot = dates.find((day) => day.date === today);
-  const todaySaved = saved.get(today);
-  const todayStatus = todaySaved?.published || todaySlot?.content.trim() ? "Already written" :
-    todaySaved?.draft ? "Draft saved" : "Needs a letter";
-  const nextBlank = dates.find((day) => {
-    const existing = saved.get(day.date);
-    return day.date >= today && !day.content.trim() && !existing?.draft && !existing?.published && !edits[day.date]?.trim();
-  });
+  const nextBlank = dates.find((day) => day.date >= today && day.date > date &&
+    !hasLetter(day, saved.get(day.date)) && !edits[day.date]?.trim());
+  const hasText = Boolean(text.trim());
+  const status = text !== savedText ? "Unsaved changes" :
+    letter?.draft?.trim() ? "Private draft" :
+    (letter?.published?.trim() || selected.content.trim()) ? (future ? "Scheduled" : "Published") : "Needs a letter";
 
   function selectDate(value: string) {
     setDate(value);
@@ -55,53 +72,73 @@ export default function DailyLetterEditor({ dates, letters, today }: {
   }
 
   return (
-    <section className="mb-8 rounded-3xl border border-rose-200 bg-white p-5 sm:p-8">
-      <h1 className="font-serif text-3xl">Daily Letters</h1>
-      <p className="mt-2 text-sm">Scheduled letters unlock at midnight in Cairo.</p>
-      <div className="mt-5 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-rose-100 bg-rose-50 p-4">
-        <div>
-          <h2 className="font-semibold">Today’s letter · {formatDate(today)}</h2>
-          <p className="mt-1 text-sm">{todaySlot ? "Day " + todaySlot.dayNumber + " · " + todayStatus : "No letter scheduled today."}</p>
+    <section className="mx-auto max-w-4xl rounded-3xl border border-rose-200 bg-white p-4 sm:p-6" aria-labelledby="letter-date-heading">
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div aria-live="polite">
+          <p className="mb-1 text-sm font-medium text-[#956076]">
+            {date === today ? "Today · " : ""}Day {selected.dayNumber}
+          </p>
+          <h2 id="letter-date-heading" className="font-serif text-2xl sm:text-3xl">
+            {formatDate(date)}
+          </h2>
+          <p className="mt-1 text-sm text-[#956076]">{status}</p>
         </div>
         <div className="flex flex-wrap gap-2">
-          {todaySlot && <button type="button" disabled={pending || date === today} onClick={() => selectDate(today)}
-            className="rounded-full border border-rose-300 bg-white px-3 py-2 text-sm disabled:opacity-50">Open today</button>}
-          {nextBlank && nextBlank.date !== today && (
-            <button type="button" disabled={pending || date === nextBlank.date} onClick={() => selectDate(nextBlank.date)}
-              className="rounded-full border border-rose-300 bg-white px-3 py-2 text-sm disabled:opacity-50">
-              Next blank · {formatDate(nextBlank.date)}
+          {todaySlot && date !== today && (
+            <button type="button" disabled={pending} onClick={() => selectDate(today)} className={navigationButton}>
+              Today
+            </button>
+          )}
+          {nextBlank && (
+            <button type="button" disabled={pending} onClick={() => selectDate(nextBlank.date)} className={navigationButton}>
+              Next blank
             </button>
           )}
         </div>
       </div>
-      <label className="mt-5 grid gap-2">
-        Letter date
-        <input type="date" value={date} min={dates[0].date} max={dates[dates.length - 1].date}
+
+      <div className="mt-4 flex flex-wrap items-center gap-2 border-y border-rose-100 py-3">
+        {[-1, 1].map((step) => {
+          const neighbor = dates[selectedIndex + step];
+          const label = step < 0 ? "Previous day" : "Next day";
+          return (
+            <button key={step} type="button" disabled={pending || !neighbor}
+              onClick={() => selectDate(neighbor.date)} className={navigationButton}>
+              {label}
+            </button>
+          );
+        })}
+        <input type="date" aria-label="Jump to a letter date" value={date} min={dates[0].date} max={dates[dates.length - 1].date}
           disabled={pending} onChange={(event) => {
             if (dates.some((day) => day.date === event.target.value)) selectDate(event.target.value);
-          }} className="w-fit rounded-xl border border-rose-200 p-2" />
-      </label>
-      <label className="mt-4 grid gap-2">
+          }} className="min-h-10 rounded-xl border border-rose-200 bg-white px-2 text-sm" />
+      </div>
+
+      <label className="mt-4 grid gap-2 text-sm font-medium">
         Letter
-        <textarea dir="auto" rows={7} maxLength={letterLimit} disabled={pending} value={text}
+        <textarea dir="auto" rows={5} maxLength={letterLimit} disabled={pending} value={text}
+          placeholder="Write your letter here…"
           onChange={(event) => setEdits({ ...edits, [date]: event.target.value })}
-          className="rounded-xl border border-rose-200 p-3 text-start" />
+          className="min-h-32 w-full rounded-xl border border-rose-200 p-3 text-start text-base font-normal focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-rose-500" />
       </label>
-      <details className="mt-4 rounded-2xl bg-rose-50 p-4">
-        <summary className="cursor-pointer">Preview</summary>
-        <p dir="auto" className="mt-3 whitespace-pre-wrap break-words text-start font-serif text-lg">
-          {text.trim() || "Your letter will appear here."}
-        </p>
-      </details>
-      <div className="mt-4 flex flex-wrap gap-3">
-        <button type="button" disabled={pending || !text.trim()} onClick={() => save("draft")}
-          className="rounded-full border border-rose-300 px-4 py-2 disabled:opacity-50">Save private draft</button>
-        <button type="button" disabled={pending || !text.trim()} onClick={() => save("publish")}
-          className="rounded-full bg-[#a83c66] px-4 py-2 text-white disabled:opacity-50">
+      <div className="mt-4 flex flex-wrap gap-2">
+        <button type="button" disabled={pending || !hasText} onClick={() => save("publish")}
+          className="min-h-11 rounded-xl bg-[#a83c66] px-4 py-2 text-sm font-semibold text-white hover:bg-[#893153] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-rose-500 disabled:opacity-50">
           {future ? "Schedule letter" : "Publish letter"}
         </button>
+        <button type="button" disabled={pending || !hasText} onClick={() => save("draft")}
+          className={navigationButton}>Save draft</button>
       </div>
-      <p className="mt-3 text-sm" role="status">{pending ? "Saving…" : message}</p>
+      <p className="mt-2 text-sm text-[#956076]" role="status">
+        {pending ? "Saving…" : message || (future ? "Scheduled letters go live at midnight Cairo time." : "Drafts are only visible here.")}
+      </p>
+
+      {hasText && (
+        <details className="mt-4 rounded-xl bg-rose-50 px-4 py-3">
+          <summary className="cursor-pointer text-sm font-medium">Preview letter</summary>
+          <p dir="auto" className="mt-3 whitespace-pre-wrap break-words text-start font-serif text-lg">{text.trim()}</p>
+        </details>
+      )}
     </section>
   );
 }

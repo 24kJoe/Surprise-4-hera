@@ -2,8 +2,7 @@
 
 import React, { useState, useEffect, useTransition, useRef, useCallback, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import Link from "next/link";
-import { BookOpen } from "lucide-react";
+import { BookOpen, LogOut } from "lucide-react";
 import {
   updateMediaAction, deleteMediaAction, getMediaItems, getCollections,
   createCollectionAction, updateCollectionAction, deleteCollectionAction, getCloudinarySignatureAction,
@@ -19,7 +18,6 @@ interface MediaItem { id: string; type: MediaType; url: string; publicId?: strin
 /*  Icons (Minified to prevent code cutoffs)                              */
 /* ---------------------------------------------------------------------- */
 const iS = { strokeLinecap: "round" as const, strokeLinejoin: "round" as const, strokeWidth: 1.75 };
-function IconArrowLeft(p: React.SVGProps<SVGSVGElement>) { return (<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" {...p}><path {...iS} d="M10.5 19.5 3 12m0 0 7.5-7.5M3 12h18" /></svg>); }
 function IconChevronDown(p: React.SVGProps<SVGSVGElement>) { return (<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" {...p}><path {...iS} d="m6 9 6 6 6-6" /></svg>); }
 function IconArrowRight(p: React.SVGProps<SVGSVGElement>) { return (<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" {...p}><path {...iS} d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" /></svg>); }
 function IconImage(p: React.SVGProps<SVGSVGElement>) { return (<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" {...p}><rect x="3" y="4" width="18" height="16" rx="2.5" {...iS} /><circle cx="8.5" cy="9.5" r="1.5" {...iS} /><path {...iS} d="m5 17 4.5-4.5a2 2 0 0 1 2.8 0L15 15.2M14.5 13.7l1.3-1.3a2 2 0 0 1 2.8 0L21 15" /></svg>); }
@@ -287,7 +285,10 @@ function SingleFilePreviewModal({
 /*  Album management dashboard                                            */
 /* ---------------------------------------------------------------------- */
 
-export default function AdminDashboard({ dailyLetters }: { dailyLetters: React.ReactNode }) {
+export default function AdminDashboard({ dailyLetters, signOutAction }: {
+  dailyLetters: React.ReactNode;
+  signOutAction: () => Promise<void>;
+}) {
   const [mediaItems, setMediaItems] = useState<MediaItem[]>([]);
   const [collections, setCollections] = useState<CollectionItem[]>([]);
   const [loaded, setLoaded] = useState(false);
@@ -622,26 +623,34 @@ export default function AdminDashboard({ dailyLetters }: { dailyLetters: React.R
     if (res.success) { setShowBulkAssignModal(false); setSelectMode(false); clearBulkSelection(); await loadData(); } else { alert(res.error || "Could not assign items"); }
   };
 
+  const heading = {
+    studio: { title: "Your memory studio", description: "Add photos and create albums." },
+    gallery: { title: "Manage photos", description: "Organize your photos and albums." },
+    letters: { title: "Daily Letters", description: "Write, preview, and schedule your letters." },
+  }[currentView];
   const displayMedia = reorderMode ? localOrderedMedia : filteredMedia;
 
   return (
     <div className="min-h-screen bg-[var(--bg)] text-[var(--cream)] p-4 sm:p-8 font-sans selection:bg-[var(--gold)] selection:text-white">
       <div className="max-w-6xl mx-auto space-y-8">
         {/* Top Header */}
-        <header className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 pb-6 border-b border-[var(--line)]">
-          <div className="flex items-center gap-4">
-            <Link href="/#letter" className="p-2.5 rounded-2xl bg-[var(--paper)]/80 hover:bg-[var(--paper)] border border-[var(--line)] text-[var(--cream)] hover:text-[var(--rose)] transition-colors shadow-sm flex items-center justify-center group shrink-0" title="Return to site">
-              <IconArrowLeft className="w-5 h-5 group-hover:-translate-x-0.5 transition-transform" />
-            </Link>
-            <div>
-              <span className="text-[11px] font-semibold uppercase tracking-wider text-[var(--gold-soft)] block">Dashboard</span>
-              <h1 className="font-serif text-3xl sm:text-4xl font-bold text-[var(--cream)] mt-0.5 leading-tight">Your memory studio</h1><p className="mt-2 text-sm text-[#956076]">Add a few photos. Make a new album. Keep your favorite days together.</p>
-            </div>
+        <header className="flex flex-col gap-4 pb-6 lg:flex-row lg:items-center lg:justify-between border-b border-[var(--line)]">
+          <div>
+            <span className="text-[11px] font-semibold uppercase tracking-wider text-[var(--gold-soft)] block">Dashboard</span>
+            <h1 className="font-serif text-3xl sm:text-4xl font-bold text-[var(--cream)] mt-0.5 leading-tight">{heading.title}</h1>
+            <p className="mt-2 text-sm text-[#956076]">{heading.description}</p>
           </div>
-          <div className="p-1.5 rounded-2xl bg-[var(--paper)] border border-[var(--line)] flex flex-wrap items-center gap-1 shadow-sm w-full sm:w-auto">
-            <button onClick={() => setCurrentView("studio")} className={`flex-1 sm:flex-none px-4 py-2 rounded-xl text-xs font-semibold tracking-wide transition-all cursor-pointer flex items-center justify-center gap-2 ${currentView === "studio" ? "bg-[var(--rose)] text-white shadow-sm" : "text-[var(--cream)]/65 hover:text-[var(--cream)] hover:bg-[var(--bg)]/50"}`}><IconUpload className="w-4 h-4" /><span>Add photos</span></button>
-            <button onClick={() => setCurrentView("gallery")} className={`flex-1 sm:flex-none px-4 py-2 rounded-xl text-xs font-semibold tracking-wide transition-all cursor-pointer flex items-center justify-center gap-2 ${currentView === "gallery" ? "bg-[var(--rose)] text-white shadow-sm" : "text-[var(--cream)]/65 hover:text-[var(--cream)] hover:bg-[var(--bg)]/50"}`}><IconImage className="w-4 h-4" /><span>Manage photos ({mediaItems.length})</span></button>
-            <button type="button" aria-pressed={currentView === "letters"} onClick={() => setCurrentView("letters")} className={`flex-1 sm:flex-none px-4 py-2 rounded-xl text-xs font-semibold tracking-wide transition-all cursor-pointer flex items-center justify-center gap-2 ${currentView === "letters" ? "bg-[var(--rose)] text-white shadow-sm" : "text-[var(--cream)]/65 hover:text-[var(--cream)] hover:bg-[var(--bg)]/50"}`}><BookOpen aria-hidden="true" className="w-4 h-4" /><span>Daily Letters</span></button>
+          <div className="flex flex-wrap items-center gap-3 lg:justify-end">
+            <nav aria-label="Dashboard sections" className="p-1.5 rounded-2xl bg-[var(--paper)] border border-[var(--line)] flex flex-wrap items-center gap-1 shadow-sm w-full sm:w-auto">
+              <button type="button" aria-pressed={currentView === "studio"} onClick={() => setCurrentView("studio")} className={`flex-1 sm:flex-none px-4 py-2 rounded-xl text-xs font-semibold tracking-wide transition-all cursor-pointer flex items-center justify-center gap-2 ${currentView === "studio" ? "bg-[var(--rose)] text-white shadow-sm" : "text-[var(--cream)]/65 hover:text-[var(--cream)] hover:bg-[var(--bg)]/50"}`}><IconUpload className="w-4 h-4" /><span>Add photos</span></button>
+              <button type="button" aria-pressed={currentView === "gallery"} onClick={() => setCurrentView("gallery")} className={`flex-1 sm:flex-none px-4 py-2 rounded-xl text-xs font-semibold tracking-wide transition-all cursor-pointer flex items-center justify-center gap-2 ${currentView === "gallery" ? "bg-[var(--rose)] text-white shadow-sm" : "text-[var(--cream)]/65 hover:text-[var(--cream)] hover:bg-[var(--bg)]/50"}`}><IconImage className="w-4 h-4" /><span>Manage photos ({mediaItems.length})</span></button>
+              <button type="button" aria-pressed={currentView === "letters"} onClick={() => setCurrentView("letters")} className={`flex-1 sm:flex-none px-4 py-2 rounded-xl text-xs font-semibold tracking-wide transition-all cursor-pointer flex items-center justify-center gap-2 ${currentView === "letters" ? "bg-[var(--rose)] text-white shadow-sm" : "text-[var(--cream)]/65 hover:text-[var(--cream)] hover:bg-[var(--bg)]/50"}`}><BookOpen aria-hidden="true" className="w-4 h-4" /><span>Daily Letters</span></button>
+            </nav>
+            <form action={signOutAction} className="ml-auto lg:ml-0">
+              <button type="submit" className="inline-flex min-h-10 items-center gap-2 whitespace-nowrap rounded-xl border border-[var(--line)] bg-[var(--paper)] px-3 py-2 text-xs font-semibold hover:border-[var(--rose)] hover:text-[var(--rose)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--rose)]">
+                <LogOut aria-hidden="true" className="size-4" /> Sign out
+              </button>
+            </form>
           </div>
         </header>
 

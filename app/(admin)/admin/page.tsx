@@ -15,17 +15,10 @@ async function AdminContent() {
 
   const letters = await prisma.dailyLetter.findMany().catch(() => null);
   return (
-    <>
-      <div className="mx-auto max-w-4xl">
-        <form action={signOut} className="mb-4 text-right">
-          <button className="rounded-full border border-rose-200 bg-white px-4 py-2">Sign out</button>
-        </form>
-      </div>
-      <AdminDashboard dailyLetters={letters ? (
-        <DailyLetterEditor dates={schedule.map(({ date, content, dayNumber }) => ({ date, content, dayNumber }))}
-          letters={letters} today={cairoDay()} />
-      ) : <p role="alert">Letters are unavailable. Try refreshing.</p>} />
-    </>
+    <AdminDashboard signOutAction={signOut} dailyLetters={letters ? (
+      <DailyLetterEditor dates={schedule.map(({ date, content, dayNumber }) => ({ date, content, dayNumber }))}
+        letters={letters} today={cairoDay()} />
+    ) : <p role="alert">Letters are unavailable. Try refreshing.</p>} />
   );
 }
 
