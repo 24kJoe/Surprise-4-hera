@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import { useVisibleSection } from "@/lib/hooks/useVisibleSection";
 import { motion, AnimatePresence } from "framer-motion";
 import { Heart, Lock, BookOpen, Clock, ArrowLeft, Calendar, X } from "lucide-react";
 
@@ -43,13 +44,17 @@ export default function DailyReasons() {
   const [isArchiveOpen, setIsArchiveOpen] = useState(false);
   const [openNote, setOpenNote] = useState<DailyReason | null>(null);
 
+  const { ref, active } = useVisibleSection(isArchiveOpen || Boolean(openNote));
+
   useEffect(() => {
+    if (!active) return;
     const initial = setTimeout(() => setNow(Date.now()), 0);
     const timer = setInterval(() => setNow(Date.now()), 1000);
     return () => { clearTimeout(initial); clearInterval(timer); };
-  }, []);
+  }, [active]);
 
   useEffect(() => {
+    if (!active) return;
     const controller = new AbortController();
     let loading = false;
     async function refresh() {
@@ -74,7 +79,7 @@ export default function DailyReasons() {
       clearInterval(interval);
       window.removeEventListener("focus", refresh);
     };
-  }, []);
+  }, [active]);
 
   useEffect(() => {
     if (isArchiveOpen || openNote) {
@@ -94,7 +99,7 @@ export default function DailyReasons() {
 
   return (
     <>
-      <section id="daily-reasons" className="relative w-full py-16 px-4 overflow-hidden">
+      <section ref={ref} className="relative w-full py-16 px-4 overflow-hidden">
         {/* Background Ambient Sparkles for the Main Page */}
         <div className="absolute inset-0 pointer-events-none -z-10 overflow-hidden">
           {[...Array(6)].map((_, i) => (
@@ -105,8 +110,8 @@ export default function DailyReasons() {
                 top: `${15 * i + 5}%`,
                 left: `${(i * 25) % 90}%`,
               }}
-              animate={{ y: [0, -15, 0], scale: [1, 1.1, 1] }}
-              transition={{ duration: 4 + i, repeat: Infinity, ease: "easeInOut" }}
+              animate={active ? { y: [0, -15, 0], scale: [1, 1.1, 1] } : { y: 0, scale: 1 }}
+              transition={active ? { duration: 4 + i, repeat: Infinity, ease: "easeInOut" } : { duration: 0 }}
             >
               <Heart className="w-5 h-5 fill-rose-200/40" />
             </motion.div>

@@ -1,5 +1,7 @@
 "use client";
 
+import MediaThumbnail from "./MediaThumbnail";
+
 import React from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
@@ -67,21 +69,20 @@ export default function AlbumCard({ collection, tilt = 0, index = 0 }: AlbumCard
         <div className="relative aspect-square sm:aspect-[4/5] w-full overflow-hidden rounded-xl bg-gradient-to-br from-rose-100 to-rose-200/60 flex items-center justify-center border border-rose-100/80">
           {mediaUrl ? (
             isVideo ? (
-              <video
+              <MediaThumbnail
                 src={mediaUrl}
-                poster={thumbnailUrl || undefined}
-                preload={thumbnailUrl ? "none" : "metadata"}
+                poster={thumbnailUrl}
+                video
+                sizes="(min-width: 1024px) 350px, (min-width: 640px) 30vw, 45vw"
+                alt={altText}
                 className="w-full h-full object-cover rounded-lg"
-                muted
-                playsInline
               />
             ) : (
-              <img
+              <MediaThumbnail
                 src={mediaUrl}
+                sizes="(min-width: 1024px) 350px, (min-width: 640px) 30vw, 45vw"
                 alt={altText}
                 className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105 rounded-lg"
-                loading="lazy"
-                decoding="async"
               />
             )
           ) : (

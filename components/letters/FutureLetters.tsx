@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import { useVisibleSection } from "@/lib/hooks/useVisibleSection";
 import { motion, AnimatePresence } from "framer-motion";
 import { Lock, Mail, Heart, Calendar, X } from "lucide-react";
 import { Amiri } from "next/font/google";
@@ -79,10 +80,18 @@ export default function FutureLetters() {
   const [now, setNow] = useState<number>(Date.now());
   const [openLetter, setOpenLetter] = useState<FutureLetter | null>(null);
 
+  const { ref, active } = useVisibleSection(Boolean(openLetter));
+
   useEffect(() => {
-    const interval = setInterval(() => setNow(Date.now()), 1000);
-    return () => clearInterval(interval);
-  }, []);
+    if (!active) return;
+    const tick = () => setNow(Date.now());
+    const initial = window.setTimeout(tick, 0);
+    const interval = window.setInterval(tick, 1000);
+    return () => {
+      window.clearTimeout(initial);
+      window.clearInterval(interval);
+    };
+  }, [active]);
 
   // Lock background scroll when letter is open
   useEffect(() => {
@@ -107,7 +116,7 @@ export default function FutureLetters() {
 
   return (
     <>
-      <section id="secret-letters" className="relative w-full py-16 px-4 overflow-hidden">
+      <section id="secret-letters" ref={ref} className="relative w-full py-16 px-4 overflow-hidden">
 
         <div className="max-w-5xl mx-auto">
           {/* Section Header */}

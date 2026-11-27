@@ -40,7 +40,7 @@ export default function MemoriesSection() {
   }
 
   return (
-    <section id="memories" className={styles.section}>
+    <section className={styles.section}>
       <div aria-hidden="true" className={styles.decorations}>
         <Heart /><Heart /><Heart /><Heart /><Sparkles /><Sparkles />
       </div>

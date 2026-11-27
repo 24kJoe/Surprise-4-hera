@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useVisibleSection } from "@/lib/hooks/useVisibleSection";
 import { motion, AnimatePresence } from "framer-motion";
 import { CONFIG } from "@/lib/config/site";
 import { Heart, CalendarHeart } from "lucide-react";
@@ -70,17 +71,20 @@ export default function CounterSection() {
   const [values, setValues] = useState({ days: 0, hours: 0, mins: 0, secs: 0 });
   const [monthData, setMonthData] = useState({ months: 0, extraDays: 0 });
 
+  const { ref, active } = useVisibleSection();
+
   useEffect(() => {
+    if (!active) return;
     const start = new Date(CONFIG.startDate);
     function update() {
       const now = new Date();
       setValues(diff(start, now));
       setMonthData(getMonthsDiff(start, now));
     }
-    update();
+    const initial = setTimeout(update, 0);
     const interval = setInterval(update, 1000);
-    return () => clearInterval(interval);
-  }, []);
+    return () => { clearTimeout(initial); clearInterval(interval); };
+  }, [active]);
 
   const items = [
     { label: "Days", value: values.days, pad: values.days > 99 ? 3 : 2 },
@@ -90,7 +94,7 @@ export default function CounterSection() {
   ];
 
   return (
-    <section id="counter" className="relative py-16 px-4">
+    <section ref={ref} className="relative py-16 px-4">
       <div className="mx-auto max-w-4xl text-center">
         {/* Header */}
         <div className="mb-9 sm:mb-10">
@@ -127,8 +131,8 @@ export default function CounterSection() {
               {idx < items.length - 1 && (
                 <div aria-hidden="true" className="absolute -right-1 top-[calc(50%-22px)] -translate-y-1/2 translate-x-1/2 flex items-center justify-center text-[#c56d91]/60 sm:static sm:translate-x-0 sm:-translate-y-6">
                   <motion.div
-                    animate={{ scale: [1, 1.2, 1], opacity: [0.4, 0.8, 0.4] }}
-                    transition={{ repeat: Infinity, duration: 1.2, ease: "easeInOut" }}
+                    animate={active ? { scale: [1, 1.2, 1], opacity: [0.4, 0.8, 0.4] } : { scale: 1, opacity: 0.4 }}
+                    transition={active ? { repeat: Infinity, duration: 1.2, ease: "easeInOut" } : { duration: 0 }}
                   >
                     <Heart className="w-2.5 h-2.5 sm:w-3.5 sm:h-3.5 fill-current" />
                   </motion.div>

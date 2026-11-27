@@ -1,5 +1,7 @@
 "use client";
 
+import MediaThumbnail from "./MediaThumbnail";
+
 import React, { useState, useRef } from "react";
 import { reorderMediaAction } from "@/lib/gallery/actions";
 
@@ -131,14 +133,18 @@ export default function InteractiveGalleryGrid({ initialMedia }: { initialMedia:
               >
                 <div className="relative aspect-square w-full rounded-xl overflow-hidden bg-black/20 border border-[var(--line)] pointer-events-none">
                   {isVideo ? (
-                    <video
+                    <MediaThumbnail
                       src={item.url}
-                      poster={item.thumbnailUrl || undefined}
+                      poster={item.thumbnailUrl}
+                      video
+                      sizes="232px"
+                      alt=""
                       className="w-full h-full object-cover"
                     />
                   ) : (
-                    <img
+                    <MediaThumbnail
                       src={item.url}
+                      sizes="232px"
                       alt={item.caption || "Collection item"}
                       className="w-full h-full object-cover"
                     />

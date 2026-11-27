@@ -1,5 +1,7 @@
 "use client";
 
+import MediaThumbnail from "./MediaThumbnail";
+
 import React, { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
@@ -73,14 +75,13 @@ export default function PolaroidCard({
           isVideo ? (
             /* عرض معاينة الفيديو داخل البطاقة */
             <div className="w-full h-full relative">
-              <video
+              <MediaThumbnail
                 src={photo.url}
-                poster={photo.thumbnailUrl || undefined}
+                poster={photo.thumbnailUrl}
+                video
+                sizes="(min-width: 768px) 360px, 85vw"
+                alt=""
                 className="w-full h-full object-cover rounded-2xl"
-                muted
-                loop
-                playsInline
-                autoPlay
               />
               <div className="absolute inset-0 bg-black/20 flex items-center justify-center opacity-80 group-hover:opacity-100 transition-opacity rounded-2xl">
                 <div className="w-9 h-9 rounded-full bg-black/60 text-white flex items-center justify-center backdrop-blur-md shadow-md">
@@ -90,12 +91,11 @@ export default function PolaroidCard({
             </div>
           ) : (
             /* عرض الصورة */
-            <img
+            <MediaThumbnail
               src={photo.url}
+                sizes="(min-width: 768px) 360px, 85vw"
               alt={photo.caption || photo.altText || "Gallery photo"}
               className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105 rounded-2xl"
-              loading="lazy"
-              decoding="async"
             />
           )
         ) : (
@@ -173,6 +173,7 @@ export default function PolaroidCard({
                     src={photo.url}
                     poster={photo.thumbnailUrl || undefined}
                     controls
+                    playsInline
                     autoPlay
                     className="max-h-[75vh] w-auto max-w-full rounded-2xl"
                   />

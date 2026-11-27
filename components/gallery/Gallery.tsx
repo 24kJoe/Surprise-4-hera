@@ -97,7 +97,7 @@ export default function Gallery() {
   };
 
   return (
-    <section id="gallery" className="scroll-mt-24">
+    <section>
       <div className="section-inner">
         <div className="text-center mb-10">
           <span className="inline-flex items-center gap-3 text-[10px] font-semibold tracking-[0.25em] text-[#a74b70] uppercase mb-5">

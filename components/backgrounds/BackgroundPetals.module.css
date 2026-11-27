@@ -32,6 +32,10 @@
   to { transform: translateX(12px) rotate(18deg); }
 }
 
+@media (max-width: 639px) {
+  .fall:nth-child(n + 9) { display: none; }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .field { display: none; }
 }
